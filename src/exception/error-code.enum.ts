@@ -1,0 +1,77 @@
+import { HttpStatus } from '@nestjs/common';
+
+export enum ErrorCode {
+  /* 400 BAD_REQUEST : 잘못된 요청 */
+  INVALID_INPUT_VALUE = 'INVALID_INPUT_VALUE',
+  INVALID_STATUS = 'INVALID_STATUS',
+
+  /* 401 UNAUTHORIZED : 인증되지 않은 사용자 */
+  INVALID_USER = 'INVALID_USER',
+  INVALID_AUTHENTICATION = 'INVALID_AUTHENTICATION',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+
+  /* 403 FORBIDDEN : 인가되지 않은 사용자 */
+  INVALID_AUTHORIZATION = 'INVALID_AUTHORIZATION',
+  FORBIDDEN_ROLE = 'FORBIDDEN_ROLE',
+  ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
+  FORBIDDEN_LICENSE = 'FORBIDDEN_LICENSE',
+
+  /* 404 NOT_FOUND : Resource 를 찾을 수 없음 */
+  NOT_FOUND = 'NOT_FOUND',
+  NOT_FOUND_USER = 'NOT_FOUND_USER',
+  NOT_FOUND_TENANT = 'NOT_FOUND_TENANT',
+  NOT_FOUND_CONTRACT_LICENSE = 'NOT_FOUND_CONTRACT_LICENSE',
+  NOT_FOUND_SITE = 'NOT_FOUND_SITE',
+  NOT_FOUND_INVENTORY = 'NOT_FOUND_INVENTORY',
+  NOT_FOUND_ACTIVITY = 'NOT_FOUND_ACTIVITY',
+  NOT_FOUND_ACTIVITY_DATA = 'NOT_FOUND_ACTIVITY_DATA',
+
+  /* 409 CONFLICT : Resource 의 현재 상태와 충돌. 보통 중복된 데이터 존재 */
+
+  /* 410 GONE : 서버는 요청한 리소스가 영구적으로 삭제 */
+  EXPIRED_EMAIL_VERIFY_CODE = 'EXPIRED_EMAIL_VERIFY_CODE',
+
+  /* 413 PAYLOAD_TOO_LARGE : 요청한 파일 크기가 허용된 제한을 초과 */
+  FILE_SIZE_EXCEEDED = 'FILE_SIZE_EXCEEDED',
+
+  /* 500 INTERNAL_SERVER_ERROR */
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+}
+
+export const HttpStatusMap: { [key in ErrorCode]: number } = {
+  /* 400 BAD_REQUEST : 잘못된 요청 */
+  [ErrorCode.INVALID_INPUT_VALUE]: HttpStatus.BAD_REQUEST,
+  [ErrorCode.INVALID_STATUS]: HttpStatus.BAD_REQUEST,
+
+  /* 401 UNAUTHORIZED : 인증되지 않은 사용자 */
+  [ErrorCode.INVALID_USER]: HttpStatus.UNAUTHORIZED,
+  [ErrorCode.INVALID_AUTHENTICATION]: HttpStatus.UNAUTHORIZED,
+  [ErrorCode.INVALID_TOKEN]: HttpStatus.UNAUTHORIZED,
+
+  /* 403 FORBIDDEN : 인가되지 않은 사용자 */
+  [ErrorCode.INVALID_AUTHORIZATION]: HttpStatus.FORBIDDEN,
+  [ErrorCode.FORBIDDEN_ROLE]: HttpStatus.FORBIDDEN,
+  [ErrorCode.ACCOUNT_LOCKED]: HttpStatus.FORBIDDEN,
+  [ErrorCode.FORBIDDEN_LICENSE]: HttpStatus.FORBIDDEN,
+
+  /* 404 NOT_FOUND : Resource 를 찾을 수 없음 */
+  [ErrorCode.NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_USER]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_TENANT]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_CONTRACT_LICENSE]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_SITE]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_INVENTORY]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_ACTIVITY]: HttpStatus.NOT_FOUND,
+  [ErrorCode.NOT_FOUND_ACTIVITY_DATA]: HttpStatus.NOT_FOUND,
+
+  /* 409 CONFLICT : Resource 의 현재 상태와 충돌. 보통 중복된 데이터 존재 */
+
+  /* 410 GONE : 서버는 요청한 리소스가 영구적으로 삭제 */
+  [ErrorCode.EXPIRED_EMAIL_VERIFY_CODE]: HttpStatus.GONE,
+
+  /* 413 PAYLOAD_TOO_LARGE : 요청한 파일 크기가 허용된 제한을 초과 */
+  [ErrorCode.FILE_SIZE_EXCEEDED]: HttpStatus.PAYLOAD_TOO_LARGE,
+
+  /* 500 INTERNAL_SERVER_ERROR */
+  [ErrorCode.INTERNAL_SERVER_ERROR]: HttpStatus.INTERNAL_SERVER_ERROR,
+};

@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          SSH_COMMAND="ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}"
+
+          # 배포 커맨드 실행
+          $SSH_COMMAND "cd ${{ secrets.APP_PATH }} && \
+            git pull && \
+            pnpm install && \
+            pnpm run build && \
+            pm2 restart ecosystem.config.js"

@@ -1,6 +1,5 @@
 import { IsEmail, IsEnum, IsNumber, IsString } from 'class-validator';
-
-import { TenantUserRole } from '@/domain/enum/tenant-user-role.enum';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 
 export class TokenPayload<T> {
   iss: string;
@@ -18,8 +17,8 @@ export class UserAccessTokenPayload {
   @IsNumber()
   userId: number;
 
-  @IsEnum(TenantUserRole, { each: true })
-  roles: TenantUserRole[];
+  @IsEnum(UserRoleType, { each: true })
+  roles: UserRoleType[];
 
   @IsEmail()
   email: string;

@@ -3,9 +3,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Reflector } from '@nestjs/core';
 
 import { Observable, map } from 'rxjs';
-
-import { Pagination } from '@/adapter/inbound/dto/pagination';
-import { NO_GLOBAL_INTERCEPTOR } from '@/config/no-global-interceptor.decorator';
+import { Pagination } from './pagination';
+import { NO_GLOBAL_INTERCEPTOR } from '../../../config/no-global-interceptor.decorator';
 
 export type Response<T> = {
   data: T;

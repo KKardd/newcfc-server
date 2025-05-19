@@ -1,4 +1,4 @@
-export enum ShopperStatus {
+export enum ChauffeurStatus {
   OFF_DUTY = 'OFF_DUTY', // 근무종료
   RECEIVED_VEHICLE = 'RECEIVED_VEHICLE', // 차량 인수
   WAITING_FOR_RESERVATION = 'WAITING_FOR_RESERVATION', // 예약 대기중

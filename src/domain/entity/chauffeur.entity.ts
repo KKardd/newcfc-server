@@ -2,11 +2,12 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '@/domain/entity/base.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
-import { ShopperStatus } from '@/domain/enum/shopper-status.enum';
-import { ShopperType } from '@/domain/enum/shopper-type.enum';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
+import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 
-@Entity('shopper')
-export class Shopper extends BaseEntity {
+@Entity('chauffeur')
+export class Chauffeur extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -20,14 +21,17 @@ export class Shopper extends BaseEntity {
   @Column({ name: 'birth_date', type: 'varchar', length: 8, nullable: false })
   birthDate: string;
 
-  @Column({ type: 'enum', enum: ShopperType })
-  type: ShopperType;
+  @Column({ type: 'enum', enum: ChauffeurType })
+  type: ChauffeurType;
 
-  @Column({ name: 'shopper_status', type: 'enum', enum: ShopperStatus, default: ShopperStatus.OFF_DUTY })
-  shopperStatus: ShopperStatus;
+  @Column({ name: 'chauffeur_status', type: 'enum', enum: ChauffeurStatus, default: ChauffeurStatus.OFF_DUTY })
+  chauffeurStatus: ChauffeurStatus;
 
   @Column({ name: 'vehicle_id', type: 'integer', nullable: true })
   vehicleId: number | null;
+
+  @Column({ type: 'enum', enum: UserRoleType, default: UserRoleType.CHAUFFEUR })
+  role: UserRoleType;
 
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;

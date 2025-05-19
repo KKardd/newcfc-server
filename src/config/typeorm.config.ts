@@ -4,7 +4,6 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 import { RequestSubscriber } from '@/port/audit/request.subscriber';
-import { VendorAuditSubscriber } from '@/port/audit/vendor-audit.subscriber';
 
 export function TypeOrmConfig(configService: ConfigService, dbName?: string): TypeOrmModuleOptions {
   const nodeEnv = configService.get<string>('NODE_ENV');
@@ -36,7 +35,7 @@ export function TypeOrmConfig(configService: ConfigService, dbName?: string): Ty
         database: configService.get<string>('DB_NAME'),
         schema: configService.get<string>('DB_SCHEMA'),
         entities: [__dirname + '/../domain/**/*.entity{.ts,.js}'],
-        subscribers: [RequestSubscriber, VendorAuditSubscriber],
+        subscribers: [RequestSubscriber],
         namingStrategy: new SnakeNamingStrategy(),
         synchronize: nodeEnv !== 'production',
         logging: true,
@@ -49,7 +48,7 @@ export function TypeOrmConfig(configService: ConfigService, dbName?: string): Ty
     type: 'sqlite',
     database: `:memory:`,
     entities: [__dirname + '/../domain/**/*.entity{.ts,.js}'],
-    subscribers: [RequestSubscriber, VendorAuditSubscriber],
+    subscribers: [RequestSubscriber],
     synchronize: true,
     logging: true,
     autoLoadEntities: true,

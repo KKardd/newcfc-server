@@ -5,11 +5,12 @@ import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
 
 import { ResponseTokenDto } from '@/adapter/inbound/dto/response/response-token.dto';
-import { User } from '@/domain/entity/user.entity';
-import { TenantUserRole } from '@/domain/enum/tenant-user-role.enum';
+import { Admin } from '@/domain/entity/admin.entity';
+import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { TokenPayload, UserAccessTokenPayload, UserRefreshTokenPayload } from '@/security/jwt/token.payload';
 
-export const ISS = 'CARBON SAURUS';
+export const ISS = 'NEWCFC';
 export const SYSTEM_ISS = 'SYSTEM';
 
 @Injectable()
@@ -47,26 +48,26 @@ export class TokenProvider {
     });
   }
 
-  createToken(user: User): ResponseTokenDto {
+  createToken(user: Admin | Chauffeur): ResponseTokenDto {
     const userAccessTokenPayload: TokenPayload<UserAccessTokenPayload> = {
       iss: ISS,
-      sub: user.uuid,
+      sub: user.id.toString(),
       jti: v4(),
       payload: {
-        tenantId: user.tenantId,
+        tenantId: 'tenantId' in user ? (user.tenantId as number) : 0,
         userId: user.id,
-        email: user.email,
+        email: 'email' in user ? (user.email as string) : user.phone,
         name: user.name,
-        roles: user.roles!.map((role) => TenantUserRole[role.role]),
+        roles: [user.role],
       },
     };
 
     const userRefreshTokenPayload: TokenPayload<UserRefreshTokenPayload> = {
       iss: ISS,
-      sub: user.uuid,
+      sub: user.id.toString(),
       jti: v4(),
       payload: {
-        tenantId: user.tenantId,
+        tenantId: 'tenantId' in user ? (user.tenantId as number) : 0,
         userId: user.id,
       },
     };
@@ -91,7 +92,7 @@ export class TokenProvider {
         userId: 0,
         email: SYSTEM_ISS,
         name: SYSTEM_ISS,
-        roles: [],
+        roles: [UserRoleType.SUPER_ADMIN],
       },
     };
 

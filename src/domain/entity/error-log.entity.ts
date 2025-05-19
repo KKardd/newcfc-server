@@ -1,7 +1,5 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-import { CustomColumn } from '@/domain/custom/custom-column';
-
 @Entity('error_log')
 export class ErrorLog {
   @PrimaryGeneratedColumn()
@@ -46,6 +44,6 @@ export class ErrorLog {
   @Column({ name: 'elapsed_time', type: 'int', nullable: true })
   elapsedTime: number;
 
-  @CustomColumn({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 }

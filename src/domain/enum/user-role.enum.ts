@@ -1,4 +1,5 @@
-export enum AdminRole {
+export enum UserRoleType {
   SUPER_ADMIN = 'SUPER_ADMIN',
   SUB_ADMIN = 'SUB_ADMIN',
+  CHAUFFEUR = 'CHAUFFEUR',
 }

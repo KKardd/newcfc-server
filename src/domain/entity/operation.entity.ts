@@ -24,8 +24,8 @@ export class Operation extends BaseEntity {
   @Column({ name: 'distance', type: 'float', nullable: true })
   distance: number | null;
 
-  @Column({ name: 'shopper_id', type: 'integer', nullable: true })
-  shopperId: number | null;
+  @Column({ name: 'chauffeur_id', type: 'integer', nullable: true })
+  chauffeurId: number | null;
 
   @Column({ name: 'vehicle_id', type: 'integer', nullable: true })
   vehicleId: number | null;

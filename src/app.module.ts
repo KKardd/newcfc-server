@@ -15,7 +15,6 @@ import { FileModule } from '@/module/file.module';
 import { AwsModule } from '@/module/infrastructure/aws.module';
 import { RedisModule } from '@/module/infrastructure/redis.module';
 import { TokenProviderModule } from '@/module/token-provider.module';
-import { UserModule } from '@/module/user.module';
 import { RequestContext } from '@/port/audit/request-context.middleware';
 
 const typeOrmModules = [
@@ -31,16 +30,6 @@ const typeOrmModules = [
     },
     inject: [ConfigService],
   }),
-  ...(process.env.NODE_ENV !== 'test'
-    ? [
-        TypeOrmModule.forRootAsync({
-          imports: [ConfigModule],
-          name: 'accountConnection',
-          useFactory: async (configService: ConfigService) => TypeOrmConfig(configService, 'ACCOUNT'),
-          inject: [ConfigService],
-        }),
-      ]
-    : []),
 ];
 @Module({
   imports: [
@@ -52,7 +41,6 @@ const typeOrmModules = [
     ...typeOrmModules,
     AwsModule,
     FileModule,
-    UserModule,
     TerminusModule,
     RedisModule,
     TokenProviderModule,

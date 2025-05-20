@@ -42,7 +42,7 @@ const typeOrmModules = [
     AwsModule,
     FileModule,
     TerminusModule,
-    RedisModule,
+    // RedisModule,
     TokenProviderModule,
     ErrorModule,
   ],

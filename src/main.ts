@@ -29,8 +29,8 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const configService = app.get(ConfigService);
- // const environment = configService.getOrThrow<string>('common.environment');
- // const nodeEnv = configService.getOrThrow<string>('common.nodeEnv');
+  const environment = configService.getOrThrow<string>('common.environment');
+  const nodeEnv = configService.getOrThrow<string>('common.nodeEnv');
 
   // Set global prefix
   app.setGlobalPrefix(GLOBAL_PREFIX);

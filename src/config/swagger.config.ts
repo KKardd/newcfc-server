@@ -11,7 +11,7 @@ export function setSwagger(app: NestExpressApplication) {
     SWAGGER: `${GLOBAL_PREFIX}/swagger`,
   };
 
-  const config = new DocumentBuilder().setTitle('CarbonTrack track api').setVersion('1.0.0').addBearerAuth().build();
+  const config = new DocumentBuilder().setTitle('newcfc api').setVersion('1.0.0').addBearerAuth().build();
   const document = SwaggerModule.createDocument(app, config, {
     include: [],
     extraModels: [PaginationResponse],

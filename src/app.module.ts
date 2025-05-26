@@ -10,13 +10,21 @@ import { AppController } from '@/app.controller';
 import commonConfig from '@/config/common.config';
 import { TypeOrmConfig } from '@/config/typeorm.config';
 import { LoggerMiddleware } from '@/log/logger.middleware';
+import { AdminModule } from '@/module/admin.module';
+import { ChauffeurModule } from '@/module/chauffeur.module';
+import { DispatchPointModule } from '@/module/dispatch-point.module';
 import { ErrorModule } from '@/module/error.module';
 import { FileModule } from '@/module/file.module';
+import { GarageModule } from '@/module/garage.module';
 import { AwsModule } from '@/module/infrastructure/aws.module';
+import { NoticeModule } from '@/module/notice.module';
+import { OperationModule } from '@/module/operation.module';
+import { RealTimeDispatchModule } from '@/module/real-time-dispatch.module';
+import { ReservationModule } from '@/module/reservation.module';
 import { TokenProviderModule } from '@/module/token-provider.module';
+import { VehicleModule } from '@/module/vehicle.module';
+import { WayPointModule } from '@/module/way-point.module';
 import { RequestContext } from '@/port/audit/request-context.middleware';
-import { RefreshToken } from '@/infrastructure/entity/refresh-token.entity';
-import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
 
 const typeOrmModules = [
   TypeOrmModule.forRootAsync({
@@ -40,15 +48,23 @@ const typeOrmModules = [
       load: [commonConfig],
     }),
     ...typeOrmModules,
-    AwsModule,
-    FileModule,
     TerminusModule,
+    AwsModule,
     TokenProviderModule,
+    ChauffeurModule,
+    AdminModule,
+    OperationModule,
+    DispatchPointModule,
+    GarageModule,
+    FileModule,
     ErrorModule,
-
+    ReservationModule,
+    NoticeModule,
+    VehicleModule,
+    WayPointModule,
+    RealTimeDispatchModule,
   ],
   controllers: [AppController],
-
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

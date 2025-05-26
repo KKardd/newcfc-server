@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { Observable, map } from 'rxjs';
 import { Pagination } from './pagination';
-import { NO_GLOBAL_INTERCEPTOR } from '../../../config/no-global-interceptor.decorator';
+import { NO_GLOBAL_INTERCEPTOR } from '@/config/no-global-interceptor.decorator';
 
 export type Response<T> = {
   data: T;

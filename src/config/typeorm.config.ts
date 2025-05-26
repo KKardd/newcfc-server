@@ -39,7 +39,7 @@ export function TypeOrmConfig(configService: ConfigService, dbName?: string): Ty
         ssl: configService.get<boolean>('DB_SSL'),
         subscribers: [RequestSubscriber],
         namingStrategy: new SnakeNamingStrategy(),
-        synchronize: nodeEnv !== 'production',
+        synchronize: true,
         logging: true,
         retryAttempts: 3,
         retryDelay: 3000,

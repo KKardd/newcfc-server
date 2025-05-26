@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/domain/enum/vehicle-status.enum.ts"],"sourcesContent":["export enum VehicleStatus {\n  NORMAL = 'NORMAL', // 정상\n  UNAVAILABLE = 'UNAVAILABLE', // 이용불가\n}\n"],"names":["VehicleStatus"],"mappings":";;;;+BAAYA;;;eAAAA;;;AAAL,IAAA,AAAKA,uCAAAA;;;WAAAA"}

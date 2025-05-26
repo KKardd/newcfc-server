@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/domain/enum/user-role.enum.ts"],"sourcesContent":["export enum UserRoleType {\n  SUPER_ADMIN = 'SUPER_ADMIN',\n  SUB_ADMIN = 'SUB_ADMIN',\n  CHAUFFEUR = 'CHAUFFEUR',\n}\n"],"names":["UserRoleType"],"mappings":";;;;+BAAYA;;;eAAAA;;;AAAL,IAAA,AAAKA,sCAAAA;;;;WAAAA"}

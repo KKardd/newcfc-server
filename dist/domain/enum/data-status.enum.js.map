@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/domain/enum/data-status.enum.ts"],"sourcesContent":["export enum DataStatus {\n  REGISTER = 'REGISTER',\n  USED = 'USED',\n  UNUSED = 'UNUSED',\n  DELETED = 'DELETED',\n}\n"],"names":["DataStatus"],"mappings":";;;;+BAAYA;;;eAAAA;;;AAAL,IAAA,AAAKA,oCAAAA;;;;;WAAAA"}

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
+import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
+
 import { v4 } from 'uuid';
 
 import { ResponseTokenDto } from '@/adapter/inbound/dto/response/response-token.dto';
@@ -18,6 +20,7 @@ export class TokenProvider {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   createAccessToken(payload: TokenPayload<UserAccessTokenPayload>): string {
@@ -48,7 +51,7 @@ export class TokenProvider {
     });
   }
 
-  createToken(user: Admin | Chauffeur): ResponseTokenDto {
+  async createToken(user: Admin | Chauffeur): Promise<ResponseTokenDto> {
     const userAccessTokenPayload: TokenPayload<UserAccessTokenPayload> = {
       iss: ISS,
       sub: user.id.toString(),
@@ -74,6 +77,13 @@ export class TokenProvider {
 
     const accessToken = this.createAccessToken(userAccessTokenPayload);
     const refreshToken = this.createRefreshToken(userRefreshTokenPayload);
+
+    // Save refresh token to database
+    const expiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '24h';
+    const expiresInMs = parseInt(expiresIn.replace(/[^0-9]/g, '')) * (expiresIn.includes('h') ? 3600000 : 1000);
+    const expiresAt = new Date(Date.now() + expiresInMs);
+    
+    await this.refreshTokenService.saveToken(user.id.toString(), refreshToken, expiresAt);
 
     const createdResponseTokenDto = new ResponseTokenDto();
     createdResponseTokenDto.accessToken = accessToken;

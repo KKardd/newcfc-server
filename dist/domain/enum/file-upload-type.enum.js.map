@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../../src/domain/enum/file-upload-type.enum.ts"],"sourcesContent":["export enum FileUploadType {\n  CUSTOM_EMISSION_FACTOR_REFERENCE = 'CUSTOM_EMISSION_FACTOR_REFERENCE',\n}\n"],"names":["FileUploadType"],"mappings":";;;;+BAAYA;;;eAAAA;;;AAAL,IAAA,AAAKA,wCAAAA;;WAAAA"}

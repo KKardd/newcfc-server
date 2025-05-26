@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../../src/domain/enum/operation-type.enum.ts"],"sourcesContent":["export enum OperationType {\n  REGULAR = 'REGULAR', // 일반 예약\n  REALTIME = 'REALTIME', // 실시간 배차\n}\n"],"names":["OperationType"],"mappings":";;;;+BAAYA;;;eAAAA;;;AAAL,IAAA,AAAKA,uCAAAA;;;WAAAA"}

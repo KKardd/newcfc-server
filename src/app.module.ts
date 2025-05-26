@@ -13,9 +13,10 @@ import { LoggerMiddleware } from '@/log/logger.middleware';
 import { ErrorModule } from '@/module/error.module';
 import { FileModule } from '@/module/file.module';
 import { AwsModule } from '@/module/infrastructure/aws.module';
-import { RedisModule } from '@/module/infrastructure/redis.module';
 import { TokenProviderModule } from '@/module/token-provider.module';
 import { RequestContext } from '@/port/audit/request-context.middleware';
+import { RefreshToken } from '@/infrastructure/entity/refresh-token.entity';
+import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
 
 const typeOrmModules = [
   TypeOrmModule.forRootAsync({
@@ -42,11 +43,12 @@ const typeOrmModules = [
     AwsModule,
     FileModule,
     TerminusModule,
-    // RedisModule,
     TokenProviderModule,
     ErrorModule,
+
   ],
   controllers: [AppController],
+
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

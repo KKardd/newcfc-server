@@ -2,12 +2,13 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { RedisModule } from '@/module/infrastructure/redis.module';
 import { TokenProvider } from '@/security/jwt/token.provider';
+import { RefreshTokenModule } from '@/module/refresh-token.module';
 
 @Global()
 @Module({
   imports: [
+    RefreshTokenModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],
@@ -19,7 +20,6 @@ import { TokenProvider } from '@/security/jwt/token.provider';
         },
       }),
     }),
-    RedisModule,
   ],
   providers: [TokenProvider],
   exports: [TokenProvider],

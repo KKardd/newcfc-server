@@ -2,14 +2,14 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 
 import { CustomException } from '@/exception/custom.exception';
 import { ErrorCode } from '@/exception/error-code.enum';
-import { RedisService } from '@/infrastructure/redis/redis.service';
+import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
 import { TokenProvider } from '@/security/jwt/token.provider';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly tokenProvider: TokenProvider,
-    private redisService: RedisService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,7 +32,7 @@ export class JwtAuthGuard implements CanActivate {
       const userId = request.user.payload.userId;
 
       try {
-        const refreshToken = await this.redisService.getClient().get(`refresh_${userId}`);
+        const refreshToken = await this.refreshTokenService.getToken(userId);
 
         if (!refreshToken) {
           throw new CustomException(ErrorCode.INVALID_TOKEN);

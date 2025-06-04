@@ -1,37 +1,40 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
-
-import { ReservationStatus } from '@/domain/enum/reservation-status.enum';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateReservationDto {
-  @ApiProperty({ description: '출발지 주소' })
-  @IsNotEmpty()
-  @IsString()
-  departureAddress: string;
-
-  @ApiProperty({ description: '도착지 주소' })
-  @IsNotEmpty()
-  @IsString()
-  destinationAddress: string;
-
-  @ApiProperty({ description: '출발 시간' })
-  @IsNotEmpty()
-  @IsDate()
-  departureTime: Date;
-
-  @ApiProperty({ description: '기사 ID' })
+  @ApiProperty({ description: '운행 ID' })
   @IsNotEmpty()
   @IsNumber()
-  chauffeurId: number;
+  operationId: number;
 
-  @ApiProperty({ description: '차량 ID' })
+  @ApiProperty({ description: '승객 이름' })
   @IsNotEmpty()
+  @IsString()
+  passengerName: string;
+
+  @ApiProperty({ description: '승객 전화번호' })
+  @IsNotEmpty()
+  @IsString()
+  passengerPhone: string;
+
+  @ApiProperty({ description: '승객 이메일', required: false })
+  @IsOptional()
+  @IsString()
+  passengerEmail?: string;
+
+  @ApiProperty({ description: '승객 수', required: false })
+  @IsOptional()
   @IsNumber()
-  vehicleId: number;
+  passengerCount?: number;
 
-  @ApiProperty({ description: '예약 상태', enum: ReservationStatus })
-  @IsNotEmpty()
-  @IsEnum(ReservationStatus)
-  reservationStatus: ReservationStatus;
+  @ApiProperty({ description: '비상 연락처', required: false })
+  @IsOptional()
+  @IsString()
+  safetyPhone?: string;
+
+  @ApiProperty({ description: '메모', required: false })
+  @IsOptional()
+  @IsString()
+  memo?: string;
 }

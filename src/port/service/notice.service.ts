@@ -33,7 +33,10 @@ export class NoticeService implements NoticeServiceInPort {
   }
 
   async create(createNotice: CreateNoticeDto): Promise<void> {
-    const notice = plainToInstance(Notice, createNotice);
+    const notice = new Notice();
+    notice.title = createNotice.title;
+    notice.content = createNotice.content;
+    notice.adminId = createNotice.adminId;
     await this.noticeServiceOutPort.save(notice);
   }
 

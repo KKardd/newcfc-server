@@ -1,43 +1,44 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
-import { ReservationStatus } from '@/domain/enum/reservation-status.enum';
 
 export class SearchReservationDto {
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  departureAddress?: string;
+  @IsNumber()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
+  operationId?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  destinationAddress?: string;
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  passengerName?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsDate()
-  departureTime?: Date;
+  @IsString()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  passengerPhone?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  passengerEmail?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
-  chauffeurId?: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsNumber()
-  vehicleId?: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsEnum(ReservationStatus)
-  reservationStatus?: ReservationStatus;
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
+  passengerCount?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsEnum(DataStatus)
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   status?: DataStatus;
 }

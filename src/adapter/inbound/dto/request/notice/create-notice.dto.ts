@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateNoticeDto {
   @ApiProperty({ description: '공지사항 제목' })
@@ -12,4 +12,9 @@ export class CreateNoticeDto {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @ApiProperty({ description: '관리자 ID' })
+  @IsNotEmpty()
+  @IsNumber()
+  adminId: number;
 }

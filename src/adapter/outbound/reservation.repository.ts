@@ -19,39 +19,33 @@ export class ReservationRepository implements ReservationServiceOutPort {
   async findAll(searchReservation: SearchReservationDto, paginationQuery: PaginationQuery): Promise<[Reservation[], number]> {
     const query = this.repository.createQueryBuilder('reservation');
 
-    if (searchReservation.departureAddress) {
-      query.andWhere('reservation.departureAddress LIKE :departureAddress', {
-        departureAddress: `%${searchReservation.departureAddress}%`,
+    if (searchReservation.operationId) {
+      query.andWhere('reservation.operationId = :operationId', {
+        operationId: searchReservation.operationId,
       });
     }
 
-    if (searchReservation.destinationAddress) {
-      query.andWhere('reservation.destinationAddress LIKE :destinationAddress', {
-        destinationAddress: `%${searchReservation.destinationAddress}%`,
+    if (searchReservation.passengerName) {
+      query.andWhere('reservation.passengerName LIKE :passengerName', {
+        passengerName: `%${searchReservation.passengerName}%`,
       });
     }
 
-    if (searchReservation.departureTime) {
-      query.andWhere('reservation.departureTime = :departureTime', {
-        departureTime: searchReservation.departureTime,
+    if (searchReservation.passengerPhone) {
+      query.andWhere('reservation.passengerPhone LIKE :passengerPhone', {
+        passengerPhone: `%${searchReservation.passengerPhone}%`,
       });
     }
 
-    if (searchReservation.chauffeurId) {
-      query.andWhere('reservation.chauffeurId = :chauffeurId', {
-        chauffeurId: searchReservation.chauffeurId,
+    if (searchReservation.passengerEmail) {
+      query.andWhere('reservation.passengerEmail LIKE :passengerEmail', {
+        passengerEmail: `%${searchReservation.passengerEmail}%`,
       });
     }
 
-    if (searchReservation.vehicleId) {
-      query.andWhere('reservation.vehicleId = :vehicleId', {
-        vehicleId: searchReservation.vehicleId,
-      });
-    }
-
-    if (searchReservation.reservationStatus) {
-      query.andWhere('reservation.reservationStatus = :reservationStatus', {
-        reservationStatus: searchReservation.reservationStatus,
+    if (searchReservation.passengerCount) {
+      query.andWhere('reservation.passengerCount = :passengerCount', {
+        passengerCount: searchReservation.passengerCount,
       });
     }
 

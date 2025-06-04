@@ -9,7 +9,7 @@ import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { ErrorLogServiceInPort } from '@/port/inbound/error-log-service.in-port';
 
 @ApiTags('ErrorLog')
-@Controller('/error-logs')
+@Controller('errorlogs')
 export class ErrorLogController {
   constructor(private readonly errorLogService: ErrorLogServiceInPort) {}
 

@@ -3,7 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
-import { ReservationStatus } from '@/domain/enum/reservation-status.enum';
 
 export class ReservationResponseDto {
   @ApiProperty()
@@ -12,27 +11,31 @@ export class ReservationResponseDto {
 
   @ApiProperty()
   @Expose()
-  departureAddress: string;
+  operationId: number;
 
   @ApiProperty()
   @Expose()
-  destinationAddress: string;
+  passengerName: string;
 
   @ApiProperty()
   @Expose()
-  departureTime: Date;
+  passengerPhone: string;
 
   @ApiProperty()
   @Expose()
-  chauffeurId: number;
+  passengerEmail: string | null;
 
   @ApiProperty()
   @Expose()
-  vehicleId: number;
+  passengerCount: number;
 
   @ApiProperty()
   @Expose()
-  reservationStatus: ReservationStatus;
+  safetyPhone: string | null;
+
+  @ApiProperty()
+  @Expose()
+  memo: string | null;
 
   @ApiProperty()
   @Expose()

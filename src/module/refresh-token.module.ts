@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshToken } from '@/infrastructure/entity/refresh-token.entity';
+
+import { RefreshToken } from '@/domain/entity/refresh-token.entity';
 import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
 
 @Module({

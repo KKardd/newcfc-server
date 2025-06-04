@@ -5,7 +5,7 @@ import { AdminLoginDto, ChauffeurLoginDto } from '@/adapter/inbound/dto/request/
 import { ResponseTokenDto } from '@/adapter/inbound/dto/response/response-token.dto';
 import { AuthService } from '@/application/service/auth.service';
 
-@ApiTags('인증')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

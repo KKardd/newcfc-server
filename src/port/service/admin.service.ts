@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -34,6 +35,7 @@ export class AdminService implements AdminServiceInPort {
 
   async create(createAdmin: CreateAdminDto): Promise<void> {
     const admin = plainToInstance(Admin, createAdmin);
+    admin.password = await bcrypt.hash(admin.password, 10);
     await this.adminServiceOutPort.save(admin);
   }
 

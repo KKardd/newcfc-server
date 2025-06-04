@@ -58,9 +58,9 @@ export class TokenProvider {
       payload: {
         tenantId: 'tenantId' in user ? (user.tenantId as number) : 0,
         userId: user.id,
-        email: 'email' in user ? (user.email as string) : user.phone,
+        email: 'email' in user ? (user.email as string) : 'phone' in user ? user.phone : '',
         name: user.name,
-        roles: [user.role],
+        roles: [user.role || UserRoleType.CHAUFFEUR],
       },
     };
 

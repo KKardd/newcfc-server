@@ -1,9 +1,9 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '@/domain/entity/base.entity';
-import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 
 @Entity('chauffeur')

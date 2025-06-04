@@ -17,6 +17,10 @@ export class CreateAdminDto {
 
   @IsNotEmpty()
   @IsString()
+  birthDate: string;
+
+  @IsNotEmpty()
+  @IsString()
   password: string;
 
   @IsNotEmpty()

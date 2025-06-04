@@ -1,8 +1,8 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '@/domain/entity/base.entity';
-import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 
 @Entity('admin')
 export class Admin extends BaseEntity {

@@ -2,14 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
-
 import { v4 } from 'uuid';
 
 import { ResponseTokenDto } from '@/adapter/inbound/dto/response/response-token.dto';
 import { Admin } from '@/domain/entity/admin.entity';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
+import { RefreshTokenService } from '@/infrastructure/refresh-token.service';
 import { TokenPayload, UserAccessTokenPayload, UserRefreshTokenPayload } from '@/security/jwt/token.payload';
 
 export const ISS = 'NEWCFC';
@@ -82,7 +81,7 @@ export class TokenProvider {
     const expiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '24h';
     const expiresInMs = parseInt(expiresIn.replace(/[^0-9]/g, '')) * (expiresIn.includes('h') ? 3600000 : 1000);
     const expiresAt = new Date(Date.now() + expiresInMs);
-    
+
     await this.refreshTokenService.saveToken(user.id.toString(), refreshToken, expiresAt);
 
     const createdResponseTokenDto = new ResponseTokenDto();

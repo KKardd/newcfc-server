@@ -11,6 +11,7 @@ import commonConfig from '@/config/common.config';
 import { TypeOrmConfig } from '@/config/typeorm.config';
 import { LoggerMiddleware } from '@/log/logger.middleware';
 import { AdminModule } from '@/module/admin.module';
+import { AuthModule } from '@/module/auth.module';
 import { ChauffeurModule } from '@/module/chauffeur.module';
 import { DispatchPointModule } from '@/module/dispatch-point.module';
 import { ErrorModule } from '@/module/error.module';
@@ -51,6 +52,7 @@ const typeOrmModules = [
     TerminusModule,
     AwsModule,
     TokenProviderModule,
+    AuthModule,
     ChauffeurModule,
     AdminModule,
     OperationModule,

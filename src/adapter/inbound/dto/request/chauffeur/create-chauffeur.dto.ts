@@ -1,4 +1,5 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 
 export class CreateChauffeurDto {

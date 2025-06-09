@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
@@ -8,10 +7,17 @@ import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/crea
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
+import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Chauffeur')
 @Controller('chauffeurs')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.CHAUFFEUR)
 export class ChauffeurController {
   constructor(private readonly chauffeurService: ChauffeurServiceInPort) {}
 

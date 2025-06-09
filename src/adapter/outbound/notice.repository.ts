@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchNoticeDto } from '@/adapter/inbound/dto/request/notice/search-notice.dto';
+import { NoticeResponseDto } from '@/adapter/inbound/dto/response/notice/notice-response.dto';
 import { Notice } from '@/domain/entity/notice.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
@@ -16,28 +17,42 @@ export class NoticeRepository implements NoticeServiceOutPort {
     private readonly repository: Repository<Notice>,
   ) {}
 
-  async findAll(searchNotice: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<[Notice[], number]> {
-    const query = this.repository.createQueryBuilder('notice');
+  async findAll(searchNotice: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<[NoticeResponseDto[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('notice').select('notice.*');
 
     if (searchNotice.title) {
-      query.andWhere('notice.title LIKE :title', {
+      queryBuilder.andWhere('notice.title LIKE :title', {
         title: `%${searchNotice.title}%`,
       });
     }
 
     if (searchNotice.content) {
-      query.andWhere('notice.content LIKE :content', {
+      queryBuilder.andWhere('notice.content LIKE :content', {
         content: `%${searchNotice.content}%`,
       });
     }
 
     if (searchNotice.status) {
-      query.andWhere('notice.status = :status', {
+      queryBuilder.andWhere('notice.status = :status', {
         status: searchNotice.status,
       });
     }
 
-    return await query.skip(paginationQuery.skip).take(paginationQuery.countPerPage).getManyAndCount();
+    queryBuilder.orderBy('notice.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+
+    const notices = await queryBuilder.getRawMany();
+    const totalCount = await queryBuilder.getCount();
+
+    const noticesResponse: NoticeResponseDto[] = notices.map((notice) => ({
+      id: notice.id,
+      title: notice.title,
+      content: notice.content,
+      status: notice.status,
+      createdAt: notice.created_at,
+      updatedAt: notice.updated_at,
+    }));
+
+    return [noticesResponse, totalCount];
   }
 
   async findById(id: number): Promise<Notice | null> {

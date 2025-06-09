@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -8,10 +8,16 @@ import { SearchReservationDto } from '@/adapter/inbound/dto/request/reservation/
 import { UpdateReservationDto } from '@/adapter/inbound/dto/request/reservation/update-reservation.dto';
 import { ReservationResponseDto } from '@/adapter/inbound/dto/response/reservation/reservation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Reservation')
 @Controller('reservations')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.CHAUFFEUR)
 export class ReservationController {
   constructor(private readonly reservationService: ReservationServiceInPort) {}
 

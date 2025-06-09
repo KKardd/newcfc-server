@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin.dto';
+import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
 import { Admin } from '@/domain/entity/admin.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
@@ -16,40 +17,56 @@ export class AdminRepository implements AdminServiceOutPort {
     private readonly repository: Repository<Admin>,
   ) {}
 
-  async findAll(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<[Admin[], number]> {
-    const query = this.repository.createQueryBuilder('admin');
+  async findAll(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<[AdminResponseDto[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('admin').select('admin.*');
 
     if (searchAdmin.email) {
-      query.andWhere('admin.email LIKE :email', {
+      queryBuilder.andWhere('admin.email LIKE :email', {
         email: `%${searchAdmin.email}%`,
       });
     }
 
     if (searchAdmin.name) {
-      query.andWhere('admin.name LIKE :name', {
+      queryBuilder.andWhere('admin.name LIKE :name', {
         name: `%${searchAdmin.name}%`,
       });
     }
 
     if (searchAdmin.phone) {
-      query.andWhere('admin.phone LIKE :phone', {
+      queryBuilder.andWhere('admin.phone LIKE :phone', {
         phone: `%${searchAdmin.phone}%`,
       });
     }
 
     if (searchAdmin.role) {
-      query.andWhere('admin.role = :role', {
+      queryBuilder.andWhere('admin.role = :role', {
         role: searchAdmin.role,
       });
     }
 
     if (searchAdmin.status) {
-      query.andWhere('admin.status = :status', {
+      queryBuilder.andWhere('admin.status = :status', {
         status: searchAdmin.status,
       });
     }
 
-    return await query.skip(paginationQuery.skip).take(paginationQuery.countPerPage).getManyAndCount();
+    queryBuilder.orderBy('admin.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+
+    const admins = await queryBuilder.getRawMany();
+    const totalCount = await queryBuilder.getCount();
+
+    const adminsResponse: AdminResponseDto[] = admins.map((admin) => ({
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      phone: admin.phone,
+      role: admin.role,
+      status: admin.status,
+      createdAt: admin.created_at,
+      updatedAt: admin.updated_at,
+    }));
+
+    return [adminsResponse, totalCount];
   }
 
   async findById(id: number): Promise<Admin> {

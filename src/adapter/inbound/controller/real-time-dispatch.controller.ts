@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -8,10 +8,16 @@ import { SearchRealTimeDispatchDto } from '@/adapter/inbound/dto/request/real-ti
 import { UpdateRealTimeDispatchDto } from '@/adapter/inbound/dto/request/real-time-dispatch/update-real-time-dispatch.dto';
 import { RealTimeDispatchResponseDto } from '@/adapter/inbound/dto/response/real-time-dispatch/real-time-dispatch-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { RealTimeDispatchServiceInPort } from '@/port/inbound/real-time-dispatch-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('RealTimeDispatch')
 @Controller('real-time-dispatches')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.CHAUFFEUR)
 export class RealTimeDispatchController {
   constructor(private readonly realTimeDispatchService: RealTimeDispatchServiceInPort) {}
 

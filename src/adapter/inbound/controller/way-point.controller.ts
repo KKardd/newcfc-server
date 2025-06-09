@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -7,10 +7,16 @@ import { CreateWayPointDto } from '@/adapter/inbound/dto/request/way-point/creat
 import { SearchWayPointDto } from '@/adapter/inbound/dto/request/way-point/search-way-point.dto';
 import { UpdateWayPointDto } from '@/adapter/inbound/dto/request/way-point/update-way-point.dto';
 import { WayPointResponseDto } from '@/adapter/inbound/dto/response/way-point/way-point-response.dto';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('WayPoint')
 @Controller('way-points')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.CHAUFFEUR)
 export class WayPointController {
   constructor(private readonly wayPointService: WayPointServiceInPort) {}
 

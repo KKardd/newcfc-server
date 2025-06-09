@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -8,10 +8,16 @@ import { SearchGarageDto } from '@/adapter/inbound/dto/request/garage/search-gar
 import { UpdateGarageDto } from '@/adapter/inbound/dto/request/garage/update-garage.dto';
 import { GarageResponseDto } from '@/adapter/inbound/dto/response/garage/garage-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { GarageServiceInPort } from '@/port/inbound/garage-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Garage')
 @Controller('garages')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.SUPER_ADMIN)
 export class GarageController {
   constructor(private readonly garageService: GarageServiceInPort) {}
 

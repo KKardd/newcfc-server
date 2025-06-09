@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -8,10 +8,16 @@ import { SearchDispatchPointDto } from '@/adapter/inbound/dto/request/dispatch-p
 import { UpdateDispatchPointDto } from '@/adapter/inbound/dto/request/dispatch-point/update-dispatch-point.dto';
 import { DispatchPointResponseDto } from '@/adapter/inbound/dto/response/dispatch-point/dispatch-point-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { DispatchPointServiceInPort } from '@/port/inbound/dispatch-point-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('DispatchPoint')
 @Controller('dispatch-points')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.SUPER_ADMIN)
 export class DispatchPointController {
   constructor(private readonly dispatchPointService: DispatchPointServiceInPort) {}
 

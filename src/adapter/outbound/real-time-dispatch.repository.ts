@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchRealTimeDispatchDto } from '@/adapter/inbound/dto/request/real-time-dispatch/search-real-time-dispatch.dto';
+import { RealTimeDispatchResponseDto } from '@/adapter/inbound/dto/response/real-time-dispatch/real-time-dispatch-response.dto';
 import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
@@ -19,40 +20,56 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
   async findAll(
     searchRealTimeDispatch: SearchRealTimeDispatchDto,
     paginationQuery: PaginationQuery,
-  ): Promise<[RealTimeDispatch[], number]> {
-    const query = this.repository.createQueryBuilder('realTimeDispatch');
+  ): Promise<[RealTimeDispatchResponseDto[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('real_time_dispatch').select('real_time_dispatch.*');
 
     if (searchRealTimeDispatch.name) {
-      query.andWhere('realTimeDispatch.name LIKE :name', {
+      queryBuilder.andWhere('real_time_dispatch.name LIKE :name', {
         name: `%${searchRealTimeDispatch.name}%`,
       });
     }
 
     if (searchRealTimeDispatch.description) {
-      query.andWhere('realTimeDispatch.description LIKE :description', {
+      queryBuilder.andWhere('real_time_dispatch.description LIKE :description', {
         description: `%${searchRealTimeDispatch.description}%`,
       });
     }
 
     if (searchRealTimeDispatch.departureAddress) {
-      query.andWhere('realTimeDispatch.departureAddress LIKE :departureAddress', {
+      queryBuilder.andWhere('real_time_dispatch.departure_address LIKE :departureAddress', {
         departureAddress: `%${searchRealTimeDispatch.departureAddress}%`,
       });
     }
 
     if (searchRealTimeDispatch.destinationAddress) {
-      query.andWhere('realTimeDispatch.destinationAddress LIKE :destinationAddress', {
+      queryBuilder.andWhere('real_time_dispatch.destination_address LIKE :destinationAddress', {
         destinationAddress: `%${searchRealTimeDispatch.destinationAddress}%`,
       });
     }
 
     if (searchRealTimeDispatch.status) {
-      query.andWhere('realTimeDispatch.status = :status', {
+      queryBuilder.andWhere('real_time_dispatch.status = :status', {
         status: searchRealTimeDispatch.status,
       });
     }
 
-    return await query.skip(paginationQuery.skip).take(paginationQuery.countPerPage).getManyAndCount();
+    queryBuilder.orderBy('real_time_dispatch.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+
+    const realTimeDispatches = await queryBuilder.getRawMany();
+    const totalCount = await queryBuilder.getCount();
+
+    const realTimeDispatchesResponse: RealTimeDispatchResponseDto[] = realTimeDispatches.map((dispatch) => ({
+      id: dispatch.id,
+      name: dispatch.name,
+      description: dispatch.description,
+      departureAddress: dispatch.departure_address,
+      destinationAddress: dispatch.destination_address,
+      status: dispatch.status,
+      createdAt: dispatch.created_at,
+      updatedAt: dispatch.updated_at,
+    }));
+
+    return [realTimeDispatchesResponse, totalCount];
   }
 
   async findById(id: number): Promise<RealTimeDispatch> {

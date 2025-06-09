@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -8,10 +8,16 @@ import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/sear
 import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/update-operation.dto';
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Operation')
 @Controller('operations')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.CHAUFFEUR)
 export class OperationController {
   constructor(private readonly operationService: OperationServiceInPort) {}
 

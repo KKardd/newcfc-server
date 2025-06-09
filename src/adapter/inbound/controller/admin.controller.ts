@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -8,10 +8,16 @@ import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin
 import { UpdateAdminDto } from '@/adapter/inbound/dto/request/admin/update-admin.dto';
 import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { AdminServiceInPort } from '@/port/inbound/admin-service.in-port';
+import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
+import { Roles } from '@/security/guard/user-role.decorator';
+import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Admin')
 @Controller('admins')
+@UseGuards(JwtAuthGuard, UserRolesGuard)
+@Roles(UserRoleType.SUPER_ADMIN)
 export class AdminController {
   constructor(private readonly adminService: AdminServiceInPort) {}
 

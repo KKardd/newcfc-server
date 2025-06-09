@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchDispatchPointDto } from '@/adapter/inbound/dto/request/dispatch-point/search-dispatch-point.dto';
+import { DispatchPointResponseDto } from '@/adapter/inbound/dto/response/dispatch-point/dispatch-point-response.dto';
 import { DispatchPoint } from '@/domain/entity/dispatch-point.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { DispatchPointServiceOutPort } from '@/port/outbound/dispatch-point-service.out-port';
@@ -19,28 +20,44 @@ export class DispatchPointRepository implements DispatchPointServiceOutPort {
   async findAll(
     searchDispatchPoint: SearchDispatchPointDto,
     paginationQuery: PaginationQuery,
-  ): Promise<[DispatchPoint[], number]> {
-    const query = this.repository.createQueryBuilder('dispatchPoint');
+  ): Promise<[DispatchPointResponseDto[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('dispatch_point').select('dispatch_point.*');
 
     if (searchDispatchPoint.name) {
-      query.andWhere('dispatchPoint.name LIKE :name', {
+      queryBuilder.andWhere('dispatch_point.name LIKE :name', {
         name: `%${searchDispatchPoint.name}%`,
       });
     }
 
     if (searchDispatchPoint.address) {
-      query.andWhere('dispatchPoint.address LIKE :address', {
+      queryBuilder.andWhere('dispatch_point.address LIKE :address', {
         address: `%${searchDispatchPoint.address}%`,
       });
     }
 
     if (searchDispatchPoint.status) {
-      query.andWhere('dispatchPoint.status = :status', {
+      queryBuilder.andWhere('dispatch_point.status = :status', {
         status: searchDispatchPoint.status,
       });
     }
 
-    return await query.skip(paginationQuery.skip).take(paginationQuery.countPerPage).getManyAndCount();
+    queryBuilder.orderBy('dispatch_point.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+
+    const dispatchPoints = await queryBuilder.getRawMany();
+    const totalCount = await queryBuilder.getCount();
+
+    const dispatchPointsResponse: DispatchPointResponseDto[] = dispatchPoints.map((dispatchPoint) => ({
+      id: dispatchPoint.id,
+      name: dispatchPoint.name,
+      address: dispatchPoint.address,
+      latitude: dispatchPoint.latitude,
+      longitude: dispatchPoint.longitude,
+      status: dispatchPoint.status,
+      createdAt: dispatchPoint.created_at,
+      updatedAt: dispatchPoint.updated_at,
+    }));
+
+    return [dispatchPointsResponse, totalCount];
   }
 
   async findById(id: number): Promise<DispatchPoint> {

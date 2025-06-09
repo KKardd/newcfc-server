@@ -1,10 +1,11 @@
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchVehicleDto } from '@/adapter/inbound/dto/request/vehicle/search-vehicle.dto';
+import { VehicleResponseDto } from '@/adapter/inbound/dto/response/vehicle/vehicle-response.dto';
 import { Vehicle } from '@/domain/entity/vehicle.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export abstract class VehicleServiceOutPort {
-  abstract findAll(searchVehicle: SearchVehicleDto, paginationQuery: PaginationQuery): Promise<[Vehicle[], number]>;
+  abstract findAll(searchVehicle: SearchVehicleDto, paginationQuery: PaginationQuery): Promise<[VehicleResponseDto[], number]>;
 
   abstract findById(id: number): Promise<Vehicle>;
 

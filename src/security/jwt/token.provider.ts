@@ -56,7 +56,6 @@ export class TokenProvider {
       sub: user.id.toString(),
       jti: v4(),
       payload: {
-        tenantId: 'tenantId' in user ? (user.tenantId as number) : 0,
         userId: user.id,
         email: 'email' in user ? (user.email as string) : 'phone' in user ? user.phone : '',
         name: user.name,
@@ -69,7 +68,6 @@ export class TokenProvider {
       sub: user.id.toString(),
       jti: v4(),
       payload: {
-        tenantId: 'tenantId' in user ? (user.tenantId as number) : 0,
         userId: user.id,
       },
     };
@@ -97,7 +95,6 @@ export class TokenProvider {
       sub: SYSTEM_ISS,
       jti: v4(),
       payload: {
-        tenantId: 0,
         userId: 0,
         email: SYSTEM_ISS,
         name: SYSTEM_ISS,

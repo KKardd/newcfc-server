@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
@@ -15,9 +15,10 @@ import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Reservation')
+@ApiBearerAuth()
 @Controller('reservations')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.CHAUFFEUR)
+@Roles(UserRoleType.SUPER_ADMIN)
 export class ReservationController {
   constructor(private readonly reservationService: ReservationServiceInPort) {}
 

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
@@ -15,6 +15,7 @@ import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('Vehicle')
+@ApiBearerAuth()
 @Controller('vehicles')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
 @Roles(UserRoleType.SUPER_ADMIN)

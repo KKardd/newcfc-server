@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
@@ -14,9 +14,10 @@ import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
 
 @ApiTags('WayPoint')
+@ApiBearerAuth()
 @Controller('way-points')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.CHAUFFEUR)
+@Roles(UserRoleType.SUPER_ADMIN)
 export class WayPointController {
   constructor(private readonly wayPointService: WayPointServiceInPort) {}
 

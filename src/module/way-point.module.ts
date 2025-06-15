@@ -21,5 +21,6 @@ import { WayPointService } from '@/port/service/way-point.service';
       useClass: WayPointRepository,
     },
   ],
+  exports: [WayPointServiceInPort, WayPointServiceOutPort],
 })
 export class WayPointModule {}

@@ -23,6 +23,18 @@ export class NoticeResponseDto {
 
   @ApiProperty()
   @Expose()
+  isPopup: boolean;
+
+  @ApiProperty()
+  @Expose()
+  popupStartDate: Date | null;
+
+  @ApiProperty()
+  @Expose()
+  popupEndDate: Date | null;
+
+  @ApiProperty()
+  @Expose()
   createdAt: Date;
 
   @ApiProperty()

@@ -36,8 +36,8 @@ export class Operation extends BaseEntity {
   @Column({ name: 'additional_costs', type: 'jsonb', nullable: true })
   additionalCosts: Record<string, number> | null;
 
-  @Column({ name: 'receipt_image_url', type: 'varchar', length: 255, nullable: true })
-  receiptImageUrl: string | null;
+  @Column({ name: 'receipt_image_urls', type: 'jsonb', nullable: true })
+  receiptImageUrls: string[] | null;
 
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;

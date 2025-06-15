@@ -24,6 +24,15 @@ export class Notice extends BaseEntity {
   @Column({ type: 'enum', enum: NoticeTarget, default: NoticeTarget.ALL })
   target: NoticeTarget;
 
+  @Column({ name: 'is_popup', type: 'boolean', default: false })
+  isPopup: boolean;
+
+  @Column({ name: 'popup_start_date', type: 'timestamp', nullable: true })
+  popupStartDate: Date | null;
+
+  @Column({ name: 'popup_end_date', type: 'timestamp', nullable: true })
+  popupEndDate: Date | null;
+
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
 }

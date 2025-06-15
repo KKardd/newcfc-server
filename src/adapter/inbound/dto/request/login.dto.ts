@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsString } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 
 export class AdminLoginDto {
   @ApiProperty({ description: '이메일' })
@@ -17,7 +17,8 @@ export class ChauffeurLoginDto {
   @IsString()
   phone: string;
 
-  @ApiProperty({ description: '생년월일 (YYYYMMDD)' })
+  @ApiProperty({ description: '생년월일 (YYMMDD)' })
   @IsString()
+  @Matches(/^\d{6}$/, { message: '생년월일은 6자리 숫자여야 합니다 (YYMMDD)' })
   birthDate: string;
 }

@@ -48,7 +48,7 @@ export class OperationResponseDto {
 
   @ApiProperty()
   @Expose()
-  receiptImageUrl: string | null;
+  receiptImageUrls: string[] | null;
 
   @ApiProperty()
   @Expose()

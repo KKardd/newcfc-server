@@ -27,6 +27,11 @@ export class NoticeService implements NoticeServiceInPort {
     return new PaginationResponse(response, pagination);
   }
 
+  async getPopupNotices(): Promise<NoticeResponseDto[]> {
+    const notices = await this.noticeServiceOutPort.findPopupNotices();
+    return plainToInstance(NoticeResponseDto, notices, classTransformDefaultOptions);
+  }
+
   async detail(id: number): Promise<NoticeResponseDto> {
     const notice = await this.noticeServiceOutPort.findById(id);
     return plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
@@ -37,11 +42,28 @@ export class NoticeService implements NoticeServiceInPort {
     notice.title = createNotice.title;
     notice.content = createNotice.content;
     notice.adminId = createNotice.adminId;
+    notice.isPopup = createNotice.isPopup || false;
+    notice.popupStartDate = createNotice.popupStartDate ? new Date(createNotice.popupStartDate) : null;
+    notice.popupEndDate = createNotice.popupEndDate ? new Date(createNotice.popupEndDate) : null;
     await this.noticeServiceOutPort.save(notice);
   }
 
   async update(id: number, updateNotice: UpdateNoticeDto): Promise<void> {
-    await this.noticeServiceOutPort.update(id, updateNotice);
+    const updateData: Partial<Notice> = {
+      title: updateNotice.title,
+      content: updateNotice.content,
+      isPopup: updateNotice.isPopup,
+    };
+
+    if (updateNotice.popupStartDate) {
+      updateData.popupStartDate = new Date(updateNotice.popupStartDate);
+    }
+
+    if (updateNotice.popupEndDate) {
+      updateData.popupEndDate = new Date(updateNotice.popupEndDate);
+    }
+
+    await this.noticeServiceOutPort.update(id, updateData);
   }
 
   async delete(id: number): Promise<void> {

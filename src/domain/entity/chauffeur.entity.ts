@@ -18,7 +18,7 @@ export class Chauffeur extends BaseEntity {
   @Index()
   phone: string;
 
-  @Column({ name: 'birth_date', type: 'varchar', length: 8, nullable: false })
+  @Column({ name: 'birth_date', type: 'varchar', length: 6, nullable: false })
   birthDate: string;
 
   @Column({ type: 'enum', enum: ChauffeurType, default: ChauffeurType.RESIDENT })

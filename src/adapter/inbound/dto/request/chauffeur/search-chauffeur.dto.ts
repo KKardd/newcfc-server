@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
@@ -23,6 +23,7 @@ export class SearchChauffeurDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @Matches(/^\d{6}$/, { message: '생년월일은 6자리 숫자여야 합니다 (YYMMDD)' })
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   birthDate?: string;
 

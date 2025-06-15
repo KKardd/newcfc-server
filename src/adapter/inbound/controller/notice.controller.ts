@@ -33,6 +33,14 @@ export class NoticeController {
     return await this.noticeService.search(searchNotice, paginationQuery);
   }
 
+  @ApiOperation({ summary: '팝업 공지사항 목록 조회' })
+  @ApiSuccessResponse(200, NoticeResponseDto, { isArray: true })
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Get('popup')
+  async getPopupNotices(): Promise<NoticeResponseDto[]> {
+    return await this.noticeService.getPopupNotices();
+  }
+
   @ApiOperation({ summary: '공지사항 상세 조회' })
   @ApiSuccessResponse(200, NoticeResponseDto)
   @Roles(UserRoleType.CHAUFFEUR)

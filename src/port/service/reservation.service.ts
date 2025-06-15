@@ -37,11 +37,24 @@ export class ReservationService implements ReservationServiceInPort {
 
   async create(createReservation: CreateReservationDto): Promise<void> {
     const reservation = plainToInstance(Reservation, createReservation);
+
+    // 안심 전화번호가 없는 경우 고객 전화번호와 동일하게 설정
+    if (!reservation.safetyPhone) {
+      reservation.safetyPhone = reservation.passengerPhone;
+    }
+
     await this.reservationServiceOutPort.save(reservation);
   }
 
   async update(id: number, updateReservation: UpdateReservationDto): Promise<void> {
-    await this.reservationServiceOutPort.update(id, updateReservation as Partial<Reservation>);
+    const reservationData = { ...updateReservation } as Partial<Reservation>;
+
+    // 안심 전화번호가 없고 고객 전화번호가 있는 경우, 안심 전화번호를 고객 전화번호와 동일하게 설정
+    if (!reservationData.safetyPhone && reservationData.passengerPhone) {
+      reservationData.safetyPhone = reservationData.passengerPhone;
+    }
+
+    await this.reservationServiceOutPort.update(id, reservationData);
   }
 
   async delete(id: number): Promise<void> {

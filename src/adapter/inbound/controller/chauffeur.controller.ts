@@ -3,10 +3,12 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
+import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeur/change-status.dto';
 import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/create-chauffeur.dto';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
+import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
@@ -55,5 +57,15 @@ export class ChauffeurController {
   @Put(':id/delete')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.chauffeurService.delete(id);
+  }
+
+  @ApiOperation({ summary: '기사 상태 변경' })
+  @ApiSuccessResponse(200, ChauffeurStatusChangeResponseDto)
+  @Put(':id/status')
+  async changeStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() changeStatusDto: ChangeChauffeurStatusDto,
+  ): Promise<ChauffeurStatusChangeResponseDto> {
+    return await this.chauffeurService.changeStatus(id, changeStatusDto);
   }
 }

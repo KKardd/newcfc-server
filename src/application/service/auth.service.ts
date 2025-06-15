@@ -39,7 +39,7 @@ export class AuthService {
 
   async chauffeurLogin(loginDto: ChauffeurLoginDto): Promise<ResponseTokenDto> {
     const chauffeur = await this.chauffeurRepository.findOne({
-      where: [{ phone: loginDto.phone, birthDate: loginDto.birthDate }],
+      where: { phone: loginDto.phone, birthDate: loginDto.birthDate },
     });
 
     if (!chauffeur) {

@@ -18,7 +18,7 @@ export class PaginationQuery {
   @IsInt()
   @Max(100)
   @IsOptional()
-  countPerPage?: number = 20;
+  countPerPage?: number = 1000;
 
   get skip(): number {
     if (this.countPerPage === undefined) {

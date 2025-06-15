@@ -7,6 +7,8 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 export abstract class NoticeServiceOutPort {
   abstract findAll(searchNotice: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<[NoticeResponseDto[], number]>;
 
+  abstract findPopupNotices(): Promise<NoticeResponseDto[]>;
+
   abstract findById(id: number): Promise<Notice | null>;
 
   abstract save(notice: Notice): Promise<void>;

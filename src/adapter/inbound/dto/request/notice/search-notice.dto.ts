@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
@@ -19,4 +19,9 @@ export class SearchNoticeDto {
   @IsOptional()
   @IsEnum(DataStatus)
   status?: DataStatus;
+
+  @ApiProperty({ description: '팝업 공지사항 여부', required: false })
+  @IsOptional()
+  @IsBoolean()
+  isPopup?: boolean;
 }

@@ -38,6 +38,12 @@ export class NoticeRepository implements NoticeServiceOutPort {
       });
     }
 
+    if (searchNotice.isPopup !== undefined) {
+      queryBuilder.andWhere('notice.is_popup = :isPopup', {
+        isPopup: searchNotice.isPopup,
+      });
+    }
+
     queryBuilder.orderBy('notice.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
 
     const notices = await queryBuilder.getRawMany();
@@ -48,11 +54,39 @@ export class NoticeRepository implements NoticeServiceOutPort {
       title: notice.title,
       content: notice.content,
       status: notice.status,
+      isPopup: notice.is_popup,
+      popupStartDate: notice.popup_start_date,
+      popupEndDate: notice.popup_end_date,
       createdAt: notice.created_at,
       updatedAt: notice.updated_at,
     }));
 
     return [noticesResponse, totalCount];
+  }
+
+  async findPopupNotices(): Promise<NoticeResponseDto[]> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('notice')
+      .select('notice.*')
+      .where('notice.is_popup = :isPopup', { isPopup: true })
+      .andWhere('notice.status = :status', { status: DataStatus.REGISTER })
+      .andWhere('(notice.popup_start_date IS NULL OR notice.popup_start_date <= NOW())')
+      .andWhere('(notice.popup_end_date IS NULL OR notice.popup_end_date >= NOW())')
+      .orderBy('notice.id', 'DESC');
+
+    const notices = await queryBuilder.getRawMany();
+
+    return notices.map((notice) => ({
+      id: notice.id,
+      title: notice.title,
+      content: notice.content,
+      status: notice.status,
+      isPopup: notice.is_popup,
+      popupStartDate: notice.popup_start_date,
+      popupEndDate: notice.popup_end_date,
+      createdAt: notice.created_at,
+      updatedAt: notice.updated_at,
+    }));
   }
 
   async findById(id: number): Promise<Notice | null> {

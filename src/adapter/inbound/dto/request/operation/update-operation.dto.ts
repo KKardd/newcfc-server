@@ -43,6 +43,6 @@ export class UpdateOperationDto {
   additionalCosts?: Record<string, number>;
 
   @IsOptional()
-  @IsString()
-  receiptImageUrl?: string;
+  @IsString({ each: true })
+  receiptImageUrls?: string[];
 }

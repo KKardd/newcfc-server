@@ -11,6 +11,8 @@ export abstract class NoticeServiceInPort {
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<NoticeResponseDto>>;
 
+  abstract getPopupNotices(): Promise<NoticeResponseDto[]>;
+
   abstract detail(id: number): Promise<NoticeResponseDto>;
 
   abstract create(createNotice: CreateNoticeDto): Promise<void>;

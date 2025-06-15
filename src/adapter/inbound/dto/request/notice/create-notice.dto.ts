@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsOptional, IsBoolean, IsDateString } from 'class-validator';
 
 export class CreateNoticeDto {
   @ApiProperty({ description: '공지사항 제목' })
@@ -17,4 +17,19 @@ export class CreateNoticeDto {
   @IsNotEmpty()
   @IsNumber()
   adminId: number;
+
+  @ApiProperty({ description: '팝업 공지사항 여부', required: false })
+  @IsOptional()
+  @IsBoolean()
+  isPopup?: boolean;
+
+  @ApiProperty({ description: '팝업 시작일', required: false })
+  @IsOptional()
+  @IsDateString()
+  popupStartDate?: string;
+
+  @ApiProperty({ description: '팝업 종료일', required: false })
+  @IsOptional()
+  @IsDateString()
+  popupEndDate?: string;
 }

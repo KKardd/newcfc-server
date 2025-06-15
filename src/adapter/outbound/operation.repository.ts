@@ -107,7 +107,7 @@ export class OperationRepository implements OperationServiceOutPort {
       dispatchOriginName: operation.dispatch_origin_name,
       dispatchDestinationName: operation.dispatch_destination_name,
       additionalCosts: operation.additional_costs,
-      receiptImageUrl: operation.receipt_image_url,
+      receiptImageUrls: operation.receipt_image_urls,
       status: operation.status,
       createdBy: operation.created_by,
       createdAt: operation.created_at,

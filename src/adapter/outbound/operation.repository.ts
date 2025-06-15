@@ -33,8 +33,8 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('vehicle.vehicle_number', 'vehicle_number')
       .addSelect('vehicle.model_name', 'vehicle_model_name')
       .addSelect('garage.name', 'garage_name')
-      .addSelect('real_time_dispatch.origin_name', 'dispatch_origin_name')
-      .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name');
+      .addSelect('real_time_dispatch.name', 'dispatch_origin_name')
+      .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_name');
 
     if (searchOperation.type) {
       queryBuilder.andWhere('operation.type = :type', {

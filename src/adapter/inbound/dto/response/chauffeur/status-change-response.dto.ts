@@ -5,7 +5,7 @@ import { Expose } from 'class-transformer';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 
 export class ChauffeurStatusChangeResponseDto {
-  @ApiProperty({ description: '변경된 상태' })
+  @ApiProperty({ description: '변경된 상태', enum: ChauffeurStatus })
   @Expose()
   chauffeurStatus: ChauffeurStatus;
 
@@ -25,7 +25,7 @@ export class ChauffeurStatusChangeResponseDto {
   @Expose()
   destinationAddress?: string;
 
-  @ApiProperty({ description: '경유지 목록', required: false })
+  @ApiProperty({ description: '경유지 목록', required: false, type: () => [WayPointInfo] })
   @Expose()
   wayPoints?: WayPointInfo[];
 }

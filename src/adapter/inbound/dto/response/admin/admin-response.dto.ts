@@ -6,35 +6,35 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 
 export class AdminResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: '관리자 ID' })
   @Expose()
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '이메일' })
   @Expose()
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '이름' })
   @Expose()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '핸드폰 번호' })
   @Expose()
   phone: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '관리자 권한', enum: UserRoleType })
   @Expose()
   role: UserRoleType;
 
-  @ApiProperty()
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;
 
-  @ApiProperty()
+  @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: '수정일' })
   @Expose()
   updatedAt: Date;
 }

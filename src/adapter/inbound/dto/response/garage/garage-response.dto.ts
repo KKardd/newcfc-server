@@ -5,27 +5,27 @@ import { Expose } from 'class-transformer';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export class GarageResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: '차고지 ID' })
   @Expose()
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '차고지 이름' })
   @Expose()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '차고지 주소' })
   @Expose()
   address: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;
 
-  @ApiProperty()
+  @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: '수정일' })
   @Expose()
   updatedAt: Date;
 }

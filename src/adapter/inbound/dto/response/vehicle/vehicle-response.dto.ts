@@ -6,35 +6,35 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 
 export class VehicleResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: '차량 ID' })
   @Expose()
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '차량 번호' })
   @Expose()
   vehicleNumber: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '차량 모델명' })
   @Expose()
   modelName: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '차고지 ID' })
   @Expose()
   garageId: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '차량 상태', enum: VehicleStatus })
   @Expose()
   vehicleStatus: VehicleStatus;
 
-  @ApiProperty()
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;
 
-  @ApiProperty()
+  @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: '수정일' })
   @Expose()
   updatedAt: Date;
 }

@@ -5,17 +5,17 @@ import { IsEnum, IsOptional, IsString, IsBoolean } from 'class-validator';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export class SearchNoticeDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '공지사항 제목', required: false })
   @IsOptional()
   @IsString()
   title?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '공지사항 내용', required: false })
   @IsOptional()
   @IsString()
   content?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()
   @IsEnum(DataStatus)
   status?: DataStatus;

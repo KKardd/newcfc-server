@@ -3,59 +3,59 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
 export class ErrorLogResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: '에러 로그 ID' })
   @Expose()
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '서비스 이름' })
   @Expose()
   service: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '요청 URL' })
   @Expose()
   requestUrl: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '액세스 토큰' })
   @Expose()
   accessToken: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'HTTP 메소드' })
   @Expose()
   method: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '요청 헤더' })
   @Expose()
   header: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '요청 파라미터' })
   @Expose()
   param: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '요청 쿼리' })
   @Expose()
   query: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '요청 바디' })
   @Expose()
   body: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '상태' })
   @Expose()
   status: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '응답 바디' })
   @Expose()
   responseBody: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '스택 트레이스' })
   @Expose()
   stackTrace: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '소요 시간(ms)' })
   @Expose()
   elapsedTime: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
 }

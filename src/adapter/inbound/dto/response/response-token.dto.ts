@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ResponseTokenDto {
-  @ApiProperty({ type: String })
+  @ApiProperty({ description: '액세스 토큰', type: String })
   accessToken: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ description: '리프레시 토큰', type: String })
   refreshToken: string;
 }

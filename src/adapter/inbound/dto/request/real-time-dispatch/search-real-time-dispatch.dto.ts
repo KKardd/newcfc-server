@@ -5,27 +5,27 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export class SearchRealTimeDispatchDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '배차 이름', required: false })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '배차 설명', required: false })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '출발지 주소', required: false })
   @IsOptional()
   @IsString()
   departureAddress?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '도착지 주소', required: false })
   @IsOptional()
   @IsString()
   destinationAddress?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()
   @IsEnum(DataStatus)
   status?: DataStatus;

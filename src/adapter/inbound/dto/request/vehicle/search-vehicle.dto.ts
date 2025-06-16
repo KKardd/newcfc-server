@@ -6,27 +6,27 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 
 export class SearchVehicleDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '차량 번호', required: false })
   @IsOptional()
   @IsString()
   vehicleNumber?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '차량 모델명', required: false })
   @IsOptional()
   @IsString()
   modelName?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '차고지 ID', required: false })
   @IsOptional()
   @IsNumber()
   garageId?: number;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '차량 상태', enum: VehicleStatus, required: false })
   @IsOptional()
   @IsEnum(VehicleStatus)
   vehicleStatus?: VehicleStatus;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()
   @IsEnum(DataStatus)
   status?: DataStatus;

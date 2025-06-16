@@ -5,17 +5,17 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export class SearchGarageDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '차고지 이름', required: false })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '차고지 주소', required: false })
   @IsOptional()
   @IsString()
   address?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()
   @IsEnum(DataStatus)
   status?: DataStatus;

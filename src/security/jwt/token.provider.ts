@@ -57,7 +57,7 @@ export class TokenProvider {
       jti: v4(),
       payload: {
         userId: user.id,
-        email: 'email' in user ? (user.email as string) : 'phone' in user ? user.phone : '',
+        email: 'email' in user ? (user.email as string) : 'phone' in user ? `${user.phone}@chauffeur.newcfc.com` : '',
         name: user.name,
         roles: [user.role || UserRoleType.CHAUFFEUR],
       },

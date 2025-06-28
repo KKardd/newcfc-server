@@ -39,6 +39,9 @@ export class Operation extends BaseEntity {
   @Column({ name: 'receipt_image_urls', type: 'jsonb', nullable: true })
   receiptImageUrls: string[] | null;
 
+  @Column({ name: 'kakao_path', type: 'jsonb', nullable: true })
+  kakaoPath: any;
+
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
 }

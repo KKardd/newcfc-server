@@ -21,6 +21,9 @@ export class Chauffeur extends BaseEntity {
   @Column({ name: 'birth_date', type: 'varchar', length: 6, nullable: false })
   birthDate: string;
 
+  @Column({ name: 'profile_image_url', type: 'varchar', length: 500, nullable: true })
+  profileImageUrl: string | null;
+
   @Column({ type: 'enum', enum: ChauffeurType, default: ChauffeurType.RESIDENT })
   type: ChauffeurType;
 

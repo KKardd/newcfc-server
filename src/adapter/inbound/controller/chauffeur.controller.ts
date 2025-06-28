@@ -7,14 +7,19 @@ import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeu
 import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/create-chauffeur.dto';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
+import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
+import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
+import { CurrentOperationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
 import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
 import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
+import { UserToken } from '@/security/jwt/user-token.decorator';
+import { UserAccessTokenPayload } from '@/security/jwt/token.payload';
 
 @ApiTags('Chauffeur')
 @ApiBearerAuth()
@@ -67,5 +72,30 @@ export class ChauffeurController {
     @Body() changeStatusDto: ChangeChauffeurStatusDto,
   ): Promise<ChauffeurStatusChangeResponseDto> {
     return await this.chauffeurService.changeStatus(id, changeStatusDto);
+  }
+
+  // 기사 전용 API들
+  @ApiOperation({ summary: '내 프로필 조회' })
+  @ApiSuccessResponse(200, ChauffeurProfileResponseDto)
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Get('me/profile')
+  async getMyProfile(@UserToken() user: UserAccessTokenPayload): Promise<ChauffeurProfileResponseDto> {
+    return await this.chauffeurService.getMyProfile(user.userId);
+  }
+
+  @ApiOperation({ summary: '내 배정 차량 조회' })
+  @ApiSuccessResponse(200, AssignedVehicleResponseDto)
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Get('me/vehicle')
+  async getMyAssignedVehicle(@UserToken() user: UserAccessTokenPayload): Promise<AssignedVehicleResponseDto | null> {
+    return await this.chauffeurService.getMyAssignedVehicle(user.userId);
+  }
+
+  @ApiOperation({ summary: '내 현재 운행/예약 조회' })
+  @ApiSuccessResponse(200, CurrentOperationResponseDto)
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Get('me/current-operation')
+  async getMyCurrentOperation(@UserToken() user: UserAccessTokenPayload): Promise<CurrentOperationResponseDto | null> {
+    return await this.chauffeurService.getMyCurrentOperation(user.userId);
   }
 }

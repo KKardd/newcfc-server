@@ -22,6 +22,10 @@ export class ChauffeurResponseDto {
   @Expose()
   birthDate: string;
 
+  @ApiProperty({ description: '프로필 사진 URL', required: false })
+  @Expose()
+  profileImageUrl: string | null;
+
   @ApiProperty({ description: '기사 타입', enum: ChauffeurType })
   @Expose()
   type: ChauffeurType;

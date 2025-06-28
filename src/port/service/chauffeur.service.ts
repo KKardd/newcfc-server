@@ -8,20 +8,30 @@ import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeu
 import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/create-chauffeur.dto';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
+import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
+import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import {
   ChauffeurStatusChangeResponseDto,
   WayPointInfo,
 } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
+import {
+  CurrentOperationResponseDto,
+  CurrentReservationDto,
+  CurrentWayPointDto,
+} from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { OperationType } from '@/domain/enum/operation-type.enum';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
+import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
+import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
@@ -29,6 +39,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   constructor(
     private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
     private readonly operationServiceOutPort: OperationServiceOutPort,
+    private readonly vehicleServiceOutPort: VehicleServiceOutPort,
+    private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
     private readonly reservationServiceInPort: ReservationServiceInPort,
     private readonly wayPointServiceInPort: WayPointServiceInPort,
   ) {}
@@ -105,6 +117,72 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         // 운행 중 -> 운행 종료: operation.endTime 설정 및 운행시간 계산
         await this.handleOperationCompleted(chauffeurId, response);
         break;
+    }
+
+    return response;
+  }
+
+  // 기사 전용 메서드들
+  async getMyProfile(chauffeurId: number): Promise<ChauffeurProfileResponseDto> {
+    const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+    return plainToInstance(ChauffeurProfileResponseDto, chauffeur, classTransformDefaultOptions);
+  }
+
+  async getMyAssignedVehicle(chauffeurId: number): Promise<AssignedVehicleResponseDto | null> {
+    const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+    if (!chauffeur.vehicleId) {
+      return null;
+    }
+
+    const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
+    return plainToInstance(AssignedVehicleResponseDto, vehicle, classTransformDefaultOptions);
+  }
+
+  async getMyCurrentOperation(chauffeurId: number): Promise<CurrentOperationResponseDto | null> {
+    const currentOperation = await this.getCurrentOperation(chauffeurId);
+
+    if (!currentOperation) {
+      return null;
+    }
+
+    const response = plainToInstance(CurrentOperationResponseDto, currentOperation, classTransformDefaultOptions);
+
+    // 예약 정보 조회 (일반 예약인 경우)
+    if (currentOperation.type === OperationType.REGULAR) {
+      try {
+        const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
+        response.reservation = plainToInstance(CurrentReservationDto, reservation, classTransformDefaultOptions);
+
+        // 경유지 정보 조회
+        const wayPointPagination = new PaginationQuery();
+        wayPointPagination.page = 1;
+        wayPointPagination.countPerPage = 100;
+
+        const wayPoints = await this.wayPointServiceInPort.search({ reservationId: reservation.id }, wayPointPagination);
+        response.wayPoints = wayPoints.data
+          .sort((a, b) => a.order - b.order)
+          .map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
+      } catch (error) {
+        // 예약 정보가 없는 경우
+        response.reservation = null;
+        response.wayPoints = [];
+      }
+    }
+
+    // 실시간 배차 정보 조회 (실시간 배차인 경우)
+    if (currentOperation.type === OperationType.REALTIME && currentOperation.realTimeDispatchId) {
+      try {
+        const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(currentOperation.realTimeDispatchId);
+        response.departureAddress = realTimeDispatch.departureAddress;
+        response.destinationAddress = realTimeDispatch.destinationAddress;
+        response.wayPoints = [];
+      } catch (error) {
+        // 실시간 배차 정보가 없는 경우
+        response.departureAddress = null;
+        response.destinationAddress = null;
+        response.wayPoints = [];
+      }
     }
 
     return response;

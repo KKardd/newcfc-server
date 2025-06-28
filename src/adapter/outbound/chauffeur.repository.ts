@@ -77,6 +77,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       name: chauffeur.name,
       phone: chauffeur.phone,
       birthDate: chauffeur.birth_date,
+      profileImageUrl: chauffeur.profile_image_url,
       type: chauffeur.type,
       chauffeurStatus: chauffeur.chauffeur_status,
       vehicleId: chauffeur.vehicle_id,

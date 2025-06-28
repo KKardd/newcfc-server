@@ -4,8 +4,11 @@ import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeu
 import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/create-chauffeur.dto';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
+import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
+import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
+import { CurrentOperationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
 
 export abstract class ChauffeurServiceInPort {
   abstract search(
@@ -22,4 +25,11 @@ export abstract class ChauffeurServiceInPort {
   abstract delete(id: number): Promise<void>;
 
   abstract changeStatus(id: number, changeStatusDto: ChangeChauffeurStatusDto): Promise<ChauffeurStatusChangeResponseDto>;
+
+  // 기사 전용 메서드들
+  abstract getMyProfile(chauffeurId: number): Promise<ChauffeurProfileResponseDto>;
+
+  abstract getMyAssignedVehicle(chauffeurId: number): Promise<AssignedVehicleResponseDto | null>;
+
+  abstract getMyCurrentOperation(chauffeurId: number): Promise<CurrentOperationResponseDto | null>;
 }

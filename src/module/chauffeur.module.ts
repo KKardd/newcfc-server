@@ -8,11 +8,20 @@ import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { ChauffeurService } from '@/port/service/chauffeur.service';
 import { OperationModule } from './operation.module';
+import { RealTimeDispatchModule } from './real-time-dispatch.module';
 import { ReservationModule } from './reservation.module';
+import { VehicleModule } from './vehicle.module';
 import { WayPointModule } from './way-point.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Chauffeur]), OperationModule, ReservationModule, WayPointModule],
+  imports: [
+    TypeOrmModule.forFeature([Chauffeur]),
+    OperationModule,
+    ReservationModule,
+    WayPointModule,
+    VehicleModule,
+    RealTimeDispatchModule,
+  ],
   controllers: [ChauffeurController],
   providers: [
     {

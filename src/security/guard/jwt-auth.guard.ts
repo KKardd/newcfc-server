@@ -45,8 +45,7 @@ export class JwtAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : undefined;
-      throw new CustomException(ErrorCode.INVALID_TOKEN, message);
+      throw new CustomException(ErrorCode.INVALID_TOKEN, error as string);
     }
   }
 }

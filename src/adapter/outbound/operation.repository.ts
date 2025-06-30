@@ -27,6 +27,7 @@ export class OperationRepository implements OperationServiceOutPort {
       .leftJoin('vehicle', 'vehicle', 'operation.vehicle_id = vehicle.id')
       .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
       .leftJoin('real_time_dispatch', 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
+      .leftJoin('reservation', 'reservation', 'operation.id = reservation.operation_id')
       .select('operation.*')
       .addSelect('chauffeur.id', 'chauffeur_id')
       .addSelect('chauffeur.name', 'chauffeur_name')
@@ -69,7 +70,20 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
       .addSelect('real_time_dispatch.created_at', 'dispatch_created_at')
       .addSelect('real_time_dispatch.updated_by', 'dispatch_updated_by')
-      .addSelect('real_time_dispatch.updated_at', 'dispatch_updated_at');
+      .addSelect('real_time_dispatch.updated_at', 'dispatch_updated_at')
+      .addSelect('reservation.id', 'reservation_id')
+      .addSelect('reservation.operation_id', 'reservation_operation_id')
+      .addSelect('reservation.passenger_name', 'reservation_passenger_name')
+      .addSelect('reservation.passenger_phone', 'reservation_passenger_phone')
+      .addSelect('reservation.passenger_email', 'reservation_passenger_email')
+      .addSelect('reservation.passenger_count', 'reservation_passenger_count')
+      .addSelect('reservation.safety_phone', 'reservation_safety_phone')
+      .addSelect('reservation.memo', 'reservation_memo')
+      .addSelect('reservation.status', 'reservation_status')
+      .addSelect('reservation.created_by', 'reservation_created_by')
+      .addSelect('reservation.created_at', 'reservation_created_at')
+      .addSelect('reservation.updated_by', 'reservation_updated_by')
+      .addSelect('reservation.updated_at', 'reservation_updated_at');
 
     if (searchOperation.type) {
       queryBuilder.andWhere('operation.type = :type', {
@@ -201,6 +215,24 @@ export class OperationRepository implements OperationServiceOutPort {
             createdAt: operation.dispatch_created_at,
             updatedBy: operation.dispatch_updated_by,
             updatedAt: operation.dispatch_updated_at,
+          }
+        : null,
+      // Reservation 정보 (새로 추가)
+      reservation: operation.reservation_id
+        ? {
+            id: operation.reservation_id,
+            operationId: operation.reservation_operation_id,
+            passengerName: operation.reservation_passenger_name,
+            passengerPhone: operation.reservation_passenger_phone,
+            passengerEmail: operation.reservation_passenger_email,
+            passengerCount: operation.reservation_passenger_count,
+            safetyPhone: operation.reservation_safety_phone,
+            memo: operation.reservation_memo,
+            status: operation.reservation_status,
+            createdBy: operation.reservation_created_by,
+            createdAt: operation.reservation_created_at,
+            updatedBy: operation.reservation_updated_by,
+            updatedAt: operation.reservation_updated_at,
           }
         : null,
     }));

@@ -20,8 +20,8 @@ export class WayPointRepository implements WayPointServiceOutPort {
   async findAll(searchWayPoint: SearchWayPointDto, paginationQuery: PaginationQuery): Promise<[WayPointResponseDto[], number]> {
     const queryBuilder = this.wayPointRepository.createQueryBuilder('way_point').select('way_point.*');
 
-    if (searchWayPoint.reservationId) {
-      queryBuilder.andWhere('way_point.reservation_id = :reservationId', { reservationId: searchWayPoint.reservationId });
+    if (searchWayPoint.operationId) {
+      queryBuilder.andWhere('way_point.operation_id = :operationId', { operationId: searchWayPoint.operationId });
     }
 
     if (searchWayPoint.address) {
@@ -43,13 +43,15 @@ export class WayPointRepository implements WayPointServiceOutPort {
 
     const wayPointsResponse: WayPointResponseDto[] = wayPoints.map((wayPoint) => ({
       id: wayPoint.id,
-      reservationId: wayPoint.reservation_id,
+      operationId: wayPoint.operation_id,
       address: wayPoint.address,
       latitude: wayPoint.latitude,
       longitude: wayPoint.longitude,
       order: wayPoint.order,
       status: wayPoint.status,
+      createdBy: wayPoint.created_by,
       createdAt: wayPoint.created_at,
+      updatedBy: wayPoint.updated_by,
       updatedAt: wayPoint.updated_at,
     }));
 

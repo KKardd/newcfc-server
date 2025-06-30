@@ -185,6 +185,60 @@ export class RealTimeDispatchInfoDto {
   updatedAt: Date;
 }
 
+export class ReservationInfoDto {
+  @ApiProperty({ description: '예약 ID' })
+  @Expose()
+  id: number;
+
+  @ApiProperty({ description: '운행 ID' })
+  @Expose()
+  operationId: number;
+
+  @ApiProperty({ description: '승객 이름' })
+  @Expose()
+  passengerName: string;
+
+  @ApiProperty({ description: '승객 연락처' })
+  @Expose()
+  passengerPhone: string;
+
+  @ApiProperty({ description: '승객 이메일', required: false })
+  @Expose()
+  passengerEmail: string | null;
+
+  @ApiProperty({ description: '승객 수' })
+  @Expose()
+  passengerCount: number;
+
+  @ApiProperty({ description: '안심 전화번호', required: false })
+  @Expose()
+  safetyPhone: string | null;
+
+  @ApiProperty({ description: '메모', required: false })
+  @Expose()
+  memo: string | null;
+
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
+  @Expose()
+  status: DataStatus;
+
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
+  @ApiProperty({ description: '생성일' })
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
+
+  @ApiProperty({ description: '수정일' })
+  @Expose()
+  updatedAt: Date;
+}
+
 export class OperationResponseDto {
   @ApiProperty({ description: '운행 ID' })
   @Expose()
@@ -265,4 +319,8 @@ export class OperationResponseDto {
   @ApiProperty({ description: '실시간 배차 정보', type: RealTimeDispatchInfoDto, required: false })
   @Expose()
   realTimeDispatch?: RealTimeDispatchInfoDto | null;
+
+  @ApiProperty({ description: '예약 정보', type: ReservationInfoDto, required: false })
+  @Expose()
+  reservation?: ReservationInfoDto | null;
 }

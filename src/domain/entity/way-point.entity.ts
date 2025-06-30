@@ -8,11 +8,17 @@ export class WayPoint extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'reservation_id', type: 'integer', nullable: false })
-  reservationId: number;
+  @Column({ name: 'operation_id', type: 'integer', nullable: false })
+  operationId: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   address: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitude: number | null;
+
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitude: number | null;
 
   @Column({ type: 'integer', nullable: false })
   order: number;

@@ -5,10 +5,10 @@ import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export class SearchWayPointDto {
-  @ApiProperty({ description: '예약 ID', required: false })
+  @ApiProperty({ description: '운행 ID', required: false })
   @IsOptional()
   @IsNumber()
-  reservationId?: number;
+  operationId?: number;
 
   @ApiProperty({ description: '경유지 주소', required: false })
   @IsOptional()

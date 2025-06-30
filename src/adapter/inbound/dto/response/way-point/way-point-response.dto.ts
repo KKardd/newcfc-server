@@ -9,13 +9,21 @@ export class WayPointResponseDto {
   @Expose()
   id: number;
 
-  @ApiProperty({ description: '예약 ID' })
+  @ApiProperty({ description: '운행 ID' })
   @Expose()
-  reservationId: number;
+  operationId: number;
 
   @ApiProperty({ description: '경유지 주소' })
   @Expose()
   address: string;
+
+  @ApiProperty({ description: '위도', required: false })
+  @Expose()
+  latitude: number | null;
+
+  @ApiProperty({ description: '경도', required: false })
+  @Expose()
+  longitude: number | null;
 
   @ApiProperty({ description: '경유지 순서' })
   @Expose()
@@ -25,9 +33,17 @@ export class WayPointResponseDto {
   @Expose()
   status: DataStatus;
 
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
   @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
+
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
 
   @ApiProperty({ description: '수정일' })
   @Expose()

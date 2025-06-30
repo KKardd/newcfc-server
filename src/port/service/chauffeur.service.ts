@@ -153,21 +153,24 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       try {
         const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
         response.reservation = plainToInstance(CurrentReservationDto, reservation, classTransformDefaultOptions);
-
-        // 경유지 정보 조회
-        const wayPointPagination = new PaginationQuery();
-        wayPointPagination.page = 1;
-        wayPointPagination.countPerPage = 100;
-
-        const wayPoints = await this.wayPointServiceInPort.search({ reservationId: reservation.id }, wayPointPagination);
-        response.wayPoints = wayPoints.data
-          .sort((a, b) => a.order - b.order)
-          .map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
       } catch (error) {
         // 예약 정보가 없는 경우
         response.reservation = null;
-        response.wayPoints = [];
       }
+    }
+
+    // 경유지 정보 조회 (운행에서 직접 조회)
+    try {
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const wayPoints = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
+      response.wayPoints = wayPoints.data
+        .sort((a, b) => a.order - b.order)
+        .map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
+    } catch (error) {
+      response.wayPoints = [];
     }
 
     // 실시간 배차 정보 조회 (실시간 배차인 경우)
@@ -176,12 +179,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(currentOperation.realTimeDispatchId);
         response.departureAddress = realTimeDispatch.departureAddress;
         response.destinationAddress = realTimeDispatch.destinationAddress;
-        response.wayPoints = [];
       } catch (error) {
         // 실시간 배차 정보가 없는 경우
         response.departureAddress = null;
         response.destinationAddress = null;
-        response.wayPoints = [];
       }
     }
 
@@ -217,7 +218,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       wayPointPagination.page = 1;
       wayPointPagination.countPerPage = 100;
 
-      const wayPoints = await this.wayPointServiceInPort.search({ reservationId: reservation.id }, wayPointPagination);
+      const wayPoints = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
 
       response.hasWayPoints = wayPoints.data.length > 0;
 

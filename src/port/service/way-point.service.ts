@@ -38,7 +38,7 @@ export class WayPointService implements WayPointServiceInPort {
 
   async create(createWayPoint: CreateWayPointDto): Promise<void> {
     const wayPoint = new WayPoint();
-    wayPoint.reservationId = createWayPoint.reservationId;
+    wayPoint.operationId = createWayPoint.operationId;
     wayPoint.address = createWayPoint.address;
     wayPoint.order = createWayPoint.order;
     wayPoint.status = DataStatus.USED;

@@ -7,6 +7,7 @@ import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/search-operation.dto';
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
+import { WayPoint } from '@/domain/entity/way-point.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 
@@ -15,6 +16,8 @@ export class OperationRepository implements OperationServiceOutPort {
   constructor(
     @InjectRepository(Operation)
     private readonly repository: Repository<Operation>,
+    @InjectRepository(WayPoint)
+    private readonly wayPointRepository: Repository<WayPoint>,
   ) {}
 
   async findAll(
@@ -138,6 +141,31 @@ export class OperationRepository implements OperationServiceOutPort {
     const operations = await queryBuilder.getRawMany();
     const totalCount = await queryBuilder.getCount();
 
+    // Get waypoints for all operations
+    const operationIds = operations.map((op) => op.id);
+    const wayPoints =
+      operationIds.length > 0
+        ? await this.wayPointRepository
+            .createQueryBuilder('waypoint')
+            .where('waypoint.operation_id IN (:...operationIds)', { operationIds })
+            .andWhere('waypoint.status = :status', { status: DataStatus.REGISTER })
+            .orderBy('waypoint.operation_id', 'ASC')
+            .addOrderBy('waypoint.order', 'ASC')
+            .getMany()
+        : [];
+
+    // Group waypoints by operation_id
+    const wayPointsByOperation = wayPoints.reduce(
+      (acc, wayPoint) => {
+        if (!acc[wayPoint.operationId]) {
+          acc[wayPoint.operationId] = [];
+        }
+        acc[wayPoint.operationId].push(wayPoint);
+        return acc;
+      },
+      {} as Record<number, WayPoint[]>,
+    );
+
     const operationsResponse: OperationResponseDto[] = operations.map((operation) => ({
       id: operation.id,
       type: operation.type,
@@ -235,6 +263,20 @@ export class OperationRepository implements OperationServiceOutPort {
             updatedAt: operation.reservation_updated_at,
           }
         : null,
+      // WayPoints 정보
+      wayPoints: (wayPointsByOperation[operation.id] || []).map((wayPoint) => ({
+        id: wayPoint.id,
+        operationId: wayPoint.operationId,
+        address: wayPoint.address,
+        latitude: wayPoint.latitude,
+        longitude: wayPoint.longitude,
+        order: wayPoint.order,
+        status: wayPoint.status,
+        createdBy: wayPoint.createdBy,
+        createdAt: wayPoint.createdAt,
+        updatedBy: wayPoint.updatedBy,
+        updatedAt: wayPoint.updatedAt,
+      })),
     }));
 
     return [operationsResponse, totalCount];

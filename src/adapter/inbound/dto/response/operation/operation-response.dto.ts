@@ -239,6 +239,52 @@ export class ReservationInfoDto {
   updatedAt: Date;
 }
 
+export class WayPointInfoDto {
+  @ApiProperty({ description: '경유지 ID' })
+  @Expose()
+  id: number;
+
+  @ApiProperty({ description: '운행 ID' })
+  @Expose()
+  operationId: number;
+
+  @ApiProperty({ description: '주소' })
+  @Expose()
+  address: string;
+
+  @ApiProperty({ description: '위도', required: false })
+  @Expose()
+  latitude: number | null;
+
+  @ApiProperty({ description: '경도', required: false })
+  @Expose()
+  longitude: number | null;
+
+  @ApiProperty({ description: '순서' })
+  @Expose()
+  order: number;
+
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
+  @Expose()
+  status: DataStatus;
+
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
+  @ApiProperty({ description: '생성일' })
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
+
+  @ApiProperty({ description: '수정일' })
+  @Expose()
+  updatedAt: Date;
+}
+
 export class OperationResponseDto {
   @ApiProperty({ description: '운행 ID' })
   @Expose()
@@ -323,4 +369,8 @@ export class OperationResponseDto {
   @ApiProperty({ description: '예약 정보', type: ReservationInfoDto, required: false })
   @Expose()
   reservation?: ReservationInfoDto | null;
+
+  @ApiProperty({ description: '경유지 목록', type: [WayPointInfoDto] })
+  @Expose()
+  wayPoints: WayPointInfoDto[];
 }

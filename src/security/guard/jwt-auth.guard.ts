@@ -38,7 +38,7 @@ export class JwtAuthGuard implements CanActivate {
           throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        await this.tokenProvider.verifyRefreshToken(refreshToken);
+        // await this.tokenProvider.verifyRefreshToken(refreshToken);
       } catch (error) {
         throw new CustomException(ErrorCode.INVALID_TOKEN, error as string);
       }

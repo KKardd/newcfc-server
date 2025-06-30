@@ -22,9 +22,14 @@ export class VehicleRepository implements VehicleServiceOutPort {
       .createQueryBuilder('vehicle')
       .innerJoin('garage', 'garage', 'vehicle.garageId = garage.id')
       .select('vehicle.*')
+      .addSelect('garage.id', 'garage_id')
       .addSelect('garage.name', 'garage_name')
       .addSelect('garage.address', 'garage_address')
-      .addSelect('garage.status', 'garage_status');
+      .addSelect('garage.status', 'garage_status')
+      .addSelect('garage.created_by', 'garage_created_by')
+      .addSelect('garage.created_at', 'garage_created_at')
+      .addSelect('garage.updated_by', 'garage_updated_by')
+      .addSelect('garage.updated_at', 'garage_updated_at');
 
     if (searchVehicle.vehicleNumber) {
       queryBuilder.andWhere('vehicle.vehicle_number LIKE :vehicleNumber', {
@@ -66,15 +71,23 @@ export class VehicleRepository implements VehicleServiceOutPort {
       vehicleNumber: vehicle.vehicle_number,
       modelName: vehicle.model_name,
       garageId: vehicle.garage_id,
-      garageName: vehicle.garage_name,
-      garageAddress: vehicle.garage_address,
-      garageStatus: vehicle.garage_status,
       vehicleStatus: vehicle.vehicle_status,
       status: vehicle.status,
       createdBy: vehicle.created_by,
       createdAt: vehicle.created_at,
       updatedBy: vehicle.updated_by,
       updatedAt: vehicle.updated_at,
+      // Garage 정보
+      garage: {
+        id: vehicle.garage_id,
+        name: vehicle.garage_name,
+        address: vehicle.garage_address,
+        status: vehicle.garage_status,
+        createdBy: vehicle.garage_created_by,
+        createdAt: vehicle.garage_created_at,
+        updatedBy: vehicle.garage_updated_by,
+        updatedAt: vehicle.garage_updated_at,
+      },
     }));
 
     return [vehiclesResponse, totalCount];

@@ -4,6 +4,10 @@ import { Expose } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationType } from '@/domain/enum/operation-type.enum';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
+import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
+import { UserRoleType } from '@/domain/enum/user-role.enum';
+import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 
 export class OperationResponseDto {
   @ApiProperty({ description: '운행 ID' })
@@ -54,11 +58,81 @@ export class OperationResponseDto {
   @Expose()
   status: DataStatus;
 
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
   @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
 
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
+
   @ApiProperty({ description: '수정일' })
   @Expose()
   updatedAt: Date;
+
+  @ApiProperty({ description: '기사 정보', required: false })
+  @Expose()
+  chauffeur?: {
+    id: number;
+    name: string;
+    phone: string;
+    birthDate: string;
+    profileImageUrl: string | null;
+    type: ChauffeurType;
+    chauffeurStatus: ChauffeurStatus;
+    vehicleId: number | null;
+    role: UserRoleType;
+    status: DataStatus;
+    createdBy: number;
+    createdAt: Date;
+    updatedBy: number;
+    updatedAt: Date;
+  } | null;
+
+  @ApiProperty({ description: '차량 정보', required: false })
+  @Expose()
+  vehicle?: {
+    id: number;
+    vehicleNumber: string;
+    modelName: string;
+    garageId: number;
+    vehicleStatus: VehicleStatus;
+    status: DataStatus;
+    createdBy: number;
+    createdAt: Date;
+    updatedBy: number;
+    updatedAt: Date;
+  } | null;
+
+  @ApiProperty({ description: '차고지 정보', required: false })
+  @Expose()
+  garage?: {
+    id: number;
+    name: string;
+    address: string;
+    status: DataStatus;
+    createdBy: number;
+    createdAt: Date;
+    updatedBy: number;
+    updatedAt: Date;
+  } | null;
+
+  @ApiProperty({ description: '실시간 배차 정보', required: false })
+  @Expose()
+  realTimeDispatch?: {
+    id: number;
+    name: string;
+    description: string;
+    departureAddress: string;
+    destinationAddress: string;
+    status: DataStatus;
+    createdBy: number;
+    createdAt: Date;
+    updatedBy: number;
+    updatedAt: Date;
+  } | null;
 }

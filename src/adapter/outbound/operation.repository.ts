@@ -28,13 +28,48 @@ export class OperationRepository implements OperationServiceOutPort {
       .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
       .leftJoin('real_time_dispatch', 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
       .select('operation.*')
+      .addSelect('chauffeur.id', 'chauffeur_id')
       .addSelect('chauffeur.name', 'chauffeur_name')
       .addSelect('chauffeur.phone', 'chauffeur_phone')
+      .addSelect('chauffeur.birth_date', 'chauffeur_birth_date')
+      .addSelect('chauffeur.profile_image_url', 'chauffeur_profile_image_url')
+      .addSelect('chauffeur.type', 'chauffeur_type')
+      .addSelect('chauffeur.chauffeur_status', 'chauffeur_status')
+      .addSelect('chauffeur.vehicle_id', 'chauffeur_vehicle_id')
+      .addSelect('chauffeur.role', 'chauffeur_role')
+      .addSelect('chauffeur.status', 'chauffeur_data_status')
+      .addSelect('chauffeur.created_by', 'chauffeur_created_by')
+      .addSelect('chauffeur.created_at', 'chauffeur_created_at')
+      .addSelect('chauffeur.updated_by', 'chauffeur_updated_by')
+      .addSelect('chauffeur.updated_at', 'chauffeur_updated_at')
+      .addSelect('vehicle.id', 'vehicle_id')
       .addSelect('vehicle.vehicle_number', 'vehicle_number')
       .addSelect('vehicle.model_name', 'vehicle_model_name')
+      .addSelect('vehicle.garage_id', 'vehicle_garage_id')
+      .addSelect('vehicle.vehicle_status', 'vehicle_status')
+      .addSelect('vehicle.status', 'vehicle_data_status')
+      .addSelect('vehicle.created_by', 'vehicle_created_by')
+      .addSelect('vehicle.created_at', 'vehicle_created_at')
+      .addSelect('vehicle.updated_by', 'vehicle_updated_by')
+      .addSelect('vehicle.updated_at', 'vehicle_updated_at')
+      .addSelect('garage.id', 'garage_id')
       .addSelect('garage.name', 'garage_name')
-      .addSelect('real_time_dispatch.name', 'dispatch_origin_name')
-      .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_name');
+      .addSelect('garage.address', 'garage_address')
+      .addSelect('garage.status', 'garage_status')
+      .addSelect('garage.created_by', 'garage_created_by')
+      .addSelect('garage.created_at', 'garage_created_at')
+      .addSelect('garage.updated_by', 'garage_updated_by')
+      .addSelect('garage.updated_at', 'garage_updated_at')
+      .addSelect('real_time_dispatch.id', 'dispatch_id')
+      .addSelect('real_time_dispatch.name', 'dispatch_name')
+      .addSelect('real_time_dispatch.description', 'dispatch_description')
+      .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
+      .addSelect('real_time_dispatch.status', 'dispatch_status')
+      .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
+      .addSelect('real_time_dispatch.created_at', 'dispatch_created_at')
+      .addSelect('real_time_dispatch.updated_by', 'dispatch_updated_by')
+      .addSelect('real_time_dispatch.updated_at', 'dispatch_updated_at');
 
     if (searchOperation.type) {
       queryBuilder.andWhere('operation.type = :type', {
@@ -97,15 +132,8 @@ export class OperationRepository implements OperationServiceOutPort {
       endTime: operation.end_time,
       distance: operation.distance,
       chauffeurId: operation.chauffeur_id,
-      chauffeurName: operation.chauffeur_name,
-      chauffeurPhone: operation.chauffeur_phone,
       vehicleId: operation.vehicle_id,
-      vehicleNumber: operation.vehicle_number,
-      vehicleModelName: operation.vehicle_model_name,
-      garageName: operation.garage_name,
       realTimeDispatchId: operation.real_time_dispatch_id,
-      dispatchOriginName: operation.dispatch_origin_name,
-      dispatchDestinationName: operation.dispatch_destination_name,
       additionalCosts: operation.additional_costs,
       receiptImageUrls: operation.receipt_image_urls,
       status: operation.status,
@@ -113,6 +141,68 @@ export class OperationRepository implements OperationServiceOutPort {
       createdAt: operation.created_at,
       updatedBy: operation.updated_by,
       updatedAt: operation.updated_at,
+      // Chauffeur 정보
+      chauffeur: operation.chauffeur_id
+        ? {
+            id: operation.chauffeur_id,
+            name: operation.chauffeur_name,
+            phone: operation.chauffeur_phone,
+            birthDate: operation.chauffeur_birth_date,
+            profileImageUrl: operation.chauffeur_profile_image_url,
+            type: operation.chauffeur_type,
+            chauffeurStatus: operation.chauffeur_status,
+            vehicleId: operation.chauffeur_vehicle_id,
+            role: operation.chauffeur_role,
+            status: operation.chauffeur_data_status,
+            createdBy: operation.chauffeur_created_by,
+            createdAt: operation.chauffeur_created_at,
+            updatedBy: operation.chauffeur_updated_by,
+            updatedAt: operation.chauffeur_updated_at,
+          }
+        : null,
+      // Vehicle 정보
+      vehicle: operation.vehicle_id
+        ? {
+            id: operation.vehicle_id,
+            vehicleNumber: operation.vehicle_number,
+            modelName: operation.vehicle_model_name,
+            garageId: operation.vehicle_garage_id,
+            vehicleStatus: operation.vehicle_status,
+            status: operation.vehicle_data_status,
+            createdBy: operation.vehicle_created_by,
+            createdAt: operation.vehicle_created_at,
+            updatedBy: operation.vehicle_updated_by,
+            updatedAt: operation.vehicle_updated_at,
+          }
+        : null,
+      // Garage 정보
+      garage: operation.garage_id
+        ? {
+            id: operation.garage_id,
+            name: operation.garage_name,
+            address: operation.garage_address,
+            status: operation.garage_status,
+            createdBy: operation.garage_created_by,
+            createdAt: operation.garage_created_at,
+            updatedBy: operation.garage_updated_by,
+            updatedAt: operation.garage_updated_at,
+          }
+        : null,
+      // RealTimeDispatch 정보
+      realTimeDispatch: operation.real_time_dispatch_id
+        ? {
+            id: operation.dispatch_id,
+            name: operation.dispatch_name,
+            description: operation.dispatch_description,
+            departureAddress: operation.dispatch_departure_address,
+            destinationAddress: operation.dispatch_destination_address,
+            status: operation.dispatch_status,
+            createdBy: operation.dispatch_created_by,
+            createdAt: operation.dispatch_created_at,
+            updatedBy: operation.dispatch_updated_by,
+            updatedAt: operation.dispatch_updated_at,
+          }
+        : null,
     }));
 
     return [operationsResponse, totalCount];

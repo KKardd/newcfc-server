@@ -30,11 +30,32 @@ export class VehicleResponseDto {
   @Expose()
   status: DataStatus;
 
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
   @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;
 
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
+
   @ApiProperty({ description: '수정일' })
   @Expose()
   updatedAt: Date;
+
+  @ApiProperty({ description: '차고지 정보' })
+  @Expose()
+  garage: {
+    id: number;
+    name: string;
+    address: string;
+    status: DataStatus;
+    createdBy: number;
+    createdAt: Date;
+    updatedBy: number;
+    updatedAt: Date;
+  };
 }

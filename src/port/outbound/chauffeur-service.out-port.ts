@@ -1,5 +1,6 @@
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
+import { AvailableChauffeurDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
@@ -17,4 +18,6 @@ export abstract class ChauffeurServiceOutPort {
   abstract update(id: number, chauffeur: Partial<Chauffeur>): Promise<void>;
 
   abstract updateStatus(id: number, status: DataStatus): Promise<void>;
+
+  abstract findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<AvailableChauffeurDto[]>;
 }

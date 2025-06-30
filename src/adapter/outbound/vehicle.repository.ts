@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchVehicleDto } from '@/adapter/inbound/dto/request/vehicle/search-vehicle.dto';
+import { UnassignedVehicleDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
 import { VehicleResponseDto } from '@/adapter/inbound/dto/response/vehicle/vehicle-response.dto';
 import { Vehicle } from '@/domain/entity/vehicle.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
@@ -107,5 +108,47 @@ export class VehicleRepository implements VehicleServiceOutPort {
 
   async updateStatus(id: number, status: DataStatus): Promise<void> {
     await this.repository.update(id, { status });
+  }
+
+  async findUnassignedVehicles(): Promise<UnassignedVehicleDto[]> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('vehicle')
+      .innerJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
+      .select('vehicle.*')
+      .addSelect('garage.id', 'garage_id')
+      .addSelect('garage.name', 'garage_name')
+      .addSelect('garage.address', 'garage_address')
+      .where('vehicle.status = :status', { status: DataStatus.REGISTER })
+      .andWhere(
+        `
+        vehicle.id NOT IN (
+          SELECT DISTINCT chauffeur.vehicle_id
+          FROM chauffeur
+          WHERE chauffeur.vehicle_id IS NOT NULL
+            AND chauffeur.status = :chauffeurStatus
+        )
+      `,
+      )
+      .setParameters({
+        chauffeurStatus: DataStatus.REGISTER,
+      })
+      .orderBy('garage.name', 'ASC')
+      .addOrderBy('vehicle.vehicle_number', 'ASC');
+
+    const vehicles = await queryBuilder.getRawMany();
+
+    return vehicles.map((vehicle) => ({
+      id: vehicle.id,
+      vehicleNumber: vehicle.vehicle_number,
+      modelName: vehicle.model_name,
+      garageId: vehicle.garage_id,
+      vehicleStatus: vehicle.vehicle_status,
+      status: vehicle.status,
+      garage: {
+        id: vehicle.garage_id,
+        name: vehicle.garage_name,
+        address: vehicle.garage_address,
+      },
+    }));
   }
 }

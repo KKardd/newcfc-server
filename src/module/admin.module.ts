@@ -7,9 +7,11 @@ import { Admin } from '@/domain/entity/admin.entity';
 import { AdminServiceInPort } from '@/port/inbound/admin-service.in-port';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { AdminService } from '@/port/service/admin.service';
+import { ChauffeurModule } from './chauffeur.module';
+import { VehicleModule } from './vehicle.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Admin])],
+  imports: [TypeOrmModule.forFeature([Admin]), ChauffeurModule, VehicleModule],
   controllers: [AdminController],
   providers: [
     {

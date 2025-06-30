@@ -6,6 +6,82 @@ import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 import { ApiProperty } from '@nestjs/swagger';
 
+export class VehicleInfoDto {
+  @ApiProperty({ description: '차량 ID' })
+  @Expose()
+  id: number;
+
+  @ApiProperty({ description: '차량 번호' })
+  @Expose()
+  vehicleNumber: string;
+
+  @ApiProperty({ description: '차량 모델명' })
+  @Expose()
+  modelName: string;
+
+  @ApiProperty({ description: '차고지 ID' })
+  @Expose()
+  garageId: number;
+
+  @ApiProperty({ description: '차량 상태', enum: VehicleStatus })
+  @Expose()
+  vehicleStatus: VehicleStatus;
+
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
+  @Expose()
+  status: DataStatus;
+
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
+  @ApiProperty({ description: '생성일' })
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
+
+  @ApiProperty({ description: '수정일' })
+  @Expose()
+  updatedAt: Date;
+}
+
+export class GarageInfoDto {
+  @ApiProperty({ description: '차고지 ID' })
+  @Expose()
+  id: number;
+
+  @ApiProperty({ description: '차고지 이름' })
+  @Expose()
+  name: string;
+
+  @ApiProperty({ description: '차고지 주소' })
+  @Expose()
+  address: string;
+
+  @ApiProperty({ description: '데이터 상태', enum: DataStatus })
+  @Expose()
+  status: DataStatus;
+
+  @ApiProperty({ description: '생성자 ID' })
+  @Expose()
+  createdBy: number;
+
+  @ApiProperty({ description: '생성일' })
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
+
+  @ApiProperty({ description: '수정일' })
+  @Expose()
+  updatedAt: Date;
+}
+
 export class ChauffeurResponseDto {
   @ApiProperty({ description: '기사 ID' })
   @Expose()
@@ -63,31 +139,11 @@ export class ChauffeurResponseDto {
   @Expose()
   updatedAt: Date;
 
-  @ApiProperty({ description: '차량 정보', required: false })
+  @ApiProperty({ description: '차량 정보', type: VehicleInfoDto, required: false })
   @Expose()
-  vehicle?: {
-    id: number;
-    vehicleNumber: string;
-    modelName: string;
-    garageId: number;
-    vehicleStatus: VehicleStatus;
-    status: DataStatus;
-    createdBy: number;
-    createdAt: Date;
-    updatedBy: number;
-    updatedAt: Date;
-  } | null;
+  vehicle?: VehicleInfoDto | null;
 
-  @ApiProperty({ description: '차고지 정보', required: false })
+  @ApiProperty({ description: '차고지 정보', type: GarageInfoDto, required: false })
   @Expose()
-  garage?: {
-    id: number;
-    name: string;
-    address: string;
-    status: DataStatus;
-    createdBy: number;
-    createdAt: Date;
-    updatedBy: number;
-    updatedAt: Date;
-  } | null;
+  garage?: GarageInfoDto | null;
 }

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Matches } from 'class-validator';
 
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
@@ -44,4 +44,20 @@ export class SearchChauffeurDto {
   @IsEnum(DataStatus)
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   status?: DataStatus;
+
+  @ApiProperty({ description: '실시간 배차지 ID', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
+  realTimeDispatchId?: number;
+
+  @ApiProperty({ description: '비상주 쇼퍼만 조회 (NON_RESIDENT 타입)', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  isNonResident?: boolean;
 }

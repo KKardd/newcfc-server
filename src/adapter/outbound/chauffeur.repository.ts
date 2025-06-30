@@ -83,6 +83,32 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       });
     }
 
+    // 실시간 배차지 필터링
+    if (searchChauffeur.realTimeDispatchId) {
+      queryBuilder.andWhere(
+        `
+        chauffeur.id IN (
+          SELECT DISTINCT operation.chauffeur_id
+          FROM operation
+          WHERE operation.chauffeur_id IS NOT NULL
+            AND operation.real_time_dispatch_id = :realTimeDispatchId
+            AND operation.status = :operationStatus
+        )
+      `,
+        {
+          realTimeDispatchId: searchChauffeur.realTimeDispatchId,
+          operationStatus: DataStatus.REGISTER,
+        },
+      );
+    }
+
+    // 비상주 쇼퍼 필터링
+    if (searchChauffeur.isNonResident === true) {
+      queryBuilder.andWhere('chauffeur.type = :nonResidentType', {
+        nonResidentType: ChauffeurType.NON_RESIDENT,
+      });
+    }
+
     queryBuilder.orderBy('chauffeur.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
 
     const chauffeurs = await queryBuilder.getRawMany();

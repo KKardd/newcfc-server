@@ -32,12 +32,10 @@ export class JwtAuthGuard implements CanActivate {
       const userId = request.user.payload.userId.toString();
 
       try {
-        const refreshToken = await this.refreshTokenService.getToken(userId);
-
-        if (!refreshToken) {
-          throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
+        // const refreshToken = await this.refreshTokenService.getToken(userId);
+        // if (!refreshToken) {
+        //   throw new CustomException(ErrorCode.INVALID_TOKEN);
+        // }
         // await this.tokenProvider.verifyRefreshToken(refreshToken);
       } catch (error) {
         throw new CustomException(ErrorCode.INVALID_TOKEN, error as string);

@@ -8,7 +8,7 @@ export class WayPoint extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'operation_id', type: 'integer', nullable: true })
+  @Column({ name: 'operation_id', type: 'integer', nullable: false })
   operationId: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })

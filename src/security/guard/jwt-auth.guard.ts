@@ -40,8 +40,7 @@ export class JwtAuthGuard implements CanActivate {
 
         await this.tokenProvider.verifyRefreshToken(refreshToken);
       } catch (error) {
-        const message = error instanceof Error ? error.message : undefined;
-        throw new CustomException(ErrorCode.INVALID_TOKEN, message);
+        throw new CustomException(ErrorCode.INVALID_TOKEN, error as string);
       }
 
       return true;

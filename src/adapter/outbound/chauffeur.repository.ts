@@ -45,7 +45,8 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       .addSelect('garage.created_by', 'garage_created_by')
       .addSelect('garage.created_at', 'garage_created_at')
       .addSelect('garage.updated_by', 'garage_updated_by')
-      .addSelect('garage.updated_at', 'garage_updated_at');
+      .addSelect('garage.updated_at', 'garage_updated_at')
+      .where('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
 
     if (searchChauffeur.name) {
       queryBuilder.andWhere('chauffeur.name LIKE :name', {

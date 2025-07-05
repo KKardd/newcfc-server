@@ -23,6 +23,7 @@ export class GarageRepository implements GarageServiceOutPort {
       .leftJoin('vehicle', 'vehicle', "garage.id = vehicle.garageId AND vehicle.status != 'DELETED'")
       .select('garage.*')
       .addSelect('COUNT(vehicle.id)', 'vehicle_count')
+      .where('garage.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
       .groupBy('garage.id');
 
     if (searchGarage.name) {
@@ -72,6 +73,7 @@ export class GarageRepository implements GarageServiceOutPort {
       .select('garage.*')
       .addSelect('COUNT(vehicle.id)', 'vehicle_count')
       .where('garage.id = :id', { id })
+      .andWhere('garage.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
       .groupBy('garage.id')
       .getRawOne();
 

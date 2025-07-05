@@ -32,7 +32,8 @@ export class VehicleRepository implements VehicleServiceOutPort {
       .addSelect('garage.created_at', 'garage_created_at')
       .addSelect('garage.updated_by', 'garage_updated_by')
       .addSelect('garage.updated_at', 'garage_updated_at')
-      .addSelect('CASE WHEN chauffeur.id IS NOT NULL THEN true ELSE false END', 'assigned');
+      .addSelect('CASE WHEN chauffeur.id IS NOT NULL THEN true ELSE false END', 'assigned')
+      .where('vehicle.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
 
     if (searchVehicle.vehicleNumber) {
       queryBuilder.andWhere('vehicle.vehicle_number LIKE :vehicleNumber', {

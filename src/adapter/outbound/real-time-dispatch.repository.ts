@@ -27,6 +27,7 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
       .leftJoin('chauffeur', 'chauffeur', "operation.chauffeur_id = chauffeur.id AND chauffeur.status != 'DELETED'")
       .select('real_time_dispatch.*')
       .addSelect('COUNT(chauffeur.id)', 'chauffeur_count')
+      .where('real_time_dispatch.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
       .groupBy('real_time_dispatch.id');
 
     if (searchRealTimeDispatch.departureName) {

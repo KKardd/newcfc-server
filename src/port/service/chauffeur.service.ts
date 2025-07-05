@@ -309,10 +309,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       wayPointPagination.page = 1;
       wayPointPagination.countPerPage = 100;
 
-      const wayPointsResponse = await this.wayPointServiceInPort.search(
-        { operationId: currentOperation.id, status: DataStatus.REGISTER },
-        wayPointPagination,
-      );
+      const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
 
       if (wayPointsResponse.data.length === 0) {
         return; // waypoint가 없으면 업데이트 불필요

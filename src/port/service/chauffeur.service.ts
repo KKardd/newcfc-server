@@ -201,23 +201,37 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         startTime: new Date(),
       });
 
-      const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
-      response.safetyPhone = reservation.safetyPhone ?? undefined;
+      try {
+        const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
+        response.safetyPhone = reservation.safetyPhone ?? undefined;
+      } catch (error) {
+        // 예약 정보가 없는 경우
+        response.safetyPhone = undefined;
+      }
     }
   }
 
   private async handleWaitingForPassenger(chauffeurId: number, response: ChauffeurStatusChangeResponseDto): Promise<void> {
     const currentOperation = await this.getCurrentOperation(chauffeurId);
     if (currentOperation) {
-      const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
-      response.safetyPhone = reservation.safetyPhone ?? undefined;
+      try {
+        const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
+        response.safetyPhone = reservation.safetyPhone ?? undefined;
+      } catch (error) {
+        // 예약 정보가 없는 경우
+        response.safetyPhone = undefined;
+      }
     }
   }
 
   private async handleInOperation(chauffeurId: number, response: ChauffeurStatusChangeResponseDto): Promise<void> {
     const currentOperation = await this.getCurrentOperation(chauffeurId);
     if (currentOperation) {
-      const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
+      try {
+        const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
+      } catch (error) {
+        // 예약 정보가 없는 경우 - 계속 진행
+      }
 
       const wayPointPagination = new PaginationQuery();
       wayPointPagination.page = 1;
@@ -238,8 +252,13 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   private async handleWaitingOperation(chauffeurId: number, response: ChauffeurStatusChangeResponseDto): Promise<void> {
     const currentOperation = await this.getCurrentOperation(chauffeurId);
     if (currentOperation) {
-      const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
-      response.safetyPhone = reservation.safetyPhone ?? undefined;
+      try {
+        const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
+        response.safetyPhone = reservation.safetyPhone ?? undefined;
+      } catch (error) {
+        // 예약 정보가 없는 경우
+        response.safetyPhone = undefined;
+      }
     }
   }
 

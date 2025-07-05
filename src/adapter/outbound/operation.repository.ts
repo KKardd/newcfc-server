@@ -32,6 +32,7 @@ export class OperationRepository implements OperationServiceOutPort {
       .leftJoin('real_time_dispatch', 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
       .leftJoin('reservation', 'reservation', 'operation.id = reservation.operation_id')
       .select('operation.*')
+      .addSelect('operation.kakao_path', 'kakao_path')
       .addSelect('chauffeur.id', 'chauffeur_id')
       .addSelect('chauffeur.name', 'chauffeur_name')
       .addSelect('chauffeur.phone', 'chauffeur_phone')

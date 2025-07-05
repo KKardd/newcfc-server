@@ -1,23 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateRealTimeDispatchDto {
-  @ApiProperty({ description: '배차 이름' })
+  @ApiProperty({ description: '출발지 이름' })
   @IsNotEmpty()
   @IsString()
-  name: string;
-
-  @ApiProperty({ description: '배차 설명', required: false })
-  @IsOptional()
-  @IsString()
-  description?: string;
+  departureName: string;
 
   @ApiProperty({ description: '출발지 주소' })
   @IsNotEmpty()
   @IsString()
   departureAddress: string;
 
-  @ApiProperty({ description: '도착지 주소' })
+  @ApiProperty({ description: '목적지 이름' })
+  @IsNotEmpty()
+  @IsString()
+  destinationName: string;
+
+  @ApiProperty({ description: '목적지 주소' })
   @IsNotEmpty()
   @IsString()
   destinationAddress: string;

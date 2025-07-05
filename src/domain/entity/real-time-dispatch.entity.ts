@@ -8,14 +8,14 @@ export class RealTimeDispatch extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
-  name: string;
-
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @Column({ name: 'departure_name', type: 'varchar', length: 100, nullable: false })
+  departureName: string;
 
   @Column({ name: 'departure_address', type: 'varchar', length: 255, nullable: false })
   departureAddress: string;
+
+  @Column({ name: 'destination_name', type: 'varchar', length: 100, nullable: false })
+  destinationName: string;
 
   @Column({ name: 'destination_address', type: 'varchar', length: 255, nullable: false })
   destinationAddress: string;

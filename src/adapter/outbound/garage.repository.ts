@@ -18,7 +18,12 @@ export class GarageRepository implements GarageServiceOutPort {
   ) {}
 
   async findAll(searchGarage: SearchGarageDto, paginationQuery: PaginationQuery): Promise<[GarageResponseDto[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('garage').select('garage.*');
+    const queryBuilder = this.repository
+      .createQueryBuilder('garage')
+      .leftJoin('vehicle', 'vehicle', "garage.id = vehicle.garageId AND vehicle.status != 'DELETED'")
+      .select('garage.*')
+      .addSelect('COUNT(vehicle.id)', 'vehicle_count')
+      .groupBy('garage.id');
 
     if (searchGarage.name) {
       queryBuilder.andWhere('garage.name LIKE :name', {
@@ -47,6 +52,7 @@ export class GarageRepository implements GarageServiceOutPort {
       id: garage.id,
       name: garage.name,
       address: garage.address,
+      vehicleCount: parseInt(garage.vehicle_count) || 0,
       status: garage.status,
       createdAt: garage.created_at,
       updatedAt: garage.updated_at,
@@ -57,6 +63,31 @@ export class GarageRepository implements GarageServiceOutPort {
 
   async findById(id: number): Promise<Garage> {
     return await this.repository.findOneOrFail({ where: { id } });
+  }
+
+  async findByIdWithVehicleCount(id: number): Promise<GarageResponseDto> {
+    const result = await this.repository
+      .createQueryBuilder('garage')
+      .leftJoin('vehicle', 'vehicle', "garage.id = vehicle.garageId AND vehicle.status != 'DELETED'")
+      .select('garage.*')
+      .addSelect('COUNT(vehicle.id)', 'vehicle_count')
+      .where('garage.id = :id', { id })
+      .groupBy('garage.id')
+      .getRawOne();
+
+    if (!result) {
+      throw new Error('Garage not found');
+    }
+
+    return {
+      id: result.id,
+      name: result.name,
+      address: result.address,
+      vehicleCount: parseInt(result.vehicle_count) || 0,
+      status: result.status,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
   }
 
   async save(garage: Garage): Promise<void> {

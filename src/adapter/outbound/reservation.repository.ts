@@ -78,9 +78,9 @@ export class ReservationRepository implements ReservationServiceOutPort {
       .addSelect('garage.updated_by', 'garage_updated_by')
       .addSelect('garage.updated_at', 'garage_updated_at')
       .addSelect('real_time_dispatch.id', 'dispatch_id')
-      .addSelect('real_time_dispatch.name', 'dispatch_name')
-      .addSelect('real_time_dispatch.description', 'dispatch_description')
+      .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
       .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
       .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
       .addSelect('real_time_dispatch.status', 'dispatch_status')
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
@@ -213,9 +213,9 @@ export class ReservationRepository implements ReservationServiceOutPort {
       realTimeDispatch: reservation.dispatch_id
         ? {
             id: reservation.dispatch_id,
-            name: reservation.dispatch_name,
-            description: reservation.dispatch_description,
+            departureName: reservation.dispatch_departure_name,
             departureAddress: reservation.dispatch_departure_address,
+            destinationName: reservation.dispatch_destination_name,
             destinationAddress: reservation.dispatch_destination_address,
             status: reservation.dispatch_status,
             createdBy: reservation.dispatch_created_by,

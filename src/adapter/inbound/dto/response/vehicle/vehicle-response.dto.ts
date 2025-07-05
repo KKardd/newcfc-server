@@ -60,6 +60,10 @@ export class VehicleResponseDto {
   @Expose()
   vehicleStatus: VehicleStatus;
 
+  @ApiProperty({ description: '배정 여부 (특정 쇼퍼에게 배정되었는지)' })
+  @Expose()
+  assigned: boolean;
+
   @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;

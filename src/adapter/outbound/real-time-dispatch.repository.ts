@@ -21,23 +21,29 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
     searchRealTimeDispatch: SearchRealTimeDispatchDto,
     paginationQuery: PaginationQuery,
   ): Promise<[RealTimeDispatchResponseDto[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('real_time_dispatch').select('real_time_dispatch.*');
+    const queryBuilder = this.repository
+      .createQueryBuilder('real_time_dispatch')
+      .leftJoin('operation', 'operation', 'real_time_dispatch.id = operation.real_time_dispatch_id')
+      .leftJoin('chauffeur', 'chauffeur', "operation.chauffeur_id = chauffeur.id AND chauffeur.status != 'DELETED'")
+      .select('real_time_dispatch.*')
+      .addSelect('COUNT(chauffeur.id)', 'chauffeur_count')
+      .groupBy('real_time_dispatch.id');
 
-    if (searchRealTimeDispatch.name) {
-      queryBuilder.andWhere('real_time_dispatch.name LIKE :name', {
-        name: `%${searchRealTimeDispatch.name}%`,
-      });
-    }
-
-    if (searchRealTimeDispatch.description) {
-      queryBuilder.andWhere('real_time_dispatch.description LIKE :description', {
-        description: `%${searchRealTimeDispatch.description}%`,
+    if (searchRealTimeDispatch.departureName) {
+      queryBuilder.andWhere('real_time_dispatch.departure_name LIKE :departureName', {
+        departureName: `%${searchRealTimeDispatch.departureName}%`,
       });
     }
 
     if (searchRealTimeDispatch.departureAddress) {
       queryBuilder.andWhere('real_time_dispatch.departure_address LIKE :departureAddress', {
         departureAddress: `%${searchRealTimeDispatch.departureAddress}%`,
+      });
+    }
+
+    if (searchRealTimeDispatch.destinationName) {
+      queryBuilder.andWhere('real_time_dispatch.destination_name LIKE :destinationName', {
+        destinationName: `%${searchRealTimeDispatch.destinationName}%`,
       });
     }
 
@@ -60,10 +66,11 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
 
     const realTimeDispatchesResponse: RealTimeDispatchResponseDto[] = realTimeDispatches.map((dispatch) => ({
       id: dispatch.id,
-      name: dispatch.name,
-      description: dispatch.description,
+      departureName: dispatch.departure_name,
       departureAddress: dispatch.departure_address,
+      destinationName: dispatch.destination_name,
       destinationAddress: dispatch.destination_address,
+      chauffeurCount: parseInt(dispatch.chauffeur_count) || 0,
       status: dispatch.status,
       createdAt: dispatch.created_at,
       updatedAt: dispatch.updated_at,

@@ -17,6 +17,10 @@ export class GarageResponseDto {
   @Expose()
   address: string;
 
+  @ApiProperty({ description: '배정된 차량 개수' })
+  @Expose()
+  vehicleCount: number;
+
   @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;

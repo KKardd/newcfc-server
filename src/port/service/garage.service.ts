@@ -28,8 +28,7 @@ export class GarageService implements GarageServiceInPort {
   }
 
   async detail(id: number): Promise<GarageResponseDto> {
-    const garage = await this.garageServiceOutPort.findById(id);
-    return plainToInstance(GarageResponseDto, garage, classTransformDefaultOptions);
+    return await this.garageServiceOutPort.findByIdWithVehicleCount(id);
   }
 
   async create(createGarage: CreateGarageDto): Promise<void> {

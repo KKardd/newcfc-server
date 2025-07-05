@@ -65,9 +65,9 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('garage.updated_by', 'garage_updated_by')
       .addSelect('garage.updated_at', 'garage_updated_at')
       .addSelect('real_time_dispatch.id', 'dispatch_id')
-      .addSelect('real_time_dispatch.name', 'dispatch_name')
-      .addSelect('real_time_dispatch.description', 'dispatch_description')
+      .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
       .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
       .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
       .addSelect('real_time_dispatch.status', 'dispatch_status')
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
@@ -239,9 +239,9 @@ export class OperationRepository implements OperationServiceOutPort {
       realTimeDispatch: operation.real_time_dispatch_id
         ? {
             id: operation.dispatch_id,
-            name: operation.dispatch_name,
-            description: operation.dispatch_description,
+            departureName: operation.dispatch_departure_name,
             departureAddress: operation.dispatch_departure_address,
+            destinationName: operation.dispatch_destination_name,
             destinationAddress: operation.dispatch_destination_address,
             status: operation.dispatch_status,
             createdBy: operation.dispatch_created_by,
@@ -336,9 +336,9 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('garage.updated_by', 'garage_updated_by')
       .addSelect('garage.updated_at', 'garage_updated_at')
       .addSelect('real_time_dispatch.id', 'dispatch_id')
-      .addSelect('real_time_dispatch.name', 'dispatch_name')
-      .addSelect('real_time_dispatch.description', 'dispatch_description')
+      .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
       .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
       .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
       .addSelect('real_time_dispatch.status', 'dispatch_status')
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
@@ -449,9 +449,9 @@ export class OperationRepository implements OperationServiceOutPort {
       realTimeDispatch: operation.real_time_dispatch_id
         ? {
             id: operation.dispatch_id,
-            name: operation.dispatch_name,
-            description: operation.dispatch_description,
+            departureName: operation.dispatch_departure_name,
             departureAddress: operation.dispatch_departure_address,
+            destinationName: operation.dispatch_destination_name,
             destinationAddress: operation.dispatch_destination_address,
             status: operation.dispatch_status,
             createdBy: operation.dispatch_created_by,

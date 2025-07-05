@@ -22,6 +22,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
     const queryBuilder = this.repository
       .createQueryBuilder('vehicle')
       .innerJoin('garage', 'garage', 'vehicle.garageId = garage.id')
+      .leftJoin('chauffeur', 'chauffeur', "vehicle.id = chauffeur.vehicleId AND chauffeur.status != 'DELETED'")
       .select('vehicle.*')
       .addSelect('garage.id', 'garage_id')
       .addSelect('garage.name', 'garage_name')
@@ -30,7 +31,8 @@ export class VehicleRepository implements VehicleServiceOutPort {
       .addSelect('garage.created_by', 'garage_created_by')
       .addSelect('garage.created_at', 'garage_created_at')
       .addSelect('garage.updated_by', 'garage_updated_by')
-      .addSelect('garage.updated_at', 'garage_updated_at');
+      .addSelect('garage.updated_at', 'garage_updated_at')
+      .addSelect('CASE WHEN chauffeur.id IS NOT NULL THEN true ELSE false END', 'assigned');
 
     if (searchVehicle.vehicleNumber) {
       queryBuilder.andWhere('vehicle.vehicle_number LIKE :vehicleNumber', {
@@ -56,6 +58,14 @@ export class VehicleRepository implements VehicleServiceOutPort {
       });
     }
 
+    if (searchVehicle.assigned !== undefined) {
+      if (searchVehicle.assigned) {
+        queryBuilder.andWhere('chauffeur.id IS NOT NULL');
+      } else {
+        queryBuilder.andWhere('chauffeur.id IS NULL');
+      }
+    }
+
     if (searchVehicle.status) {
       queryBuilder.andWhere('vehicle.status = :status', {
         status: searchVehicle.status,
@@ -73,6 +83,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
       modelName: vehicle.model_name,
       garageId: vehicle.garage_id,
       vehicleStatus: vehicle.vehicle_status,
+      assigned: vehicle.assigned,
       status: vehicle.status,
       createdBy: vehicle.created_by,
       createdAt: vehicle.created_at,

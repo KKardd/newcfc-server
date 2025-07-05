@@ -9,6 +9,8 @@ export abstract class GarageServiceOutPort {
 
   abstract findById(id: number): Promise<Garage>;
 
+  abstract findByIdWithVehicleCount(id: number): Promise<GarageResponseDto>;
+
   abstract save(garage: Garage): Promise<void>;
 
   abstract update(id: number, garage: Partial<Garage>): Promise<void>;

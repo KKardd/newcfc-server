@@ -33,6 +33,9 @@ export class Chauffeur extends BaseEntity {
   @Column({ name: 'vehicle_id', type: 'integer', nullable: true })
   vehicleId: number | null;
 
+  @Column({ name: 'real_time_dispatch_id', type: 'integer', nullable: true })
+  realTimeDispatchId: number | null;
+
   @Column({ type: 'enum', enum: UserRoleType, default: UserRoleType.CHAUFFEUR })
   role: UserRoleType;
 

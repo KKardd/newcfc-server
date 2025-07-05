@@ -80,6 +80,10 @@ export class AvailableChauffeurDto {
   @Expose()
   vehicleId: number | null;
 
+  @ApiProperty({ description: '실시간 배차 ID', required: false })
+  @Expose()
+  realTimeDispatchId: number | null;
+
   @ApiProperty({ description: '사용자 권한', enum: UserRoleType })
   @Expose()
   role: UserRoleType;

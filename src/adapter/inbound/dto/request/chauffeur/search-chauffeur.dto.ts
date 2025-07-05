@@ -48,8 +48,17 @@ export class SearchChauffeurDto {
   @ApiProperty({ description: '실시간 배차지 ID', required: false })
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
   realTimeDispatchId?: number;
+
+  @ApiProperty({ description: '실시간 배차지가 null인 기사만 조회', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  isRealTimeDispatchNull?: boolean;
 
   @ApiProperty({ description: '비상주 쇼퍼만 조회 (NON_RESIDENT 타입)', required: false })
   @IsOptional()

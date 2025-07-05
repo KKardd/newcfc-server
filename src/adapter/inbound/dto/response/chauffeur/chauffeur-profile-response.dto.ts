@@ -24,4 +24,8 @@ export class ChauffeurProfileResponseDto {
   @ApiProperty({ description: '기사 상태', enum: ChauffeurStatus })
   @Expose()
   chauffeurStatus: ChauffeurStatus;
+
+  @ApiProperty({ description: '실시간 배차 ID', required: false })
+  @Expose()
+  realTimeDispatchId: number | null;
 }

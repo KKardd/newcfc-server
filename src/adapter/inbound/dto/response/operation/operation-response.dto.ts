@@ -322,6 +322,18 @@ export class OperationResponseDto {
   @Expose()
   chauffeurId: number | null;
 
+  @ApiProperty({ description: '기사 이름', required: false })
+  @Expose()
+  chauffeurName: string | null;
+
+  @ApiProperty({ description: '기사 전화번호', required: false })
+  @Expose()
+  chauffeurPhone: string | null;
+
+  @ApiProperty({ description: '탑승 인원 수', required: false })
+  @Expose()
+  passengerCount: number | null;
+
   @ApiProperty({ description: '차량 ID', required: false })
   @Expose()
   vehicleId: number | null;

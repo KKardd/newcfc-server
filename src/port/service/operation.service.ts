@@ -11,8 +11,13 @@ import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/upda
 import { AssignChauffeurResponseDto } from '@/adapter/inbound/dto/response/admin/assign-chauffeur-response.dto';
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
+import { Reservation } from '@/domain/entity/reservation.entity';
+import { WayPoint } from '@/domain/entity/way-point.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { OperationType } from '@/domain/enum/operation-type.enum';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
+import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
+import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
@@ -22,6 +27,8 @@ export class OperationService implements OperationServiceInPort {
   constructor(
     private readonly operationServiceOutPort: OperationServiceOutPort,
     private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
+    private readonly reservationServiceInPort: ReservationServiceInPort,
+    private readonly wayPointServiceInPort: WayPointServiceInPort,
   ) {}
 
   async search(
@@ -42,8 +49,57 @@ export class OperationService implements OperationServiceInPort {
   }
 
   async create(createOperation: CreateOperationDto): Promise<void> {
-    const operation = plainToInstance(Operation, createOperation);
+    // 1. Operation 엔티티 생성
+    const operation = plainToInstance(Operation, {
+      type: createOperation.type,
+      isRepeated: createOperation.schedule.isRepeat || false,
+      startTime: createOperation.startTime,
+      endTime: createOperation.endTime,
+      distance: createOperation.distance,
+      chauffeurId: createOperation.chauffeurId,
+      vehicleId: createOperation.vehicleId,
+      realTimeDispatchId: createOperation.schedule.realTimeDispatchId,
+      status: DataStatus.REGISTER,
+    });
+
+    // 2. Operation 저장
     await this.operationServiceOutPort.save(operation);
+
+    // 3. Reservation 생성 및 저장
+    await this.reservationServiceInPort.create({
+      operationId: operation.id,
+      passengerName: createOperation.reservation.passengerName,
+      passengerPhone: createOperation.reservation.passengerPhone,
+      passengerEmail: createOperation.reservation.passengerEmail,
+      passengerCount: createOperation.reservation.passengerCount,
+      safetyPhone: createOperation.reservation.safetyPhone,
+      memo: createOperation.memo,
+    });
+
+    // 4. WayPoints 생성 및 저장
+    for (const wayPointInfo of createOperation.schedule.wayPoints) {
+      await this.wayPointServiceInPort.create({
+        operationId: operation.id,
+        address: wayPointInfo.address,
+        addressDetail: wayPointInfo.addressDetail,
+        latitude: wayPointInfo.latitude,
+        longitude: wayPointInfo.longitude,
+        order: wayPointInfo.order,
+      });
+    }
+
+    // 5. 실시간 배차인 경우 담당자 정보 저장
+    if (createOperation.manager && createOperation.type === OperationType.REALTIME) {
+      // 담당자 정보를 operation의 추가 정보로 저장
+      const managerInfo = {
+        managerName: createOperation.manager.managerName,
+        managerNumber: createOperation.manager.managerNumber,
+      };
+
+      await this.operationServiceOutPort.update(operation.id, {
+        additionalCosts: managerInfo as any, // 임시로 additionalCosts 필드 활용
+      });
+    }
   }
 
   async update(id: number, updateOperation: UpdateOperationDto): Promise<void> {

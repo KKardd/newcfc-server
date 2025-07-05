@@ -34,6 +34,7 @@ import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispat
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 import { WayPointServiceOutPort } from '@/port/outbound/way-point-service.out-port';
+import { WorkHistoryService } from '@/port/service/work-history.service';
 
 @Injectable()
 export class ChauffeurService implements ChauffeurServiceInPort {
@@ -45,6 +46,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     private readonly reservationServiceInPort: ReservationServiceInPort,
     private readonly wayPointServiceInPort: WayPointServiceInPort,
     private readonly wayPointServiceOutPort: WayPointServiceOutPort,
+    private readonly workHistoryService: WorkHistoryService,
   ) {}
 
   async search(
@@ -98,6 +100,26 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
     // 상태별 추가 로직 처리
     switch (changeStatusDto.updateStatus) {
+      case ChauffeurStatus.RECEIVED_VEHICLE:
+        // 차량 인수: 근무 시작
+        try {
+          await this.workHistoryService.startWork(chauffeurId, chauffeur.vehicleId || undefined);
+        } catch (error) {
+          console.error('근무 시작 기록 실패:', error);
+          // 근무 기록 실패해도 상태 변경은 계속 진행
+        }
+        break;
+
+      case ChauffeurStatus.OFF_DUTY:
+        // 근무 종료: 근무 종료 (차량 반납)
+        try {
+          await this.workHistoryService.endWork(chauffeurId);
+        } catch (error) {
+          console.error('근무 종료 기록 실패:', error);
+          // 근무 기록 실패해도 상태 변경은 계속 진행
+        }
+        break;
+
       case ChauffeurStatus.MOVING_TO_DEPARTURE:
         // 예약 대기중 -> 출발지 이동: operation.startTime 설정 및 안심 전화번호 반환
         await this.handleMovingToDeparture(chauffeurId, response);

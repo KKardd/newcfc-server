@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches, IsNumber } from 'class-validator';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 
@@ -33,4 +33,9 @@ export class UpdateChauffeurDto {
   @ApiProperty({ description: '차량 ID', required: false })
   @IsOptional()
   vehicleId?: number;
+
+  @ApiProperty({ description: '실시간 배차 ID', required: false })
+  @IsOptional()
+  @IsNumber()
+  realTimeDispatchId?: number | null;
 }

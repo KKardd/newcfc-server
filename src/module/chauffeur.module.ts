@@ -12,6 +12,7 @@ import { RealTimeDispatchModule } from './real-time-dispatch.module';
 import { ReservationModule } from './reservation.module';
 import { VehicleModule } from './vehicle.module';
 import { WayPointModule } from './way-point.module';
+import { WorkHistoryModule } from './work-history.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { WayPointModule } from './way-point.module';
     WayPointModule,
     VehicleModule,
     RealTimeDispatchModule,
+    WorkHistoryModule,
   ],
   controllers: [ChauffeurController],
   providers: [

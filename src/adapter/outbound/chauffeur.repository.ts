@@ -83,23 +83,16 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       });
     }
 
-    // 실시간 배차지 필터링
+    // 실시간 배차지 필터링 (chauffeur 테이블의 realTimeDispatchId 필드 직접 검색)
     if (searchChauffeur.realTimeDispatchId) {
-      queryBuilder.andWhere(
-        `
-        chauffeur.id IN (
-          SELECT DISTINCT operation.chauffeur_id
-          FROM operation
-          WHERE operation.chauffeur_id IS NOT NULL
-            AND operation.real_time_dispatch_id = :realTimeDispatchId
-            AND operation.status = :operationStatus
-        )
-      `,
-        {
-          realTimeDispatchId: searchChauffeur.realTimeDispatchId,
-          operationStatus: DataStatus.REGISTER,
-        },
-      );
+      queryBuilder.andWhere('chauffeur.real_time_dispatch_id = :realTimeDispatchId', {
+        realTimeDispatchId: searchChauffeur.realTimeDispatchId,
+      });
+    }
+
+    // 실시간 배차지가 null인 기사 검색
+    if (searchChauffeur.isRealTimeDispatchNull === true) {
+      queryBuilder.andWhere('chauffeur.real_time_dispatch_id IS NULL');
     }
 
     // 비상주 쇼퍼 필터링
@@ -123,6 +116,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       type: chauffeur.type,
       chauffeurStatus: chauffeur.chauffeur_status,
       vehicleId: chauffeur.vehicle_id,
+      realTimeDispatchId: chauffeur.real_time_dispatch_id,
       role: chauffeur.role,
       status: chauffeur.status,
       createdBy: chauffeur.created_by,
@@ -231,6 +225,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       type: chauffeur.type,
       chauffeurStatus: chauffeur.chauffeur_status,
       vehicleId: chauffeur.vehicle_id,
+      realTimeDispatchId: chauffeur.real_time_dispatch_id,
       role: chauffeur.role,
       status: chauffeur.status,
       vehicle: chauffeur.vehicle_id

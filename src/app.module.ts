@@ -25,6 +25,7 @@ import { ReservationModule } from '@/module/reservation.module';
 import { TokenProviderModule } from '@/module/token-provider.module';
 import { VehicleModule } from '@/module/vehicle.module';
 import { WayPointModule } from '@/module/way-point.module';
+import { WorkHistoryModule } from '@/module/work-history.module';
 import { RequestContext } from '@/port/audit/request-context.middleware';
 
 const typeOrmModules = [
@@ -65,6 +66,7 @@ const typeOrmModules = [
     VehicleModule,
     WayPointModule,
     RealTimeDispatchModule,
+    WorkHistoryModule,
   ],
   controllers: [AppController],
 })

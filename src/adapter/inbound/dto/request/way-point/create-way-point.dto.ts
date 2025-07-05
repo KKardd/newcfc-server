@@ -17,6 +17,16 @@ export class CreateWayPointDto {
   @IsString()
   addressDetail?: string;
 
+  @ApiProperty({ description: '위도', required: false })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiProperty({ description: '경도', required: false })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
   @ApiProperty({ description: '경유지 순서' })
   @IsNotEmpty()
   @IsNumber()

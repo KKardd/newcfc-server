@@ -181,6 +181,7 @@ export class OperationRepository implements OperationServiceOutPort {
       realTimeDispatchId: operation.real_time_dispatch_id,
       additionalCosts: operation.additional_costs,
       receiptImageUrls: operation.receipt_image_urls,
+      kakaoPath: operation.kakao_path,
       status: operation.status,
       createdBy: operation.created_by,
       createdAt: operation.created_at,

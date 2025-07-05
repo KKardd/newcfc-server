@@ -393,4 +393,8 @@ export class OperationResponseDto {
   @ApiProperty({ description: '경유지 목록', type: [WayPointInfoDto] })
   @Expose()
   wayPoints: WayPointInfoDto[];
+
+  @ApiProperty({ description: '카카오 경로 정보', required: false })
+  @Expose()
+  kakaoPath: any;
 }

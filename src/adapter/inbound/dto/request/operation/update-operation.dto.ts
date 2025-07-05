@@ -56,4 +56,9 @@ export class UpdateOperationDto {
   @IsOptional()
   @IsString({ each: true })
   receiptImageUrls?: string[];
+
+  @ApiProperty({ description: '카카오 경로 정보', type: Object, required: false })
+  @IsOptional()
+  @IsObject()
+  kakaoPath?: any;
 }

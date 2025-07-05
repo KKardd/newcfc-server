@@ -148,7 +148,9 @@ export class OperationRepository implements OperationServiceOutPort {
         ? await this.wayPointRepository
             .createQueryBuilder('waypoint')
             .where('waypoint.operation_id IN (:...operationIds)', { operationIds })
-            .andWhere('waypoint.status = :status', { status: DataStatus.REGISTER })
+            .andWhere('waypoint.status NOT IN (:...excludedStatuses)', {
+              excludedStatuses: [DataStatus.DELETED, DataStatus.CANCELLED],
+            })
             .orderBy('waypoint.operation_id', 'ASC')
             .addOrderBy('waypoint.order', 'ASC')
             .getMany()
@@ -368,7 +370,9 @@ export class OperationRepository implements OperationServiceOutPort {
     const wayPoints = await this.wayPointRepository
       .createQueryBuilder('waypoint')
       .where('waypoint.operation_id = :operationId', { operationId: id })
-      .andWhere('waypoint.status = :status', { status: DataStatus.REGISTER })
+      .andWhere('waypoint.status NOT IN (:...excludedStatuses)', {
+        excludedStatuses: [DataStatus.DELETED, DataStatus.CANCELLED],
+      })
       .orderBy('waypoint.order', 'ASC')
       .getMany();
 

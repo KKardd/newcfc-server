@@ -44,8 +44,7 @@ export class OperationService implements OperationServiceInPort {
   }
 
   async detail(id: number): Promise<OperationResponseDto> {
-    const operation = await this.operationServiceOutPort.findById(id);
-    return plainToInstance(OperationResponseDto, operation, classTransformDefaultOptions);
+    return await this.operationServiceOutPort.findByIdWithDetails(id);
   }
 
   async create(createOperation: CreateOperationDto): Promise<void> {

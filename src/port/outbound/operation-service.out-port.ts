@@ -12,6 +12,8 @@ export abstract class OperationServiceOutPort {
 
   abstract findById(id: number): Promise<Operation>;
 
+  abstract findByIdWithDetails(id: number): Promise<OperationResponseDto>;
+
   abstract save(operation: Operation): Promise<void>;
 
   abstract update(id: number, operation: Partial<Operation>): Promise<void>;

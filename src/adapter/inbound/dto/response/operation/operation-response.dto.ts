@@ -396,5 +396,5 @@ export class OperationResponseDto {
 
   @ApiProperty({ description: '카카오 경로 정보', required: false })
   @Expose()
-  kakaoPath: any;
+  kakaoPath?: any;
 }

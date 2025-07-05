@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ChauffeurController } from '@/adapter/inbound/controller/chauffeur.controller';
@@ -16,7 +16,7 @@ import { WayPointModule } from './way-point.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Chauffeur]),
-    OperationModule,
+    forwardRef(() => OperationModule),
     ReservationModule,
     WayPointModule,
     VehicleModule,

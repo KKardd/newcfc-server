@@ -268,6 +268,8 @@ export class OperationRepository implements OperationServiceOutPort {
         id: wayPoint.id,
         operationId: wayPoint.operationId,
         address: wayPoint.address,
+        addressDetail: wayPoint.addressDetail,
+        chauffeurStatus: wayPoint.chauffeurStatus,
         latitude: wayPoint.latitude,
         longitude: wayPoint.longitude,
         order: wayPoint.order,

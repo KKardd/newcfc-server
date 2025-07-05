@@ -3,9 +3,11 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
+import { AssignChauffeurDto } from '@/adapter/inbound/dto/request/admin/assign-chauffeur.dto';
 import { CreateOperationDto } from '@/adapter/inbound/dto/request/operation/create-operation.dto';
 import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/search-operation.dto';
 import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/update-operation.dto';
+import { AssignChauffeurResponseDto } from '@/adapter/inbound/dto/response/admin/assign-chauffeur-response.dto';
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
@@ -55,5 +57,12 @@ export class OperationController {
   @Put(':id/delete')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.operationService.delete(id);
+  }
+
+  @ApiOperation({ summary: '실시간 예약 배차하기' })
+  @ApiSuccessResponse(200, AssignChauffeurResponseDto)
+  @Post('assign-chauffeur')
+  async assignChauffeur(@Body() assignDto: AssignChauffeurDto): Promise<AssignChauffeurResponseDto> {
+    return await this.operationService.assignChauffeur(assignDto);
   }
 }

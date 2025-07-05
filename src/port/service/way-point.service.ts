@@ -40,6 +40,7 @@ export class WayPointService implements WayPointServiceInPort {
     const wayPoint = new WayPoint();
     wayPoint.operationId = createWayPoint.operationId;
     wayPoint.address = createWayPoint.address;
+    wayPoint.addressDetail = createWayPoint.addressDetail || null;
     wayPoint.order = createWayPoint.order;
     wayPoint.status = DataStatus.USED;
 

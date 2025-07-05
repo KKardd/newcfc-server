@@ -252,6 +252,14 @@ export class WayPointInfoDto {
   @Expose()
   address: string;
 
+  @ApiProperty({ description: '상세 주소', required: false })
+  @Expose()
+  addressDetail: string | null;
+
+  @ApiProperty({ description: '기사 상태', enum: ChauffeurStatus, required: false })
+  @Expose()
+  chauffeurStatus: ChauffeurStatus | null;
+
   @ApiProperty({ description: '위도', required: false })
   @Expose()
   latitude: number | null;

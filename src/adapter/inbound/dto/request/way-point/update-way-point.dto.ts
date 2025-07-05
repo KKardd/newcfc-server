@@ -12,6 +12,11 @@ export class UpdateWayPointDto {
   @IsString()
   address?: string;
 
+  @ApiProperty({ description: '상세 주소', required: false })
+  @IsOptional()
+  @IsString()
+  addressDetail?: string;
+
   @ApiProperty({ description: '경유지 순서', required: false })
   @IsOptional()
   @IsNumber()

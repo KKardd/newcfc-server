@@ -2,6 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '@/domain/entity/base.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 
 @Entity('way_point')
 export class WayPoint extends BaseEntity {
@@ -11,8 +12,14 @@ export class WayPoint extends BaseEntity {
   @Column({ name: 'operation_id', type: 'integer', nullable: true })
   operationId: number;
 
+  @Column({ name: 'chauffeur_status', type: 'enum', enum: ChauffeurStatus, nullable: true })
+  chauffeurStatus: ChauffeurStatus | null;
+
   @Column({ type: 'varchar', length: 255, nullable: false })
   address: string;
+
+  @Column({ name: 'address_detail', type: 'varchar', length: 255, nullable: true })
+  addressDetail: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
   latitude: number | null;

@@ -50,7 +50,12 @@ export class AdminRepository implements AdminServiceOutPort {
       });
     }
 
-    queryBuilder.orderBy('admin.id', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+    queryBuilder
+      .orderBy('CASE WHEN admin.status = :usedStatus THEN 1 ELSE 0 END', 'DESC')
+      .addOrderBy('admin.name', 'ASC')
+      .setParameter('usedStatus', DataStatus.USED)
+      .offset(paginationQuery.skip)
+      .limit(paginationQuery.countPerPage);
 
     const admins = await queryBuilder.getRawMany();
     const totalCount = await queryBuilder.getCount();

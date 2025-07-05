@@ -33,6 +33,7 @@ import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-p
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
+import { WayPointServiceOutPort } from '@/port/outbound/way-point-service.out-port';
 
 @Injectable()
 export class ChauffeurService implements ChauffeurServiceInPort {
@@ -43,6 +44,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
     private readonly reservationServiceInPort: ReservationServiceInPort,
     private readonly wayPointServiceInPort: WayPointServiceInPort,
+    private readonly wayPointServiceOutPort: WayPointServiceOutPort,
   ) {}
 
   async search(
@@ -87,6 +89,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     await this.chauffeurServiceOutPort.update(chauffeurId, {
       chauffeurStatus: changeStatusDto.updateStatus,
     });
+
+    // 기사 상태 변경 시 현재 위치의 waypoint에 상태 저장
+    await this.updateWayPointChauffeurStatus(chauffeurId, changeStatusDto.updateStatus);
 
     const response = new ChauffeurStatusChangeResponseDto();
     response.chauffeurStatus = changeStatusDto.updateStatus;
@@ -256,10 +261,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     operationPagination.page = 1;
     operationPagination.countPerPage = 1;
 
-    const operations = await this.operationServiceOutPort.findAll(
-      { chauffeurId, status: DataStatus.REGISTER },
-      operationPagination,
-    );
+    const operations = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
 
     if (operations[1] > 0) {
       const currentTime = new Date();
@@ -269,5 +271,85 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     }
 
     return null;
+  }
+
+  /**
+   * 기사 상태 변경 시 현재 위치의 waypoint에 기사 상태를 저장하는 메서드
+   */
+  private async updateWayPointChauffeurStatus(chauffeurId: number, chauffeurStatus: ChauffeurStatus): Promise<void> {
+    try {
+      // 현재 기사의 진행 중인 operation 조회
+      const currentOperation = await this.getCurrentOperation(chauffeurId);
+
+      if (!currentOperation) {
+        return; // 진행 중인 운행이 없으면 waypoint 업데이트 불필요
+      }
+
+      // 해당 operation의 waypoint들 조회
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const wayPointsResponse = await this.wayPointServiceInPort.search(
+        { operationId: currentOperation.id, status: DataStatus.REGISTER },
+        wayPointPagination,
+      );
+
+      if (wayPointsResponse.data.length === 0) {
+        return; // waypoint가 없으면 업데이트 불필요
+      }
+
+      // waypoint들을 order 순으로 정렬
+      const wayPoints = wayPointsResponse.data.sort((a, b) => a.order - b.order);
+
+      // 기사 상태에 따른 현재 위치 waypoint 찾기
+      let targetWayPointId: number | null = null;
+
+      switch (chauffeurStatus) {
+        case ChauffeurStatus.WAITING_FOR_PASSENGER:
+          // 출발지에 도착 - 첫 번째 waypoint (order=1)
+          const firstWayPoint = wayPoints.find((wp) => wp.order === 1);
+          if (firstWayPoint) {
+            targetWayPointId = firstWayPoint.id;
+          }
+          break;
+
+        case ChauffeurStatus.WAITING_OPERATION:
+          // 경유지에 도착 - 현재 진행 중인 waypoint를 찾아야 함
+          // 여기서는 가장 최근에 업데이트된 waypoint 다음 순서를 사용
+          // 실제 구현에서는 더 정교한 로직이 필요할 수 있음
+          for (let i = 0; i < wayPoints.length; i++) {
+            // 기존에 chauffeurStatus가 없는 waypoint 중 첫 번째를 선택
+            const wayPoint = await this.wayPointServiceOutPort.findById(wayPoints[i].id);
+            if (wayPoint && !wayPoint.chauffeurStatus) {
+              targetWayPointId = wayPoint.id;
+              break;
+            }
+          }
+          break;
+
+        case ChauffeurStatus.OPERATION_COMPLETED:
+          // 운행 완료 - 마지막 waypoint
+          const lastWayPoint = wayPoints[wayPoints.length - 1];
+          if (lastWayPoint) {
+            targetWayPointId = lastWayPoint.id;
+          }
+          break;
+
+        default:
+          // 다른 상태들은 waypoint 업데이트 불필요
+          break;
+      }
+
+      // 대상 waypoint에 기사 상태 업데이트
+      if (targetWayPointId) {
+        await this.wayPointServiceOutPort.update(targetWayPointId, {
+          chauffeurStatus: chauffeurStatus,
+        });
+      }
+    } catch (error) {
+      // waypoint 업데이트 실패 시 로그만 남기고 전체 플로우는 계속 진행
+      console.error('Failed to update waypoint chauffeur status:', error);
+    }
   }
 }

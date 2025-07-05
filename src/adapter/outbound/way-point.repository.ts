@@ -45,6 +45,8 @@ export class WayPointRepository implements WayPointServiceOutPort {
       id: wayPoint.id,
       operationId: wayPoint.operation_id,
       address: wayPoint.address,
+      addressDetail: wayPoint.address_detail,
+      chauffeurStatus: wayPoint.chauffeur_status,
       latitude: wayPoint.latitude,
       longitude: wayPoint.longitude,
       order: wayPoint.order,

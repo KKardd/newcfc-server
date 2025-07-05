@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 
 export class WayPointResponseDto {
   @ApiProperty({ description: '경유지 ID' })
@@ -16,6 +17,14 @@ export class WayPointResponseDto {
   @ApiProperty({ description: '경유지 주소' })
   @Expose()
   address: string;
+
+  @ApiProperty({ description: '상세 주소', required: false })
+  @Expose()
+  addressDetail: string | null;
+
+  @ApiProperty({ description: '기사 상태', enum: ChauffeurStatus, required: false })
+  @Expose()
+  chauffeurStatus: ChauffeurStatus | null;
 
   @ApiProperty({ description: '위도', required: false })
   @Expose()

@@ -59,6 +59,20 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
       });
     }
 
+    // 연도별 필터링
+    if (searchWorkHistory.year) {
+      queryBuilder.andWhere('YEAR(work_history.start_time) = :year', {
+        year: searchWorkHistory.year,
+      });
+    }
+
+    // 월별 필터링
+    if (searchWorkHistory.month) {
+      queryBuilder.andWhere('MONTH(work_history.start_time) = :month', {
+        month: searchWorkHistory.month,
+      });
+    }
+
     if (searchWorkHistory.status) {
       queryBuilder.andWhere('work_history.status = :status', {
         status: searchWorkHistory.status,

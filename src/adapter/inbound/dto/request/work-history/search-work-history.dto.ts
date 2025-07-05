@@ -16,6 +16,18 @@ export class SearchWorkHistoryDto {
   @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
   vehicleId?: number;
 
+  @ApiProperty({ description: '조회할 연도 (예: 2024)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
+  year?: number;
+
+  @ApiProperty({ description: '조회할 월 (1-12)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
+  month?: number;
+
   @ApiProperty({ description: '시작일 (YYYY-MM-DD)', required: false })
   @IsOptional()
   @IsDateString()

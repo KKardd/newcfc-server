@@ -233,18 +233,28 @@ export class OperationRepository implements OperationServiceOutPort {
       // Vehicle 정보
       vehicle:
         operation.vehicle_id && operation.vehicle_number
-          ? {
-              id: operation.vehicle_id,
-              vehicleNumber: operation.vehicle_number,
-              modelName: operation.vehicle_model_name,
-              garageId: operation.vehicle_garage_id,
-              vehicleStatus: operation.vehicle_status,
-              status: operation.vehicle_data_status,
-              createdBy: operation.vehicle_created_by,
-              createdAt: operation.vehicle_created_at,
-              updatedBy: operation.vehicle_updated_by,
-              updatedAt: operation.vehicle_updated_at,
-            }
+          ? (function () {
+              console.log('Vehicle mapping for operation', operation.id, {
+                vehicle_id: operation.vehicle_id,
+                vehicle_number: operation.vehicle_number,
+                vehicle_model_name: operation.vehicle_model_name,
+                vehicle_garage_id: operation.vehicle_garage_id,
+                vehicle_status: operation.vehicle_status,
+                vehicle_data_status: operation.vehicle_data_status,
+              });
+              return {
+                id: operation.vehicle_id,
+                vehicleNumber: operation.vehicle_number,
+                modelName: operation.vehicle_model_name,
+                garageId: operation.vehicle_garage_id,
+                vehicleStatus: operation.vehicle_status,
+                status: operation.vehicle_data_status,
+                createdBy: operation.vehicle_created_by,
+                createdAt: operation.vehicle_created_at,
+                updatedBy: operation.vehicle_updated_by,
+                updatedAt: operation.vehicle_updated_at,
+              };
+            })()
           : null,
       // Garage 정보
       garage: operation.garage_id
@@ -451,18 +461,28 @@ export class OperationRepository implements OperationServiceOutPort {
       // Vehicle 정보
       vehicle:
         operation.vehicle_id && operation.vehicle_number
-          ? {
-              id: operation.vehicle_id,
-              vehicleNumber: operation.vehicle_number,
-              modelName: operation.vehicle_model_name,
-              garageId: operation.vehicle_garage_id,
-              vehicleStatus: operation.vehicle_status,
-              status: operation.vehicle_data_status,
-              createdBy: operation.vehicle_created_by,
-              createdAt: operation.vehicle_created_at,
-              updatedBy: operation.vehicle_updated_by,
-              updatedAt: operation.vehicle_updated_at,
-            }
+          ? (function () {
+              console.log('Vehicle mapping for operation', operation.id, {
+                vehicle_id: operation.vehicle_id,
+                vehicle_number: operation.vehicle_number,
+                vehicle_model_name: operation.vehicle_model_name,
+                vehicle_garage_id: operation.vehicle_garage_id,
+                vehicle_status: operation.vehicle_status,
+                vehicle_data_status: operation.vehicle_data_status,
+              });
+              return {
+                id: operation.vehicle_id,
+                vehicleNumber: operation.vehicle_number,
+                modelName: operation.vehicle_model_name,
+                garageId: operation.vehicle_garage_id,
+                vehicleStatus: operation.vehicle_status,
+                status: operation.vehicle_data_status,
+                createdBy: operation.vehicle_created_by,
+                createdAt: operation.vehicle_created_at,
+                updatedBy: operation.vehicle_updated_by,
+                updatedAt: operation.vehicle_updated_at,
+              };
+            })()
           : null,
       // Garage 정보
       garage:

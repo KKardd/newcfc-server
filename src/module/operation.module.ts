@@ -5,6 +5,11 @@ import { OperationController } from '@/adapter/inbound/controller/operation.cont
 import { OperationRepository } from '@/adapter/outbound/operation.repository';
 import { Operation } from '@/domain/entity/operation.entity';
 import { WayPoint } from '@/domain/entity/way-point.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { Garage } from '@/domain/entity/garage.entity';
+import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
+import { Reservation } from '@/domain/entity/reservation.entity';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { OperationService } from '@/port/service/operation.service';
@@ -14,7 +19,7 @@ import { WayPointModule } from './way-point.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Operation, WayPoint]),
+    TypeOrmModule.forFeature([Operation, WayPoint, Vehicle, Chauffeur, Garage, RealTimeDispatch, Reservation]),
     forwardRef(() => ChauffeurModule),
     ReservationModule,
     WayPointModule,

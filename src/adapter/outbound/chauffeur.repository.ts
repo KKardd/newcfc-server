@@ -8,6 +8,8 @@ import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/sear
 import { AvailableChauffeurDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Garage } from '@/domain/entity/garage.entity';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
@@ -17,6 +19,10 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   constructor(
     @InjectRepository(Chauffeur)
     private readonly repository: Repository<Chauffeur>,
+    @InjectRepository(Vehicle)
+    private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(Garage)
+    private readonly garageRepository: Repository<Garage>,
   ) {}
 
   async findAll(
@@ -25,8 +31,8 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   ): Promise<[ChauffeurResponseDto[], number]> {
     const queryBuilder = this.repository
       .createQueryBuilder('chauffeur')
-      .leftJoin('vehicle', 'vehicle', 'chauffeur.vehicle_id = vehicle.id')
-      .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
+      .leftJoin(Vehicle, 'vehicle', 'chauffeur.vehicle_id = vehicle.id')
+      .leftJoin(Garage, 'garage', 'vehicle.garage_id = garage.id')
       .select('chauffeur.*')
       .addSelect('vehicle.id', 'vehicle_id')
       .addSelect('vehicle.vehicle_number', 'vehicle_number')
@@ -176,8 +182,8 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   async findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<AvailableChauffeurDto[]> {
     const queryBuilder = this.repository
       .createQueryBuilder('chauffeur')
-      .leftJoin('vehicle', 'vehicle', 'chauffeur.vehicle_id = vehicle.id')
-      .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
+      .leftJoin(Vehicle, 'vehicle', 'chauffeur.vehicle_id = vehicle.id')
+      .leftJoin(Garage, 'garage', 'vehicle.garage_id = garage.id')
       .leftJoin('operation', 'operation', 'chauffeur.id = operation.chauffeur_id')
       .select('chauffeur.*')
       .addSelect('vehicle.id', 'vehicle_id')

@@ -44,11 +44,13 @@ export class WayPointRepository implements WayPointServiceOutPort {
     const wayPointsResponse: WayPointResponseDto[] = wayPoints.map((wayPoint) => ({
       id: wayPoint.id,
       operationId: wayPoint.operation_id,
+      name: wayPoint.name,
       address: wayPoint.address,
       addressDetail: wayPoint.address_detail,
       chauffeurStatus: wayPoint.chauffeur_status,
       latitude: wayPoint.latitude,
       longitude: wayPoint.longitude,
+      visitTime: wayPoint.visit_time,
       order: wayPoint.order,
       status: wayPoint.status,
       createdBy: wayPoint.created_by,

@@ -7,5 +7,6 @@ export enum ChauffeurStatus {
   IN_OPERATION = 'IN_OPERATION', // 운행 중
   WAITING_OPERATION = 'WAITING_OPERATION', // 운행 대기 (경유지에 도착한 경우)
   OPERATION_COMPLETED = 'OPERATION_COMPLETED', // 운행 종료
+  PENDING_RECEIPT_INPUT = 'PENDING_RECEIPT_INPUT', // 정보 미기입 (영수증/추가비용 입력 대기)
   PAUSED = 'PAUSED', // 일시정지
 }

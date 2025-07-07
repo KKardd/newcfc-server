@@ -8,6 +8,11 @@ import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/sear
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
 import { WayPoint } from '@/domain/entity/way-point.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { Garage } from '@/domain/entity/garage.entity';
+import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
+import { Reservation } from '@/domain/entity/reservation.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 
@@ -18,6 +23,16 @@ export class OperationRepository implements OperationServiceOutPort {
     private readonly repository: Repository<Operation>,
     @InjectRepository(WayPoint)
     private readonly wayPointRepository: Repository<WayPoint>,
+    @InjectRepository(Vehicle)
+    private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(Chauffeur)
+    private readonly chauffeurRepository: Repository<Chauffeur>,
+    @InjectRepository(Garage)
+    private readonly garageRepository: Repository<Garage>,
+    @InjectRepository(RealTimeDispatch)
+    private readonly realTimeDispatchRepository: Repository<RealTimeDispatch>,
+    @InjectRepository(Reservation)
+    private readonly reservationRepository: Repository<Reservation>,
   ) {}
 
   async findAll(
@@ -26,11 +41,11 @@ export class OperationRepository implements OperationServiceOutPort {
   ): Promise<[OperationResponseDto[], number]> {
     const queryBuilder = this.repository
       .createQueryBuilder('operation')
-      .leftJoin('chauffeur', 'chauffeur', 'operation.chauffeur_id = chauffeur.id')
-      .leftJoin('vehicle', 'vehicle', 'operation.vehicle_id = vehicle.id')
-      .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
-      .leftJoin('real_time_dispatch', 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
-      .leftJoin('reservation', 'reservation', 'operation.id = reservation.operation_id')
+      .leftJoin(Chauffeur, 'chauffeur', 'operation.chauffeur_id = chauffeur.id')
+      .leftJoin(Vehicle, 'vehicle', 'operation.vehicle_id = vehicle.id')
+      .leftJoin(Garage, 'garage', 'vehicle.garage_id = garage.id')
+      .leftJoin(RealTimeDispatch, 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
+      .leftJoin(Reservation, 'reservation', 'operation.id = reservation.operation_id')
       .select('operation.*')
       .addSelect('chauffeur.id', 'chauffeur_id')
       .addSelect('chauffeur.name', 'chauffeur_name')
@@ -303,11 +318,11 @@ export class OperationRepository implements OperationServiceOutPort {
   async findByIdWithDetails(id: number): Promise<OperationResponseDto> {
     const queryBuilder = this.repository
       .createQueryBuilder('operation')
-      .leftJoin('chauffeur', 'chauffeur', 'operation.chauffeur_id = chauffeur.id')
-      .leftJoin('vehicle', 'vehicle', 'operation.vehicle_id = vehicle.id')
-      .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
-      .leftJoin('real_time_dispatch', 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
-      .leftJoin('reservation', 'reservation', 'operation.id = reservation.operation_id')
+      .leftJoin(Chauffeur, 'chauffeur', 'operation.chauffeur_id = chauffeur.id')
+      .leftJoin(Vehicle, 'vehicle', 'operation.vehicle_id = vehicle.id')
+      .leftJoin(Garage, 'garage', 'vehicle.garage_id = garage.id')
+      .leftJoin(RealTimeDispatch, 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
+      .leftJoin(Reservation, 'reservation', 'operation.id = reservation.operation_id')
       .select('operation.*')
       .addSelect('operation.kakao_path', 'kakao_path')
       .addSelect('chauffeur.id', 'chauffeur_id')

@@ -7,6 +7,9 @@ import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchReservationDto } from '@/adapter/inbound/dto/request/reservation/search-reservation.dto';
 import { ReservationResponseDto } from '@/adapter/inbound/dto/response/reservation/reservation-response.dto';
 import { Reservation } from '@/domain/entity/reservation.entity';
+import { Operation } from '@/domain/entity/operation.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 
@@ -15,6 +18,12 @@ export class ReservationRepository implements ReservationServiceOutPort {
   constructor(
     @InjectRepository(Reservation)
     private readonly repository: Repository<Reservation>,
+    @InjectRepository(Operation)
+    private readonly operationRepository: Repository<Operation>,
+    @InjectRepository(Vehicle)
+    private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(Chauffeur)
+    private readonly chauffeurRepository: Repository<Chauffeur>,
   ) {}
 
   async findAll(
@@ -23,28 +32,32 @@ export class ReservationRepository implements ReservationServiceOutPort {
   ): Promise<[ReservationResponseDto[], number]> {
     const queryBuilder = this.repository
       .createQueryBuilder('reservation')
-      .innerJoin('operation', 'operation', 'reservation.operation_id = operation.id')
-      .leftJoin('chauffeur', 'chauffeur', 'operation.chauffeur_id = chauffeur.id')
-      .leftJoin('vehicle', 'vehicle', 'operation.vehicle_id = vehicle.id')
-      .leftJoin('garage', 'garage', 'vehicle.garage_id = garage.id')
-      .leftJoin('real_time_dispatch', 'real_time_dispatch', 'operation.real_time_dispatch_id = real_time_dispatch.id')
+      .leftJoin(Operation, 'operation', 'reservation.operation_id = operation.id')
+      .leftJoin(Vehicle, 'vehicle', 'operation.vehicle_id = vehicle.id')
+      .leftJoin(Chauffeur, 'chauffeur', 'operation.chauffeur_id = chauffeur.id')
       .select('reservation.*')
       .addSelect('operation.id', 'operation_id')
       .addSelect('operation.type', 'operation_type')
-      .addSelect('operation.is_repeated', 'operation_is_repeated')
       .addSelect('operation.start_time', 'operation_start_time')
       .addSelect('operation.end_time', 'operation_end_time')
       .addSelect('operation.distance', 'operation_distance')
       .addSelect('operation.chauffeur_id', 'operation_chauffeur_id')
       .addSelect('operation.vehicle_id', 'operation_vehicle_id')
-      .addSelect('operation.real_time_dispatch_id', 'operation_real_time_dispatch_id')
-      .addSelect('operation.additional_costs', 'operation_additional_costs')
-      .addSelect('operation.receipt_image_urls', 'operation_receipt_image_urls')
       .addSelect('operation.status', 'operation_status')
       .addSelect('operation.created_by', 'operation_created_by')
       .addSelect('operation.created_at', 'operation_created_at')
       .addSelect('operation.updated_by', 'operation_updated_by')
       .addSelect('operation.updated_at', 'operation_updated_at')
+      .addSelect('vehicle.id', 'vehicle_id')
+      .addSelect('vehicle.vehicle_number', 'vehicle_number')
+      .addSelect('vehicle.model_name', 'vehicle_model_name')
+      .addSelect('vehicle.garage_id', 'vehicle_garage_id')
+      .addSelect('vehicle.vehicle_status', 'vehicle_status')
+      .addSelect('vehicle.status', 'vehicle_data_status')
+      .addSelect('vehicle.created_by', 'vehicle_created_by')
+      .addSelect('vehicle.created_at', 'vehicle_created_at')
+      .addSelect('vehicle.updated_by', 'vehicle_updated_by')
+      .addSelect('vehicle.updated_at', 'vehicle_updated_at')
       .addSelect('chauffeur.id', 'chauffeur_id')
       .addSelect('chauffeur.name', 'chauffeur_name')
       .addSelect('chauffeur.phone', 'chauffeur_phone')
@@ -59,36 +72,6 @@ export class ReservationRepository implements ReservationServiceOutPort {
       .addSelect('chauffeur.created_at', 'chauffeur_created_at')
       .addSelect('chauffeur.updated_by', 'chauffeur_updated_by')
       .addSelect('chauffeur.updated_at', 'chauffeur_updated_at')
-      .addSelect('vehicle.id', 'vehicle_id')
-      .addSelect('vehicle.vehicle_number', 'vehicle_number')
-      .addSelect('vehicle.model_name', 'vehicle_model_name')
-      .addSelect('vehicle.garage_id', 'vehicle_garage_id')
-      .addSelect('vehicle.vehicle_status', 'vehicle_status')
-      .addSelect('vehicle.status', 'vehicle_data_status')
-      .addSelect('vehicle.created_by', 'vehicle_created_by')
-      .addSelect('vehicle.created_at', 'vehicle_created_at')
-      .addSelect('vehicle.updated_by', 'vehicle_updated_by')
-      .addSelect('vehicle.updated_at', 'vehicle_updated_at')
-      .addSelect('garage.id', 'garage_id')
-      .addSelect('garage.name', 'garage_name')
-      .addSelect('garage.address', 'garage_address')
-      .addSelect('garage.status', 'garage_status')
-      .addSelect('garage.created_by', 'garage_created_by')
-      .addSelect('garage.created_at', 'garage_created_at')
-      .addSelect('garage.updated_by', 'garage_updated_by')
-      .addSelect('garage.updated_at', 'garage_updated_at')
-      .addSelect('real_time_dispatch.id', 'dispatch_id')
-      .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
-      .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
-      .addSelect('real_time_dispatch.departure_address_detail', 'dispatch_departure_address_detail')
-      .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
-      .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
-      .addSelect('real_time_dispatch.destination_address_detail', 'dispatch_destination_address_detail')
-      .addSelect('real_time_dispatch.status', 'dispatch_status')
-      .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
-      .addSelect('real_time_dispatch.created_at', 'dispatch_created_at')
-      .addSelect('real_time_dispatch.updated_by', 'dispatch_updated_by')
-      .addSelect('real_time_dispatch.updated_at', 'dispatch_updated_at')
       .where('reservation.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
 
     if (searchReservation.operationId) {

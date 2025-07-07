@@ -148,8 +148,13 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         await this.handleWaitingOperation(chauffeurId, response);
         break;
 
+      case ChauffeurStatus.PENDING_RECEIPT_INPUT:
+        // 운행 중 -> 정보 미기입: 영수증/추가비용 입력 대기 상태로 전환
+        await this.handlePendingReceiptInput(chauffeurId, response);
+        break;
+
       case ChauffeurStatus.OPERATION_COMPLETED:
-        // 운행 중 -> 운행 종료: operation.endTime 설정 및 운행시간 계산
+        // 정보 미기입 -> 운행 종료: operation.endTime 설정 및 운행시간 계산 (operation update 완료 후)
         await this.handleOperationCompleted(chauffeurId, response);
         break;
     }
@@ -411,18 +416,44 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     }
   }
 
+  private async handlePendingReceiptInput(chauffeurId: number, response: ChauffeurStatusChangeResponseDto): Promise<void> {
+    // 운행 중에서 정보 미기입 상태로 전환 시 endTime 설정
+    const currentOperation = await this.getCurrentOperation(chauffeurId);
+    if (currentOperation && currentOperation.startTime) {
+      const endTime = new Date();
+      await this.operationServiceOutPort.update(currentOperation.id, {
+        endTime,
+      });
+
+      const operationTimeMs = endTime.getTime() - currentOperation.startTime.getTime();
+      response.operationTimeMinutes = Math.floor(operationTimeMs / (1000 * 60));
+    }
+
+    // 이 상태에서는 클라이언트가 영수증 및 추가비용 정보를 입력할 수 있음
+    // operation update API 호출 시 자동으로 OPERATION_COMPLETED 상태로 전환됨
+  }
+
   private async getCurrentOperation(chauffeurId: number) {
     const operationPagination = new PaginationQuery();
     operationPagination.page = 1;
-    operationPagination.countPerPage = 1;
+    operationPagination.countPerPage = 10; // 충분한 수의 운행을 조회
 
     const operations = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
 
     if (operations[1] > 0) {
-      const currentTime = new Date();
-      const validOperations = operations[0].filter((op) => !op.startTime || op.startTime >= currentTime || !op.endTime);
+      // 현재 진행 중인 운행: endTime이 없고 기사에게 배정된 운행
+      const currentOperations = operations[0].filter((op) => !op.endTime);
 
-      return validOperations.length > 0 ? validOperations[0] : null;
+      // 가장 최근에 시작된 운행을 반환 (startTime 기준으로 정렬)
+      if (currentOperations.length > 0) {
+        currentOperations.sort((a, b) => {
+          if (!a.startTime && !b.startTime) return 0;
+          if (!a.startTime) return 1; // startTime이 없는 것은 뒤로
+          if (!b.startTime) return -1;
+          return b.startTime.getTime() - a.startTime.getTime(); // 내림차순 (최신 순)
+        });
+        return currentOperations[0];
+      }
     }
 
     return null;

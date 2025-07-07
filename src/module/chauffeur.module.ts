@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChauffeurController } from '@/adapter/inbound/controller/chauffeur.controller';
 import { ChauffeurRepository } from '@/adapter/outbound/chauffeur.repository';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Garage } from '@/domain/entity/garage.entity';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { ChauffeurService } from '@/port/service/chauffeur.service';
@@ -16,7 +18,7 @@ import { WorkHistoryModule } from './work-history.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Chauffeur]),
+    TypeOrmModule.forFeature([Chauffeur, Vehicle, Garage]),
     forwardRef(() => OperationModule),
     ReservationModule,
     WayPointModule,

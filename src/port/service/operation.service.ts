@@ -13,6 +13,7 @@ import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/o
 import { Operation } from '@/domain/entity/operation.entity';
 import { Reservation } from '@/domain/entity/reservation.entity';
 import { WayPoint } from '@/domain/entity/way-point.entity';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationType } from '@/domain/enum/operation-type.enum';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
@@ -98,7 +99,28 @@ export class OperationService implements OperationServiceInPort {
   }
 
   async update(id: number, updateOperation: UpdateOperationDto): Promise<void> {
+    // 1. Operation 업데이트 실행
     await this.operationServiceOutPort.update(id, updateOperation);
+
+    // 2. 영수증이나 추가비용이 업데이트되었는지 확인
+    const hasReceiptUpdate = updateOperation.receiptImageUrls && updateOperation.receiptImageUrls.length > 0;
+    const hasAdditionalCostsUpdate = updateOperation.additionalCosts && Object.keys(updateOperation.additionalCosts).length > 0;
+
+    // 3. 영수증이나 추가비용이 업데이트된 경우, 기사 상태 확인 및 변경
+    if (hasReceiptUpdate || hasAdditionalCostsUpdate) {
+      const operation = await this.operationServiceOutPort.findById(id);
+
+      if (operation.chauffeurId) {
+        const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
+
+        // 기사가 정보 미기입 상태인 경우 운행 완료 상태로 변경
+        if (chauffeur.chauffeurStatus === ChauffeurStatus.PENDING_RECEIPT_INPUT) {
+          await this.chauffeurServiceOutPort.update(operation.chauffeurId, {
+            chauffeurStatus: ChauffeurStatus.OPERATION_COMPLETED,
+          });
+        }
+      }
+    }
   }
 
   async delete(id: number): Promise<void> {

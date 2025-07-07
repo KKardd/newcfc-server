@@ -191,138 +191,148 @@ export class OperationRepository implements OperationServiceOutPort {
     console.log('operations', operations);
     console.log('--------------------------------');
 
-    const operationsResponse: OperationResponseDto[] = operations.map((operation) => ({
-      id: operation.id,
-      type: operation.type,
-      isRepeated: operation.is_repeated,
-      startTime: operation.start_time,
-      endTime: operation.end_time,
-      distance: operation.distance,
-      chauffeurId: operation.chauffeur_id,
-      chauffeurName: operation.chauffeur_name || null,
-      chauffeurPhone: operation.chauffeur_phone || null,
-      passengerCount: operation.reservation_passenger_count || null,
-      vehicleId: operation.vehicle_id,
-      realTimeDispatchId: operation.real_time_dispatch_id,
-      additionalCosts: operation.additional_costs,
-      receiptImageUrls: operation.receipt_image_urls,
-      status: operation.status,
-      createdBy: operation.created_by,
-      createdAt: operation.created_at,
-      updatedBy: operation.updated_by,
-      updatedAt: operation.updated_at,
-      // Chauffeur 정보
-      chauffeur: operation.chauffeur_id
-        ? {
-            id: operation.chauffeur_id,
-            name: operation.chauffeur_name,
-            phone: operation.chauffeur_phone,
-            birthDate: operation.chauffeur_birth_date,
-            profileImageUrl: operation.chauffeur_profile_image_url,
-            type: operation.chauffeur_type,
-            chauffeurStatus: operation.chauffeur_status,
-            vehicleId: operation.chauffeur_vehicle_id,
-            role: operation.chauffeur_role,
-            status: operation.chauffeur_data_status,
-            createdBy: operation.chauffeur_created_by,
-            createdAt: operation.chauffeur_created_at,
-            updatedBy: operation.chauffeur_updated_by,
-            updatedAt: operation.chauffeur_updated_at,
-          }
-        : null,
-      // Vehicle 정보
-      vehicle:
-        operation.vehicle_id && operation.vehicle_number
-          ? (function () {
-              console.log('Vehicle mapping for operation', operation.id, {
-                vehicle_id: operation.vehicle_id,
-                vehicle_number: operation.vehicle_number,
-                vehicle_model_name: operation.vehicle_model_name,
-                vehicle_garage_id: operation.vehicle_garage_id,
-                vehicle_status: operation.vehicle_status,
-                vehicle_data_status: operation.vehicle_data_status,
-              });
-              return {
-                id: operation.vehicle_id,
-                vehicleNumber: operation.vehicle_number,
-                modelName: operation.vehicle_model_name,
-                garageId: operation.vehicle_garage_id,
-                vehicleStatus: operation.vehicle_status,
-                status: operation.vehicle_data_status,
-                createdBy: operation.vehicle_created_by,
-                createdAt: operation.vehicle_created_at,
-                updatedBy: operation.vehicle_updated_by,
-                updatedAt: operation.vehicle_updated_at,
-              };
-            })()
+    const operationsResponse: OperationResponseDto[] = operations.map((operation) => {
+      console.log('Processing operation', operation.id, {
+        vehicle_id: operation.vehicle_id,
+        vehicle_number: operation.vehicle_number,
+        typeof_vehicle_id: typeof operation.vehicle_id,
+        typeof_vehicle_number: typeof operation.vehicle_number,
+        boolean_check: !!(operation.vehicle_id && operation.vehicle_number),
+      });
+
+      return {
+        id: operation.id,
+        type: operation.type,
+        isRepeated: operation.is_repeated,
+        startTime: operation.start_time,
+        endTime: operation.end_time,
+        distance: operation.distance,
+        chauffeurId: operation.chauffeur_id,
+        chauffeurName: operation.chauffeur_name || null,
+        chauffeurPhone: operation.chauffeur_phone || null,
+        passengerCount: operation.reservation_passenger_count || null,
+        vehicleId: operation.vehicle_id,
+        realTimeDispatchId: operation.real_time_dispatch_id,
+        additionalCosts: operation.additional_costs,
+        receiptImageUrls: operation.receipt_image_urls,
+        status: operation.status,
+        createdBy: operation.created_by,
+        createdAt: operation.created_at,
+        updatedBy: operation.updated_by,
+        updatedAt: operation.updated_at,
+        // Chauffeur 정보
+        chauffeur: operation.chauffeur_id
+          ? {
+              id: operation.chauffeur_id,
+              name: operation.chauffeur_name,
+              phone: operation.chauffeur_phone,
+              birthDate: operation.chauffeur_birth_date,
+              profileImageUrl: operation.chauffeur_profile_image_url,
+              type: operation.chauffeur_type,
+              chauffeurStatus: operation.chauffeur_status,
+              vehicleId: operation.chauffeur_vehicle_id,
+              role: operation.chauffeur_role,
+              status: operation.chauffeur_data_status,
+              createdBy: operation.chauffeur_created_by,
+              createdAt: operation.chauffeur_created_at,
+              updatedBy: operation.chauffeur_updated_by,
+              updatedAt: operation.chauffeur_updated_at,
+            }
           : null,
-      // Garage 정보
-      garage: operation.garage_id
-        ? {
-            id: operation.garage_id,
-            name: operation.garage_name,
-            address: operation.garage_address,
-            status: operation.garage_status,
-            createdBy: operation.garage_created_by,
-            createdAt: operation.garage_created_at,
-            updatedBy: operation.garage_updated_by,
-            updatedAt: operation.garage_updated_at,
-          }
-        : null,
-      // RealTimeDispatch 정보
-      realTimeDispatch: operation.real_time_dispatch_id
-        ? {
-            id: operation.dispatch_id,
-            departureName: operation.dispatch_departure_name,
-            departureAddress: operation.dispatch_departure_address,
-            departureAddressDetail: operation.dispatch_departure_address_detail,
-            destinationName: operation.dispatch_destination_name,
-            destinationAddress: operation.dispatch_destination_address,
-            destinationAddressDetail: operation.dispatch_destination_address_detail,
-            status: operation.dispatch_status,
-            createdBy: operation.dispatch_created_by,
-            createdAt: operation.dispatch_created_at,
-            updatedBy: operation.dispatch_updated_by,
-            updatedAt: operation.dispatch_updated_at,
-          }
-        : null,
-      // Reservation 정보 (새로 추가)
-      reservation: operation.reservation_id
-        ? {
-            id: operation.reservation_id,
-            operationId: operation.reservation_operation_id,
-            passengerName: operation.reservation_passenger_name,
-            passengerPhone: operation.reservation_passenger_phone,
-            passengerEmail: operation.reservation_passenger_email,
-            passengerCount: operation.reservation_passenger_count,
-            safetyPhone: operation.reservation_safety_phone,
-            memo: operation.reservation_memo,
-            status: operation.reservation_status,
-            createdBy: operation.reservation_created_by,
-            createdAt: operation.reservation_created_at,
-            updatedBy: operation.reservation_updated_by,
-            updatedAt: operation.reservation_updated_at,
-          }
-        : null,
-      // WayPoints 정보
-      wayPoints: (wayPointsByOperation[operation.id] || []).map((wayPoint) => ({
-        id: wayPoint.id,
-        operationId: wayPoint.operationId,
-        name: wayPoint.name,
-        address: wayPoint.address,
-        addressDetail: wayPoint.addressDetail,
-        chauffeurStatus: wayPoint.chauffeurStatus,
-        latitude: wayPoint.latitude,
-        longitude: wayPoint.longitude,
-        visitTime: wayPoint.visitTime,
-        order: wayPoint.order,
-        status: wayPoint.status,
-        createdBy: wayPoint.createdBy,
-        createdAt: wayPoint.createdAt,
-        updatedBy: wayPoint.updatedBy,
-        updatedAt: wayPoint.updatedAt,
-      })),
-    }));
+        // Vehicle 정보
+        vehicle:
+          operation.vehicle_id && operation.vehicle_number
+            ? (function () {
+                console.log('Vehicle mapping for operation', operation.id, {
+                  vehicle_id: operation.vehicle_id,
+                  vehicle_number: operation.vehicle_number,
+                  vehicle_model_name: operation.vehicle_model_name,
+                  vehicle_garage_id: operation.vehicle_garage_id,
+                  vehicle_status: operation.vehicle_status,
+                  vehicle_data_status: operation.vehicle_data_status,
+                });
+                return {
+                  id: operation.vehicle_id,
+                  vehicleNumber: operation.vehicle_number,
+                  modelName: operation.vehicle_model_name,
+                  garageId: operation.vehicle_garage_id,
+                  vehicleStatus: operation.vehicle_status,
+                  status: operation.vehicle_data_status,
+                  createdBy: operation.vehicle_created_by,
+                  createdAt: operation.vehicle_created_at,
+                  updatedBy: operation.vehicle_updated_by,
+                  updatedAt: operation.vehicle_updated_at,
+                };
+              })()
+            : null,
+        // Garage 정보
+        garage: operation.garage_id
+          ? {
+              id: operation.garage_id,
+              name: operation.garage_name,
+              address: operation.garage_address,
+              status: operation.garage_status,
+              createdBy: operation.garage_created_by,
+              createdAt: operation.garage_created_at,
+              updatedBy: operation.garage_updated_by,
+              updatedAt: operation.garage_updated_at,
+            }
+          : null,
+        // RealTimeDispatch 정보
+        realTimeDispatch: operation.real_time_dispatch_id
+          ? {
+              id: operation.dispatch_id,
+              departureName: operation.dispatch_departure_name,
+              departureAddress: operation.dispatch_departure_address,
+              departureAddressDetail: operation.dispatch_departure_address_detail,
+              destinationName: operation.dispatch_destination_name,
+              destinationAddress: operation.dispatch_destination_address,
+              destinationAddressDetail: operation.dispatch_destination_address_detail,
+              status: operation.dispatch_status,
+              createdBy: operation.dispatch_created_by,
+              createdAt: operation.dispatch_created_at,
+              updatedBy: operation.dispatch_updated_by,
+              updatedAt: operation.dispatch_updated_at,
+            }
+          : null,
+        // Reservation 정보 (새로 추가)
+        reservation: operation.reservation_id
+          ? {
+              id: operation.reservation_id,
+              operationId: operation.reservation_operation_id,
+              passengerName: operation.reservation_passenger_name,
+              passengerPhone: operation.reservation_passenger_phone,
+              passengerEmail: operation.reservation_passenger_email,
+              passengerCount: operation.reservation_passenger_count,
+              safetyPhone: operation.reservation_safety_phone,
+              memo: operation.reservation_memo,
+              status: operation.reservation_status,
+              createdBy: operation.reservation_created_by,
+              createdAt: operation.reservation_created_at,
+              updatedBy: operation.reservation_updated_by,
+              updatedAt: operation.reservation_updated_at,
+            }
+          : null,
+        // WayPoints 정보
+        wayPoints: (wayPointsByOperation[operation.id] || []).map((wayPoint) => ({
+          id: wayPoint.id,
+          operationId: wayPoint.operationId,
+          name: wayPoint.name,
+          address: wayPoint.address,
+          addressDetail: wayPoint.addressDetail,
+          chauffeurStatus: wayPoint.chauffeurStatus,
+          latitude: wayPoint.latitude,
+          longitude: wayPoint.longitude,
+          visitTime: wayPoint.visitTime,
+          order: wayPoint.order,
+          status: wayPoint.status,
+          createdBy: wayPoint.createdBy,
+          createdAt: wayPoint.createdAt,
+          updatedBy: wayPoint.updatedBy,
+          updatedAt: wayPoint.updatedAt,
+        })),
+      };
+    });
 
     return [operationsResponse, totalCount];
   }

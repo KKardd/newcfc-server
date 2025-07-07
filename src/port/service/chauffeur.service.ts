@@ -35,6 +35,12 @@ import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port'
 import { classTransformDefaultOptions } from '@/validate/serialization';
 import { WayPointServiceOutPort } from '@/port/outbound/way-point-service.out-port';
 import { WorkHistoryService } from '@/port/service/work-history.service';
+import {
+  NearestReservationResponseDto,
+  NextOperationDto,
+  NextReservationDto,
+  NextWayPointDto,
+} from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
 
 @Injectable()
 export class ChauffeurService implements ChauffeurServiceInPort {
@@ -211,6 +217,112 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         response.departureAddress = null;
         response.destinationAddress = null;
       }
+    }
+
+    return response;
+  }
+
+  async getMyNearestReservation(chauffeurId: number): Promise<NearestReservationResponseDto | null> {
+    // 기사에게 할당된 모든 미래 운행 조회
+    const operationPagination = new PaginationQuery();
+    operationPagination.page = 1;
+    operationPagination.countPerPage = 100; // 충분한 수의 운행을 조회
+
+    const [operations] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
+
+    if (operations.length === 0) {
+      return null;
+    }
+
+    const currentTime = new Date();
+
+    // 미래의 운행들만 필터링 (시작 시간이 없거나, 시작 시간이 현재보다 미래인 것들)
+    const futureOperations = operations.filter((op) => !op.startTime || op.startTime > currentTime);
+
+    if (futureOperations.length === 0) {
+      return null;
+    }
+
+    // 시작 시간 기준으로 정렬 (가장 빠른 것이 첫 번째)
+    const sortedOperations = futureOperations.sort((a, b) => {
+      if (!a.startTime && !b.startTime) return 0;
+      if (!a.startTime) return 1; // startTime이 없는 것은 뒤로
+      if (!b.startTime) return -1;
+      return a.startTime.getTime() - b.startTime.getTime();
+    });
+
+    const nearestOperation = sortedOperations[0];
+
+    // 응답 DTO 구성
+    const response = new NearestReservationResponseDto();
+
+    // Operation 정보
+    response.operation = plainToInstance(
+      NextOperationDto,
+      {
+        id: nearestOperation.id,
+        type: nearestOperation.type,
+        startTime: nearestOperation.startTime,
+        endTime: nearestOperation.endTime,
+        minutesUntilStart: nearestOperation.startTime
+          ? Math.floor((nearestOperation.startTime.getTime() - currentTime.getTime()) / (1000 * 60))
+          : null,
+      },
+      classTransformDefaultOptions,
+    );
+
+    // 예약 정보 조회 (일반 예약인 경우)
+    if (nearestOperation.type === OperationType.REGULAR) {
+      try {
+        // operationId로 예약 검색
+        const reservationPagination = new PaginationQuery();
+        reservationPagination.page = 1;
+        reservationPagination.countPerPage = 1;
+
+        const reservations = await this.reservationServiceInPort.search(
+          { operationId: nearestOperation.id },
+          reservationPagination,
+        );
+
+        if (reservations.data.length > 0) {
+          response.reservation = plainToInstance(NextReservationDto, reservations.data[0], classTransformDefaultOptions);
+        } else {
+          response.reservation = null;
+        }
+      } catch (error) {
+        response.reservation = null;
+      }
+    } else {
+      response.reservation = null;
+    }
+
+    // 경유지 정보 조회
+    try {
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const wayPoints = await this.wayPointServiceInPort.search({ operationId: nearestOperation.id }, wayPointPagination);
+      response.wayPoints = wayPoints.data
+        .sort((a, b) => a.order - b.order)
+        .map((wp) => plainToInstance(NextWayPointDto, wp, classTransformDefaultOptions));
+    } catch (error) {
+      response.wayPoints = [];
+    }
+
+    // 실시간 배차 정보 조회 (실시간 배차인 경우)
+    if (nearestOperation.type === OperationType.REALTIME && nearestOperation.realTimeDispatchId) {
+      try {
+        const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(nearestOperation.realTimeDispatchId);
+        response.departureAddress = realTimeDispatch.departureAddress;
+        response.destinationAddress = realTimeDispatch.destinationAddress;
+      } catch (error) {
+        response.departureAddress = null;
+        response.destinationAddress = null;
+      }
+    } else {
+      response.departureAddress = null;
+      response.destinationAddress = null;
     }
 
     return response;

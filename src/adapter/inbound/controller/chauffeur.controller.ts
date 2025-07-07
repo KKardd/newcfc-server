@@ -12,6 +12,7 @@ import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chau
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
 import { CurrentOperationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
+import { NearestReservationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
@@ -97,5 +98,13 @@ export class ChauffeurController {
   @Get('me/current-operation')
   async getMyCurrentOperation(@UserToken() user: UserAccessTokenPayload): Promise<CurrentOperationResponseDto | null> {
     return await this.chauffeurService.getMyCurrentOperation(user.userId);
+  }
+
+  @ApiOperation({ summary: '내 가장 가까운 예약 조회' })
+  @ApiSuccessResponse(200, NearestReservationResponseDto)
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Get('me/nearest-reservation')
+  async getMyNearestReservation(@UserToken() user: UserAccessTokenPayload): Promise<NearestReservationResponseDto | null> {
+    return await this.chauffeurService.getMyNearestReservation(user.userId);
   }
 }

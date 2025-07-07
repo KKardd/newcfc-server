@@ -9,6 +9,7 @@ import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chau
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
 import { CurrentOperationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
+import { NearestReservationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
 
 export abstract class ChauffeurServiceInPort {
   abstract search(
@@ -32,4 +33,6 @@ export abstract class ChauffeurServiceInPort {
   abstract getMyAssignedVehicle(chauffeurId: number): Promise<AssignedVehicleResponseDto | null>;
 
   abstract getMyCurrentOperation(chauffeurId: number): Promise<CurrentOperationResponseDto | null>;
+
+  abstract getMyNearestReservation(chauffeurId: number): Promise<NearestReservationResponseDto | null>;
 }

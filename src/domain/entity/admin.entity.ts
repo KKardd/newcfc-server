@@ -25,6 +25,9 @@ export class Admin extends BaseEntity {
   @Column({ type: 'enum', enum: UserRoleType, default: UserRoleType.SUB_ADMIN })
   role: UserRoleType;
 
+  @Column({ type: 'boolean', default: false })
+  approved: boolean;
+
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
 }

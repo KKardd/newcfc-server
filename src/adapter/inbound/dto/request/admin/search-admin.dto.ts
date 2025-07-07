@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
@@ -25,6 +25,11 @@ export class SearchAdminDto {
   @IsOptional()
   @IsEnum(UserRoleType)
   role?: UserRoleType;
+
+  @ApiProperty({ description: '승인 여부', required: false })
+  @IsOptional()
+  @IsBoolean()
+  approved?: boolean;
 
   @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()

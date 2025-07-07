@@ -8,6 +8,7 @@ import { AdminLoginDto, ChauffeurLoginDto } from '@/adapter/inbound/dto/request/
 import { ResponseTokenDto } from '@/adapter/inbound/dto/response/response-token.dto';
 import { Admin } from '@/domain/entity/admin.entity';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 import { TokenProvider } from '@/security/jwt/token.provider';
 
 @Injectable()
@@ -22,7 +23,7 @@ export class AuthService {
 
   async adminLogin(loginDto: AdminLoginDto): Promise<ResponseTokenDto> {
     const admin = await this.adminRepository.findOne({
-      where: { email: loginDto.email },
+      where: { email: loginDto.email, status: DataStatus.REGISTER },
     });
 
     if (!admin) {
@@ -32,6 +33,10 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(loginDto.password, admin.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('잘못된 로그인 정보입니다.');
+    }
+
+    if (!admin.approved) {
+      throw new UnauthorizedException('관리자 승인이 필요합니다. 관리자에게 문의하세요.');
     }
 
     return this.tokenProvider.createToken(admin);

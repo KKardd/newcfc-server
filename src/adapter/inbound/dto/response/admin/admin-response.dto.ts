@@ -26,6 +26,10 @@ export class AdminResponseDto {
   @Expose()
   role: UserRoleType;
 
+  @ApiProperty({ description: '승인 여부' })
+  @Expose()
+  approved: boolean;
+
   @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;

@@ -5,6 +5,7 @@ import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin
 import { SearchAvailableChauffeursDto } from '@/adapter/inbound/dto/request/admin/search-available-chauffeurs.dto';
 import { UpdateAdminDto } from '@/adapter/inbound/dto/request/admin/update-admin.dto';
 import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
+import { AdminProfileResponseDto } from '@/adapter/inbound/dto/response/admin/admin-profile-response.dto';
 import { AvailableChauffeursResponseDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
 
 export abstract class AdminServiceInPort {
@@ -19,4 +20,6 @@ export abstract class AdminServiceInPort {
   abstract delete(id: number): Promise<void>;
 
   abstract getAvailableChauffeurs(searchDto: SearchAvailableChauffeursDto): Promise<AvailableChauffeursResponseDto>;
+
+  abstract getMyProfile(adminId: number): Promise<AdminProfileResponseDto>;
 }

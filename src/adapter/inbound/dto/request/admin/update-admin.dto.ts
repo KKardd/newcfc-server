@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 
@@ -28,4 +28,9 @@ export class UpdateAdminDto {
   @IsOptional()
   @IsEnum(UserRoleType)
   role?: UserRoleType;
+
+  @ApiProperty({ description: '승인 여부', required: false })
+  @IsOptional()
+  @IsBoolean()
+  approved?: boolean;
 }

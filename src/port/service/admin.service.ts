@@ -10,6 +10,7 @@ import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin
 import { SearchAvailableChauffeursDto } from '@/adapter/inbound/dto/request/admin/search-available-chauffeurs.dto';
 import { UpdateAdminDto } from '@/adapter/inbound/dto/request/admin/update-admin.dto';
 import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
+import { AdminProfileResponseDto } from '@/adapter/inbound/dto/response/admin/admin-profile-response.dto';
 import { AvailableChauffeursResponseDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
 import { Admin } from '@/domain/entity/admin.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
@@ -44,10 +45,14 @@ export class AdminService implements AdminServiceInPort {
   async create(createAdmin: CreateAdminDto): Promise<void> {
     const admin = plainToInstance(Admin, createAdmin);
     admin.password = await bcrypt.hash(admin.password, 10);
+    admin.approved = false;
     await this.adminServiceOutPort.save(admin);
   }
 
   async update(id: number, updateAdmin: UpdateAdminDto): Promise<void> {
+    if (updateAdmin.password) {
+      updateAdmin.password = await bcrypt.hash(updateAdmin.password, 10);
+    }
     await this.adminServiceOutPort.update(id, updateAdmin);
   }
 
@@ -69,5 +74,10 @@ export class AdminService implements AdminServiceInPort {
       },
       classTransformDefaultOptions,
     );
+  }
+
+  async getMyProfile(adminId: number): Promise<AdminProfileResponseDto> {
+    const admin = await this.adminServiceOutPort.findById(adminId);
+    return plainToInstance(AdminProfileResponseDto, admin, classTransformDefaultOptions);
   }
 }

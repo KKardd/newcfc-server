@@ -44,6 +44,12 @@ export class AdminRepository implements AdminServiceOutPort {
       });
     }
 
+    if (searchAdmin.approved !== undefined) {
+      queryBuilder.andWhere('admin.approved = :approved', {
+        approved: searchAdmin.approved,
+      });
+    }
+
     if (searchAdmin.status) {
       queryBuilder.andWhere('admin.status = :status', {
         status: searchAdmin.status,
@@ -66,6 +72,7 @@ export class AdminRepository implements AdminServiceOutPort {
       name: admin.name,
       phone: admin.phone,
       role: admin.role,
+      approved: admin.approved,
       status: admin.status,
       createdAt: admin.created_at,
       updatedAt: admin.updated_at,

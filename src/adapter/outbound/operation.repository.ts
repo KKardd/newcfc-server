@@ -185,6 +185,11 @@ export class OperationRepository implements OperationServiceOutPort {
       },
       {} as Record<number, WayPoint[]>,
     );
+    console.log('--------------------------------');
+    console.log('wayPointsByOperation', wayPointsByOperation);
+    console.log('--------------------------------');
+    console.log('operations', operations);
+    console.log('--------------------------------');
 
     const operationsResponse: OperationResponseDto[] = operations.map((operation) => ({
       id: operation.id,
@@ -226,20 +231,21 @@ export class OperationRepository implements OperationServiceOutPort {
           }
         : null,
       // Vehicle 정보
-      vehicle: operation.vehicle_id
-        ? {
-            id: operation.vehicle_id,
-            vehicleNumber: operation.vehicle_number,
-            modelName: operation.vehicle_model_name,
-            garageId: operation.vehicle_garage_id,
-            vehicleStatus: operation.vehicle_status,
-            status: operation.vehicle_data_status,
-            createdBy: operation.vehicle_created_by,
-            createdAt: operation.vehicle_created_at,
-            updatedBy: operation.vehicle_updated_by,
-            updatedAt: operation.vehicle_updated_at,
-          }
-        : null,
+      vehicle:
+        operation.vehicle_id && operation.vehicle_number
+          ? {
+              id: operation.vehicle_id,
+              vehicleNumber: operation.vehicle_number,
+              modelName: operation.vehicle_model_name,
+              garageId: operation.vehicle_garage_id,
+              vehicleStatus: operation.vehicle_status,
+              status: operation.vehicle_data_status,
+              createdBy: operation.vehicle_created_by,
+              createdAt: operation.vehicle_created_at,
+              updatedBy: operation.vehicle_updated_by,
+              updatedAt: operation.vehicle_updated_at,
+            }
+          : null,
       // Garage 정보
       garage: operation.garage_id
         ? {
@@ -423,52 +429,55 @@ export class OperationRepository implements OperationServiceOutPort {
       updatedBy: operation.updated_by,
       updatedAt: operation.updated_at,
       // Chauffeur 정보
-      chauffeur: operation.chauffeur_id
-        ? {
-            id: operation.chauffeur_id,
-            name: operation.chauffeur_name,
-            phone: operation.chauffeur_phone,
-            birthDate: operation.chauffeur_birth_date,
-            profileImageUrl: operation.chauffeur_profile_image_url,
-            type: operation.chauffeur_type,
-            chauffeurStatus: operation.chauffeur_status,
-            vehicleId: operation.chauffeur_vehicle_id,
-            role: operation.chauffeur_role,
-            status: operation.chauffeur_data_status,
-            createdBy: operation.chauffeur_created_by,
-            createdAt: operation.chauffeur_created_at,
-            updatedBy: operation.chauffeur_updated_by,
-            updatedAt: operation.chauffeur_updated_at,
-          }
-        : null,
+      chauffeur:
+        operation.chauffeur_id && operation.chauffeur_name
+          ? {
+              id: operation.chauffeur_id,
+              name: operation.chauffeur_name,
+              phone: operation.chauffeur_phone,
+              birthDate: operation.chauffeur_birth_date,
+              profileImageUrl: operation.chauffeur_profile_image_url,
+              type: operation.chauffeur_type,
+              chauffeurStatus: operation.chauffeur_status,
+              vehicleId: operation.chauffeur_vehicle_id,
+              role: operation.chauffeur_role,
+              status: operation.chauffeur_data_status,
+              createdBy: operation.chauffeur_created_by,
+              createdAt: operation.chauffeur_created_at,
+              updatedBy: operation.chauffeur_updated_by,
+              updatedAt: operation.chauffeur_updated_at,
+            }
+          : null,
       // Vehicle 정보
-      vehicle: operation.vehicle_id
-        ? {
-            id: operation.vehicle_id,
-            vehicleNumber: operation.vehicle_number,
-            modelName: operation.vehicle_model_name,
-            garageId: operation.vehicle_garage_id,
-            vehicleStatus: operation.vehicle_status,
-            status: operation.vehicle_data_status,
-            createdBy: operation.vehicle_created_by,
-            createdAt: operation.vehicle_created_at,
-            updatedBy: operation.vehicle_updated_by,
-            updatedAt: operation.vehicle_updated_at,
-          }
-        : null,
+      vehicle:
+        operation.vehicle_id && operation.vehicle_number
+          ? {
+              id: operation.vehicle_id,
+              vehicleNumber: operation.vehicle_number,
+              modelName: operation.vehicle_model_name,
+              garageId: operation.vehicle_garage_id,
+              vehicleStatus: operation.vehicle_status,
+              status: operation.vehicle_data_status,
+              createdBy: operation.vehicle_created_by,
+              createdAt: operation.vehicle_created_at,
+              updatedBy: operation.vehicle_updated_by,
+              updatedAt: operation.vehicle_updated_at,
+            }
+          : null,
       // Garage 정보
-      garage: operation.garage_id
-        ? {
-            id: operation.garage_id,
-            name: operation.garage_name,
-            address: operation.garage_address,
-            status: operation.garage_status,
-            createdBy: operation.garage_created_by,
-            createdAt: operation.garage_created_at,
-            updatedBy: operation.garage_updated_by,
-            updatedAt: operation.garage_updated_at,
-          }
-        : null,
+      garage:
+        operation.garage_id && operation.garage_name
+          ? {
+              id: operation.garage_id,
+              name: operation.garage_name,
+              address: operation.garage_address,
+              status: operation.garage_status,
+              createdBy: operation.garage_created_by,
+              createdAt: operation.garage_created_at,
+              updatedBy: operation.garage_updated_by,
+              updatedAt: operation.garage_updated_at,
+            }
+          : null,
       // RealTimeDispatch 정보
       realTimeDispatch: operation.real_time_dispatch_id
         ? {

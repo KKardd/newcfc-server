@@ -222,6 +222,10 @@ export class RealTimeDispatchInfoDto {
   @Expose()
   departureAddress: string;
 
+  @ApiProperty({ description: '출발지 상세 주소' })
+  @Expose()
+  departureAddressDetail: string;
+
   @ApiProperty({ description: '목적지 이름' })
   @Expose()
   destinationName: string;
@@ -229,6 +233,10 @@ export class RealTimeDispatchInfoDto {
   @ApiProperty({ description: '목적지 주소' })
   @Expose()
   destinationAddress: string;
+
+  @ApiProperty({ description: '목적지 상세 주소' })
+  @Expose()
+  destinationAddressDetail: string;
 
   @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()

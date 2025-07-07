@@ -12,6 +12,11 @@ export class UpdateRealTimeDispatchDto {
   @IsString()
   departureAddress?: string;
 
+  @ApiProperty({ description: '출발지 상세 주소', required: false })
+  @IsOptional()
+  @IsString()
+  departureAddressDetail?: string;
+
   @ApiProperty({ description: '목적지 이름', required: false })
   @IsOptional()
   @IsString()
@@ -21,4 +26,9 @@ export class UpdateRealTimeDispatchDto {
   @IsOptional()
   @IsString()
   destinationAddress?: string;
+
+  @ApiProperty({ description: '목적지 상세 주소', required: false })
+  @IsOptional()
+  @IsString()
+  destinationAddressDetail?: string;
 }

@@ -14,11 +14,17 @@ export class RealTimeDispatch extends BaseEntity {
   @Column({ name: 'departure_address', type: 'varchar', length: 255, nullable: false })
   departureAddress: string;
 
+  @Column({ name: 'departure_address_detail', type: 'varchar', length: 255, nullable: true })
+  departureAddressDetail: string;
+
   @Column({ name: 'destination_name', type: 'varchar', length: 100, nullable: false })
   destinationName: string;
 
   @Column({ name: 'destination_address', type: 'varchar', length: 255, nullable: false })
   destinationAddress: string;
+
+  @Column({ name: 'destination_address_detail', type: 'varchar', length: 255, nullable: true })
+  destinationAddressDetail: string;
 
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;

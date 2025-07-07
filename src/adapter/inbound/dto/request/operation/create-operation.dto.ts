@@ -4,7 +4,7 @@ import { IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, IsString, ValidateNest
 
 import { OperationType } from '@/domain/enum/operation-type.enum';
 
-export class ReservationInfoDto {
+export class CreateReservationInfoDto {
   @ApiProperty({ description: '탑승자 이름' })
   @IsString()
   passengerName: string;
@@ -21,14 +21,9 @@ export class ReservationInfoDto {
   @IsOptional()
   @IsEmail()
   passengerEmail?: string;
-
-  @ApiProperty({ description: '안심 전화번호', required: false })
-  @IsOptional()
-  @IsString()
-  safetyPhone?: string;
 }
 
-export class WayPointInfoDto {
+export class CreateWayPointInfoDto {
   @ApiProperty({ description: '날짜 (YYYY-MM-DD)', required: false })
   @IsOptional()
   @IsString()
@@ -63,7 +58,7 @@ export class WayPointInfoDto {
   order: number;
 }
 
-export class ScheduleInfoDto {
+export class CreateScheduleInfoDto {
   @ApiProperty({ description: '실시간 배차 ID', required: false })
   @IsOptional()
   @IsNumber()
@@ -79,14 +74,14 @@ export class ScheduleInfoDto {
   @IsBoolean()
   isRepeat?: boolean;
 
-  @ApiProperty({ description: '경유지 목록', type: [WayPointInfoDto] })
+  @ApiProperty({ description: '경유지 목록', type: [CreateWayPointInfoDto] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => WayPointInfoDto)
-  wayPoints: WayPointInfoDto[];
+  @Type(() => CreateWayPointInfoDto)
+  wayPoints: CreateWayPointInfoDto[];
 }
 
-export class ManagerInfoDto {
+export class CreateManagerInfoDto {
   @ApiProperty({ description: '담당자 이름' })
   @IsString()
   managerName: string;
@@ -101,33 +96,21 @@ export class CreateOperationDto {
   @IsEnum(OperationType)
   type: OperationType;
 
-  @ApiProperty({ description: '탑승자 정보', type: ReservationInfoDto })
+  @ApiProperty({ description: '탑승자 정보', type: CreateReservationInfoDto })
   @ValidateNested()
-  @Type(() => ReservationInfoDto)
-  reservation: ReservationInfoDto;
+  @Type(() => CreateReservationInfoDto)
+  reservation: CreateReservationInfoDto;
 
-  @ApiProperty({ description: '운행 시작 시간', required: false })
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  startTime?: Date;
-
-  @ApiProperty({ description: '운행 종료 시간', required: false })
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  endTime?: Date;
-
-  @ApiProperty({ description: '일정 정보', type: ScheduleInfoDto })
+  @ApiProperty({ description: '일정 정보', type: CreateScheduleInfoDto })
   @ValidateNested()
-  @Type(() => ScheduleInfoDto)
-  schedule: ScheduleInfoDto;
+  @Type(() => CreateScheduleInfoDto)
+  schedule: CreateScheduleInfoDto;
 
-  @ApiProperty({ description: '담당자 정보 (실시간 배차용)', type: ManagerInfoDto, required: false })
+  @ApiProperty({ description: '담당자 정보 (실시간 배차용)', type: CreateManagerInfoDto, required: false })
   @IsOptional()
   @ValidateNested()
-  @Type(() => ManagerInfoDto)
-  manager?: ManagerInfoDto;
+  @Type(() => CreateManagerInfoDto)
+  manager?: CreateManagerInfoDto;
 
   @ApiProperty({ description: '기사 ID', required: false })
   @IsOptional()
@@ -143,9 +126,4 @@ export class CreateOperationDto {
   @IsOptional()
   @IsString()
   memo?: string;
-
-  @ApiProperty({ description: '운행 거리(km)', required: false })
-  @IsOptional()
-  @IsNumber()
-  distance?: number;
 }

@@ -54,6 +54,18 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
       });
     }
 
+    if (searchRealTimeDispatch.departureAddressDetail) {
+      queryBuilder.andWhere('real_time_dispatch.departure_address_detail LIKE :departureAddressDetail', {
+        departureAddressDetail: `%${searchRealTimeDispatch.departureAddressDetail}%`,
+      });
+    }
+
+    if (searchRealTimeDispatch.destinationAddressDetail) {
+      queryBuilder.andWhere('real_time_dispatch.destination_address_detail LIKE :destinationAddressDetail', {
+        destinationAddressDetail: `%${searchRealTimeDispatch.destinationAddressDetail}%`,
+      });
+    }
+
     if (searchRealTimeDispatch.status) {
       queryBuilder.andWhere('real_time_dispatch.status = :status', {
         status: searchRealTimeDispatch.status,
@@ -69,8 +81,10 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
       id: dispatch.id,
       departureName: dispatch.departure_name,
       departureAddress: dispatch.departure_address,
+      departureAddressDetail: dispatch.departure_address_detail,
       destinationName: dispatch.destination_name,
       destinationAddress: dispatch.destination_address,
+      destinationAddressDetail: dispatch.destination_address_detail,
       chauffeurCount: parseInt(dispatch.chauffeur_count) || 0,
       status: dispatch.status,
       createdAt: dispatch.created_at,

@@ -80,13 +80,16 @@ export class ReservationRepository implements ReservationServiceOutPort {
       .addSelect('real_time_dispatch.id', 'dispatch_id')
       .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
       .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.departure_address_detail', 'dispatch_departure_address_detail')
       .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
       .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
+      .addSelect('real_time_dispatch.destination_address_detail', 'dispatch_destination_address_detail')
       .addSelect('real_time_dispatch.status', 'dispatch_status')
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
       .addSelect('real_time_dispatch.created_at', 'dispatch_created_at')
       .addSelect('real_time_dispatch.updated_by', 'dispatch_updated_by')
-      .addSelect('real_time_dispatch.updated_at', 'dispatch_updated_at');
+      .addSelect('real_time_dispatch.updated_at', 'dispatch_updated_at')
+      .where('reservation.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
 
     if (searchReservation.operationId) {
       queryBuilder.andWhere('reservation.operation_id = :operationId', {
@@ -215,8 +218,10 @@ export class ReservationRepository implements ReservationServiceOutPort {
             id: reservation.dispatch_id,
             departureName: reservation.dispatch_departure_name,
             departureAddress: reservation.dispatch_departure_address,
+            departureAddressDetail: reservation.dispatch_departure_address_detail,
             destinationName: reservation.dispatch_destination_name,
             destinationAddress: reservation.dispatch_destination_address,
+            destinationAddressDetail: reservation.dispatch_destination_address_detail,
             status: reservation.dispatch_status,
             createdBy: reservation.dispatch_created_by,
             createdAt: reservation.dispatch_created_at,

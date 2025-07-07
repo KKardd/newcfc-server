@@ -67,8 +67,10 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('real_time_dispatch.id', 'dispatch_id')
       .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
       .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.departure_address_detail', 'dispatch_departure_address_detail')
       .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
       .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
+      .addSelect('real_time_dispatch.destination_address_detail', 'dispatch_destination_address_detail')
       .addSelect('real_time_dispatch.status', 'dispatch_status')
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
       .addSelect('real_time_dispatch.created_at', 'dispatch_created_at')
@@ -86,7 +88,8 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('reservation.created_by', 'reservation_created_by')
       .addSelect('reservation.created_at', 'reservation_created_at')
       .addSelect('reservation.updated_by', 'reservation_updated_by')
-      .addSelect('reservation.updated_at', 'reservation_updated_at');
+      .addSelect('reservation.updated_at', 'reservation_updated_at')
+      .where('operation.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
 
     if (searchOperation.type) {
       queryBuilder.andWhere('operation.type = :type', {
@@ -241,8 +244,10 @@ export class OperationRepository implements OperationServiceOutPort {
             id: operation.dispatch_id,
             departureName: operation.dispatch_departure_name,
             departureAddress: operation.dispatch_departure_address,
+            departureAddressDetail: operation.dispatch_departure_address_detail,
             destinationName: operation.dispatch_destination_name,
             destinationAddress: operation.dispatch_destination_address,
+            destinationAddressDetail: operation.dispatch_destination_address_detail,
             status: operation.dispatch_status,
             createdBy: operation.dispatch_created_by,
             createdAt: operation.dispatch_created_at,
@@ -338,8 +343,10 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('real_time_dispatch.id', 'dispatch_id')
       .addSelect('real_time_dispatch.departure_name', 'dispatch_departure_name')
       .addSelect('real_time_dispatch.departure_address', 'dispatch_departure_address')
+      .addSelect('real_time_dispatch.departure_address_detail', 'dispatch_departure_address_detail')
       .addSelect('real_time_dispatch.destination_name', 'dispatch_destination_name')
       .addSelect('real_time_dispatch.destination_address', 'dispatch_destination_address')
+      .addSelect('real_time_dispatch.destination_address_detail', 'dispatch_destination_address_detail')
       .addSelect('real_time_dispatch.status', 'dispatch_status')
       .addSelect('real_time_dispatch.created_by', 'dispatch_created_by')
       .addSelect('real_time_dispatch.created_at', 'dispatch_created_at')
@@ -451,8 +458,10 @@ export class OperationRepository implements OperationServiceOutPort {
             id: operation.dispatch_id,
             departureName: operation.dispatch_departure_name,
             departureAddress: operation.dispatch_departure_address,
+            departureAddressDetail: operation.dispatch_departure_address_detail,
             destinationName: operation.dispatch_destination_name,
             destinationAddress: operation.dispatch_destination_address,
+            destinationAddressDetail: operation.dispatch_destination_address_detail,
             status: operation.dispatch_status,
             createdBy: operation.dispatch_created_by,
             createdAt: operation.dispatch_created_at,

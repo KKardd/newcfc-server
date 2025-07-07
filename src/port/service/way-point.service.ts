@@ -39,8 +39,12 @@ export class WayPointService implements WayPointServiceInPort {
   async create(createWayPoint: CreateWayPointDto): Promise<void> {
     const wayPoint = new WayPoint();
     wayPoint.operationId = createWayPoint.operationId;
+    wayPoint.name = createWayPoint.name || null;
     wayPoint.address = createWayPoint.address;
     wayPoint.addressDetail = createWayPoint.addressDetail || null;
+    wayPoint.latitude = createWayPoint.latitude || null;
+    wayPoint.longitude = createWayPoint.longitude || null;
+    wayPoint.visitTime = createWayPoint.visitTime ? new Date(createWayPoint.visitTime) : null;
     wayPoint.order = createWayPoint.order;
     wayPoint.status = DataStatus.USED;
 
@@ -48,7 +52,15 @@ export class WayPointService implements WayPointServiceInPort {
   }
 
   async update(id: number, updateWayPoint: UpdateWayPointDto): Promise<void> {
-    await this.wayPointServiceOutPort.update(id, updateWayPoint);
+    const { visitTime, ...restUpdateData } = updateWayPoint;
+    const updateData: Partial<WayPoint> = { ...restUpdateData };
+
+    // visitTime이 있는 경우 Date 타입으로 변환
+    if (visitTime) {
+      updateData.visitTime = new Date(visitTime);
+    }
+
+    await this.wayPointServiceOutPort.update(id, updateData);
   }
 
   async delete(id: number): Promise<void> {

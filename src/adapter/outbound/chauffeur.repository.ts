@@ -248,4 +248,11 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
         : null,
     }));
   }
+
+  async updateLocation(id: number, latitude: number, longitude: number): Promise<void> {
+    await this.repository.update(id, {
+      latitude,
+      longitude,
+    });
+  }
 }

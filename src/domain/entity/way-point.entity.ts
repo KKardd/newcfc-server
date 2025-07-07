@@ -15,6 +15,9 @@ export class WayPoint extends BaseEntity {
   @Column({ name: 'chauffeur_status', type: 'enum', enum: ChauffeurStatus, nullable: true })
   chauffeurStatus: ChauffeurStatus | null;
 
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  name: string | null;
+
   @Column({ type: 'varchar', length: 255, nullable: false })
   address: string;
 
@@ -26,6 +29,9 @@ export class WayPoint extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
   longitude: number | null;
+
+  @Column({ name: 'visit_time', type: 'timestamp', nullable: true })
+  visitTime: Date | null;
 
   @Column({ type: 'integer', nullable: false })
   order: number;

@@ -20,4 +20,7 @@ export abstract class ChauffeurServiceOutPort {
   abstract updateStatus(id: number, status: DataStatus): Promise<void>;
 
   abstract findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<AvailableChauffeurDto[]>;
+
+  // 위치 관련 메서드
+  abstract updateLocation(id: number, latitude: number, longitude: number): Promise<void>;
 }

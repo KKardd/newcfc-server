@@ -1,11 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateWayPointDto {
   @ApiProperty({ description: '운행 ID' })
   @IsNotEmpty()
   @IsNumber()
   operationId: number;
+
+  @ApiProperty({ description: '경유지 이름', required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
 
   @ApiProperty({ description: '경유지 주소' })
   @IsNotEmpty()
@@ -26,6 +31,11 @@ export class CreateWayPointDto {
   @IsOptional()
   @IsNumber()
   longitude?: number;
+
+  @ApiProperty({ description: '방문 예정 시간', required: false, type: 'string', format: 'date-time' })
+  @IsOptional()
+  @IsDateString()
+  visitTime?: string;
 
   @ApiProperty({ description: '경유지 순서' })
   @IsNotEmpty()

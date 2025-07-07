@@ -36,6 +36,12 @@ export class Chauffeur extends BaseEntity {
   @Column({ name: 'real_time_dispatch_id', type: 'integer', nullable: true })
   realTimeDispatchId: number | null;
 
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitude: number | null;
+
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitude: number | null;
+
   @Column({ type: 'enum', enum: UserRoleType, default: UserRoleType.CHAUFFEUR })
   role: UserRoleType;
 

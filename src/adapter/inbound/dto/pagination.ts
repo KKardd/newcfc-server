@@ -9,7 +9,7 @@ export class PaginationQuery {
   @IsOptional()
   page: number = 1;
 
-  @ApiPropertyOptional({ type: Number, default: 20, description: 'Number of items per page' })
+  @ApiPropertyOptional({ type: Number, default: 100, description: 'Number of items per page' })
   @Transform(({ value }) => {
     const number = parseInt(value, 10);
 

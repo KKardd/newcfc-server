@@ -8,6 +8,7 @@ import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeu
 import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/create-chauffeur.dto';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
+import { UpdateLocationDto } from '@/adapter/inbound/dto/request/chauffeur/update-location.dto';
 import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
 import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
@@ -20,6 +21,7 @@ import {
   CurrentReservationDto,
   CurrentWayPointDto,
 } from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
+import { LocationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/location-response.dto';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
@@ -501,5 +503,22 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       // waypoint 업데이트 실패 시 로그만 남기고 전체 플로우는 계속 진행
       console.error('Failed to update waypoint chauffeur status:', error);
     }
+  }
+
+  // 위치 관련 메서드들
+  async updateMyLocation(chauffeurId: number, updateLocationDto: UpdateLocationDto): Promise<void> {
+    await this.chauffeurServiceOutPort.updateLocation(chauffeurId, updateLocationDto.latitude, updateLocationDto.longitude);
+  }
+
+  async getMyLocation(chauffeurId: number): Promise<LocationResponseDto> {
+    const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+    return plainToInstance(
+      LocationResponseDto,
+      {
+        latitude: chauffeur.latitude,
+        longitude: chauffeur.longitude,
+      },
+      classTransformDefaultOptions,
+    );
   }
 }

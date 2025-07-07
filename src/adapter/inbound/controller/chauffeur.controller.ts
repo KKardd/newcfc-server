@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -7,11 +7,13 @@ import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeu
 import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/create-chauffeur.dto';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
+import { UpdateLocationDto } from '@/adapter/inbound/dto/request/chauffeur/update-location.dto';
 import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
 import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
 import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
 import { CurrentOperationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/current-operation-response.dto';
+import { LocationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/location-response.dto';
 import { NearestReservationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
@@ -106,5 +108,21 @@ export class ChauffeurController {
   @Get('me/nearest-reservation')
   async getMyNearestReservation(@UserToken() user: UserAccessTokenPayload): Promise<NearestReservationResponseDto | null> {
     return await this.chauffeurService.getMyNearestReservation(user.userId);
+  }
+
+  // 위치 관련 API들
+  @ApiOperation({ summary: '내 현재 위치 전송' })
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Patch('me/location')
+  async updateMyLocation(@UserToken() user: UserAccessTokenPayload, @Body() updateLocationDto: UpdateLocationDto): Promise<void> {
+    await this.chauffeurService.updateMyLocation(user.userId, updateLocationDto);
+  }
+
+  @ApiOperation({ summary: '내 현재 위치 조회' })
+  @ApiSuccessResponse(200, LocationResponseDto)
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Get('me/location')
+  async getMyLocation(@UserToken() user: UserAccessTokenPayload): Promise<LocationResponseDto> {
+    return await this.chauffeurService.getMyLocation(user.userId);
   }
 }

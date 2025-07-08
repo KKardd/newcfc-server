@@ -83,15 +83,6 @@ export class OperationService implements OperationServiceInPort {
 
     // 5. 실시간 배차인 경우 담당자 정보 저장
     if (createOperation.manager && createOperation.type === OperationType.REALTIME) {
-      // 담당자 정보를 operation의 추가 정보로 저장
-      const managerInfo = {
-        managerName: createOperation.manager.managerName,
-        managerNumber: createOperation.manager.managerNumber,
-      };
-
-      await this.operationServiceOutPort.update(operation.id, {
-        additionalCosts: managerInfo as unknown as Record<string, number>, // 임시로 additionalCosts 필드 활용
-      });
     }
   }
 

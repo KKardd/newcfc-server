@@ -26,6 +26,12 @@ export class RealTimeDispatch extends BaseEntity {
   @Column({ name: 'destination_address_detail', type: 'varchar', length: 255, nullable: true })
   destinationAddressDetail: string;
 
+  @Column({ name: 'manager_name', type: 'varchar', length: 100, nullable: true })
+  managerName: string | null;
+
+  @Column({ name: 'manager_number', type: 'varchar', length: 20, nullable: true })
+  managerNumber: string | null;
+
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
 }

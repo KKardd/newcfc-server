@@ -11,8 +11,6 @@ import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/upda
 import { AssignChauffeurResponseDto } from '@/adapter/inbound/dto/response/admin/assign-chauffeur-response.dto';
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
-import { Reservation } from '@/domain/entity/reservation.entity';
-import { WayPoint } from '@/domain/entity/way-point.entity';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationType } from '@/domain/enum/operation-type.enum';
@@ -39,9 +37,8 @@ export class OperationService implements OperationServiceInPort {
     const [operations, totalCount] = await this.operationServiceOutPort.findAll(searchOperation, paginationQuery);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(OperationResponseDto, operations, classTransformDefaultOptions);
-
-    return new PaginationResponse(response, pagination);
+    // Repository에서 이미 OperationResponseDto 형태로 반환되므로 plainToInstance 변환 제거
+    return new PaginationResponse(operations, pagination);
   }
 
   async detail(id: number): Promise<OperationResponseDto> {
@@ -93,7 +90,7 @@ export class OperationService implements OperationServiceInPort {
       };
 
       await this.operationServiceOutPort.update(operation.id, {
-        additionalCosts: managerInfo as any, // 임시로 additionalCosts 필드 활용
+        additionalCosts: managerInfo as unknown as Record<string, number>, // 임시로 additionalCosts 필드 활용
       });
     }
   }

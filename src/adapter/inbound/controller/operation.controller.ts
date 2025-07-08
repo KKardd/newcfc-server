@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
@@ -34,11 +34,20 @@ export class OperationController {
     return await this.operationService.search(searchOperation, paginationQuery);
   }
 
-  @ApiOperation({ summary: '운행 상세 조회' })
-  @ApiSuccessResponse(200, OperationResponseDto)
   @Get(':id')
-  async detail(@Param('id', ParseIntPipe) id: number): Promise<OperationResponseDto> {
-    return await this.operationService.detail(id);
+  @ApiOperation({ summary: '운행 상세 조회' })
+  @ApiParam({ name: 'id', description: '운행 ID' })
+  @ApiResponse({ status: 200, description: '운행 상세 정보', type: OperationResponseDto })
+  async detail(@Param('id') id: number): Promise<OperationResponseDto> {
+    return this.operationService.detail(id);
+  }
+
+  @Get(':id/admin')
+  @ApiOperation({ summary: '관리자용 운행 상세 조회 (진행 상태 포함)' })
+  @ApiParam({ name: 'id', description: '운행 ID' })
+  @ApiResponse({ status: 200, description: '관리자용 운행 상세 정보 (진행 상태 포함)' })
+  async getAdminDetail(@Param('id') id: number) {
+    return this.operationService.getAdminOperationDetail(id);
   }
 
   @ApiOperation({ summary: '운행 생성' })

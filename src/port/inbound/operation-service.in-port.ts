@@ -15,6 +15,8 @@ export abstract class OperationServiceInPort {
 
   abstract detail(id: number): Promise<OperationResponseDto>;
 
+  abstract getAdminOperationDetail(id: number): Promise<any>;
+
   abstract create(createOperation: CreateOperationDto): Promise<void>;
 
   abstract update(id: number, updateOperation: UpdateOperationDto): Promise<void>;

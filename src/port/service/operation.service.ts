@@ -19,7 +19,55 @@ import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
+import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
+
+// 관리자용 운행 상세 응답 DTO
+export class AdminOperationDetailResponseDto {
+  id: number;
+  type: OperationType;
+  isRepeated: boolean;
+  startTime: Date | null;
+  endTime: Date | null;
+  distance: number | null;
+  chauffeurId: number | null;
+  chauffeurName: string | null;
+  chauffeurPhone: string | null;
+  passengerCount: number | null;
+  vehicleId: number | null;
+  realTimeDispatchId: number | null;
+  additionalCosts: any | null;
+  receiptImageUrls: string[] | null;
+  kakaoPath: any | null;
+  status: DataStatus;
+  createdBy: number;
+  createdAt: Date;
+  updatedBy: number;
+  updatedAt: Date;
+
+  // 관련 엔티티 정보
+  chauffeur: any | null;
+  vehicle: any | null;
+  garage: any | null;
+  realTimeDispatch: any | null;
+  reservation: any | null;
+
+  // 진행상태가 포함된 waypoints
+  wayPoints: AdminWayPointDto[];
+}
+
+export class AdminWayPointDto {
+  id: number;
+  name: string | null;
+  address: string;
+  addressDetail: string | null;
+  order: number;
+  visitTime: Date | null;
+  chauffeurStatus: ChauffeurStatus | null;
+  progressStatus: 'COMPLETED' | 'IN_PROGRESS' | 'WAITING' | 'PENDING';
+  progressLabel: string;
+  progressLabelStatus: ChauffeurStatus | null;
+}
 
 @Injectable()
 export class OperationService implements OperationServiceInPort {
@@ -28,6 +76,7 @@ export class OperationService implements OperationServiceInPort {
     private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
     private readonly reservationServiceInPort: ReservationServiceInPort,
     private readonly wayPointServiceInPort: WayPointServiceInPort,
+    private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
   ) {}
 
   async search(
@@ -37,12 +86,189 @@ export class OperationService implements OperationServiceInPort {
     const [operations, totalCount] = await this.operationServiceOutPort.findAll(searchOperation, paginationQuery);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    // Repository에서 이미 OperationResponseDto 형태로 반환되므로 plainToInstance 변환 제거
     return new PaginationResponse(operations, pagination);
   }
 
   async detail(id: number): Promise<OperationResponseDto> {
     return await this.operationServiceOutPort.findByIdWithDetails(id);
+  }
+
+  /**
+   * 관리자용 운행 상세 조회 - waypoint 진행 상태 포함
+   */
+  async getAdminOperationDetail(id: number): Promise<AdminOperationDetailResponseDto> {
+    // findByIdWithDetails와 동일한 방식으로 상세 정보 조회
+    const operationDetail = await this.operationServiceOutPort.findByIdWithDetails(id);
+
+    // 기본 응답 구성 (기존 OperationResponseDto와 동일한 정보)
+    const response = new AdminOperationDetailResponseDto();
+    response.id = operationDetail.id;
+    response.type = operationDetail.type;
+    response.isRepeated = operationDetail.isRepeated;
+    response.startTime = operationDetail.startTime;
+    response.endTime = operationDetail.endTime;
+    response.distance = operationDetail.distance;
+    response.chauffeurId = operationDetail.chauffeurId;
+    response.chauffeurName = operationDetail.chauffeurName;
+    response.chauffeurPhone = operationDetail.chauffeurPhone;
+    response.passengerCount = operationDetail.passengerCount;
+    response.vehicleId = operationDetail.vehicleId;
+    response.realTimeDispatchId = operationDetail.realTimeDispatchId;
+    response.additionalCosts = operationDetail.additionalCosts;
+    response.receiptImageUrls = operationDetail.receiptImageUrls;
+    response.kakaoPath = operationDetail.kakaoPath;
+    response.status = operationDetail.status;
+    response.createdBy = operationDetail.createdBy;
+    response.createdAt = operationDetail.createdAt;
+    response.updatedBy = operationDetail.updatedBy;
+    response.updatedAt = operationDetail.updatedAt;
+
+    // 관련 엔티티 정보 설정
+    response.chauffeur = operationDetail.chauffeur;
+    response.vehicle = operationDetail.vehicle;
+    response.garage = operationDetail.garage;
+    response.realTimeDispatch = operationDetail.realTimeDispatch;
+    response.reservation = operationDetail.reservation;
+
+    // 기사의 현재 상태 조회 (진행상태 계산을 위해)
+    let chauffeurStatus: ChauffeurStatus | null = null;
+    if (operationDetail.chauffeur) {
+      chauffeurStatus = operationDetail.chauffeur.chauffeurStatus;
+    }
+
+    // WayPoint 정보를 진행 상태와 함께 계산
+    const sortedWayPoints = operationDetail.wayPoints.sort((a, b) => a.order - b.order);
+    response.wayPoints = sortedWayPoints.map((wp) => this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints));
+
+    return response;
+  }
+
+  /**
+   * WayPoint의 진행 상태 계산
+   */
+  private calculateWayPointProgress(
+    wayPoint: any,
+    chauffeurStatus: ChauffeurStatus | null,
+    allWayPoints: any[],
+  ): AdminWayPointDto {
+    const adminWayPoint = new AdminWayPointDto();
+    adminWayPoint.id = wayPoint.id;
+    adminWayPoint.name = wayPoint.name;
+    adminWayPoint.address = wayPoint.address;
+    adminWayPoint.addressDetail = wayPoint.addressDetail;
+    adminWayPoint.order = wayPoint.order;
+    adminWayPoint.visitTime = wayPoint.visitTime;
+    adminWayPoint.chauffeurStatus = wayPoint.chauffeurStatus;
+
+    // 진행 상태 계산
+    if (wayPoint.chauffeurStatus && wayPoint.visitTime) {
+      // 방문 완료
+      adminWayPoint.progressStatus = 'COMPLETED';
+      const labelData = this.getProgressLabel(wayPoint.chauffeurStatus, 'COMPLETED');
+      adminWayPoint.progressLabel = labelData.label;
+      adminWayPoint.progressLabelStatus = labelData.status;
+    } else if (chauffeurStatus && this.isCurrentWayPoint(wayPoint, chauffeurStatus, allWayPoints)) {
+      // 현재 진행 중
+      adminWayPoint.progressStatus = 'IN_PROGRESS';
+      const labelData = this.getProgressLabel(chauffeurStatus, 'IN_PROGRESS');
+      adminWayPoint.progressLabel = labelData.label;
+      adminWayPoint.progressLabelStatus = labelData.status;
+    } else if (this.isWaitingWayPoint(wayPoint, allWayPoints)) {
+      // 대기 중
+      adminWayPoint.progressStatus = 'WAITING';
+      const labelData = this.getProgressLabel(null, 'WAITING');
+      adminWayPoint.progressLabel = labelData.label;
+      adminWayPoint.progressLabelStatus = labelData.status;
+    } else {
+      // 미정
+      adminWayPoint.progressStatus = 'PENDING';
+      const labelData = this.getProgressLabel(null, 'PENDING');
+      adminWayPoint.progressLabel = labelData.label;
+      adminWayPoint.progressLabelStatus = labelData.status;
+    }
+
+    return adminWayPoint;
+  }
+
+  /**
+   * 현재 진행 중인 waypoint인지 확인
+   */
+  private isCurrentWayPoint(wayPoint: any, chauffeurStatus: ChauffeurStatus, allWayPoints: any[]): boolean {
+    switch (chauffeurStatus) {
+      case ChauffeurStatus.MOVING_TO_DEPARTURE:
+      case ChauffeurStatus.WAITING_FOR_PASSENGER:
+        return wayPoint.order === 1;
+
+      case ChauffeurStatus.IN_OPERATION:
+        // 방문하지 않은 waypoint 중 첫 번째
+        const unvisitedWayPoints = allWayPoints.filter((wp) => !wp.chauffeurStatus || !wp.visitTime);
+        return unvisitedWayPoints.length > 0 && unvisitedWayPoints[0].id === wayPoint.id;
+
+      case ChauffeurStatus.WAITING_OPERATION:
+        // 가장 최근에 방문한 waypoint
+        const visitedWayPoints = allWayPoints.filter((wp) => wp.chauffeurStatus && wp.visitTime);
+        if (visitedWayPoints.length > 0) {
+          const latest = visitedWayPoints.sort((a, b) => new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime())[0];
+          return latest.id === wayPoint.id;
+        }
+        return false;
+
+      case ChauffeurStatus.OPERATION_COMPLETED:
+        return wayPoint.order === allWayPoints.length; // 마지막 waypoint
+
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * 대기 상태인 waypoint인지 확인
+   */
+  private isWaitingWayPoint(wayPoint: any, allWayPoints: any[]): boolean {
+    // 방문하지 않은 waypoint들 중에서 현재 진행 중이 아닌 것들
+    return !wayPoint.chauffeurStatus && !wayPoint.visitTime;
+  }
+
+  /**
+   * 진행 상태 라벨 생성
+   */
+  private getProgressLabel(
+    chauffeurStatus: ChauffeurStatus | null,
+    progressStatus: string,
+  ): { label: string; status: ChauffeurStatus | null } {
+    if (progressStatus === 'COMPLETED') {
+      switch (chauffeurStatus) {
+        case ChauffeurStatus.WAITING_FOR_PASSENGER:
+          return { label: '완료', status: ChauffeurStatus.WAITING_FOR_PASSENGER };
+        case ChauffeurStatus.IN_OPERATION:
+          return { label: '완료', status: ChauffeurStatus.IN_OPERATION };
+        case ChauffeurStatus.WAITING_OPERATION:
+          return { label: '완료', status: ChauffeurStatus.WAITING_OPERATION };
+        case ChauffeurStatus.OPERATION_COMPLETED:
+          return { label: '완료', status: ChauffeurStatus.OPERATION_COMPLETED };
+        default:
+          return { label: '완료', status: null };
+      }
+    } else if (progressStatus === 'IN_PROGRESS') {
+      switch (chauffeurStatus) {
+        case ChauffeurStatus.MOVING_TO_DEPARTURE:
+          return { label: '진행중', status: ChauffeurStatus.MOVING_TO_DEPARTURE };
+        case ChauffeurStatus.WAITING_FOR_PASSENGER:
+          return { label: '진행중', status: ChauffeurStatus.WAITING_FOR_PASSENGER };
+        case ChauffeurStatus.IN_OPERATION:
+          return { label: '진행중', status: ChauffeurStatus.IN_OPERATION };
+        case ChauffeurStatus.WAITING_OPERATION:
+          return { label: '진행중', status: ChauffeurStatus.WAITING_OPERATION };
+        case ChauffeurStatus.PENDING_RECEIPT_INPUT:
+          return { label: '진행중', status: ChauffeurStatus.PENDING_RECEIPT_INPUT };
+        default:
+          return { label: '진행중', status: null };
+      }
+    } else if (progressStatus === 'WAITING') {
+      return { label: '대기', status: null };
+    } else {
+      return { label: '미정', status: null };
+    }
   }
 
   async create(createOperation: CreateOperationDto): Promise<void> {
@@ -70,19 +296,103 @@ export class OperationService implements OperationServiceInPort {
     });
 
     // 4. WayPoints 생성 및 저장
-    for (const wayPointInfo of createOperation.schedule.wayPoints) {
-      await this.wayPointServiceInPort.create({
-        operationId: operation.id,
-        address: wayPointInfo.address,
-        addressDetail: wayPointInfo.addressDetail,
-        latitude: wayPointInfo.latitude,
-        longitude: wayPointInfo.longitude,
-        order: wayPointInfo.order,
-      });
+    if (createOperation.type === OperationType.REALTIME && createOperation.schedule.realTimeDispatchId) {
+      // 실시간 배차인 경우 WayPoint 자동 생성
+      await this.createRealTimeDispatchWayPoints(
+        operation.id,
+        createOperation.schedule.realTimeDispatchId,
+        createOperation.schedule.isReverse,
+      );
+    } else {
+      // 일반 예약인 경우 기존 로직 유지
+      for (const wayPointInfo of createOperation.schedule.wayPoints) {
+        await this.wayPointServiceInPort.create({
+          operationId: operation.id,
+          address: wayPointInfo.address,
+          addressDetail: wayPointInfo.addressDetail,
+          latitude: wayPointInfo.latitude,
+          longitude: wayPointInfo.longitude,
+          order: wayPointInfo.order,
+        });
+      }
     }
 
     // 5. 실시간 배차인 경우 담당자 정보 저장
     if (createOperation.manager && createOperation.type === OperationType.REALTIME) {
+    }
+  }
+
+  /**
+   * 실시간 배차를 위한 WayPoint 자동 생성
+   * @param operationId 운행 ID
+   * @param realTimeDispatchId 실시간 배차 ID
+   * @param isReverse 왕복 여부 (true: 왕복, false: 편도)
+   */
+  private async createRealTimeDispatchWayPoints(
+    operationId: number,
+    realTimeDispatchId: number,
+    isReverse?: boolean,
+  ): Promise<void> {
+    try {
+      // 실시간 배차 정보 조회
+      const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(realTimeDispatchId);
+
+      // 1. 출발지 WayPoint 생성 (order=1)
+      await this.wayPointServiceInPort.create({
+        operationId: operationId,
+        name: realTimeDispatch.departureName,
+        address: realTimeDispatch.departureAddress,
+        addressDetail: realTimeDispatch.departureAddressDetail,
+        order: 1,
+      });
+
+      // 2. 왕복인 경우 목적지 WayPoint 생성 (order=2)
+      if (isReverse) {
+        await this.wayPointServiceInPort.create({
+          operationId: operationId,
+          name: realTimeDispatch.destinationName,
+          address: realTimeDispatch.destinationAddress,
+          addressDetail: realTimeDispatch.destinationAddressDetail,
+          order: 2,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create real-time dispatch waypoints:', error);
+      throw new Error('실시간 배차 경유지 생성에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 기존 실시간 배차 Operation에 WayPoint 자동 생성
+   * @param operationId 운행 ID
+   * @param isReverse 왕복 여부 (true: 왕복, false: 편도) - 기본값은 편도
+   */
+  async createMissingRealTimeDispatchWayPoints(operationId: number, isReverse: boolean = false): Promise<void> {
+    try {
+      const operation = await this.operationServiceOutPort.findById(operationId);
+
+      // 실시간 배차가 아니면 무시
+      if (operation.type !== OperationType.REALTIME || !operation.realTimeDispatchId) {
+        return;
+      }
+
+      // 이미 WayPoint가 있는지 확인
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 10;
+
+      const wayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
+
+      // WayPoint가 이미 있으면 무시
+      if (wayPoints.data.length > 0) {
+        return;
+      }
+
+      // WayPoint 생성
+      await this.createRealTimeDispatchWayPoints(operationId, operation.realTimeDispatchId, isReverse);
+    } catch (error) {
+      console.error('Failed to create missing real-time dispatch waypoints:', error);
+      throw new Error('실시간 배차 경유지 생성에 실패했습니다.');
     }
   }
 

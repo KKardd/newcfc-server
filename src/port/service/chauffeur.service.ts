@@ -204,34 +204,42 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       }
     }
 
-    // 경유지 정보 조회 (운행에서 직접 조회)
-    try {
-      const wayPointPagination = new PaginationQuery();
-      wayPointPagination.page = 1;
-      wayPointPagination.countPerPage = 100;
-
-      const wayPoints = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
-      const sortedWayPoints = wayPoints.data.sort((a, b) => a.order - b.order);
-
-      response.wayPoints = sortedWayPoints.map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
-
-      // 현재 진행 중인 waypoint 식별
-      response.currentWayPoint = await this.getCurrentWayPoint(chauffeurId, sortedWayPoints);
-    } catch (error) {
-      response.wayPoints = [];
-      response.currentWayPoint = null;
-    }
-
     // 실시간 배차 정보 조회 (실시간 배차인 경우)
     if (currentOperation.type === OperationType.REALTIME && currentOperation.realTimeDispatchId) {
       try {
         const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(currentOperation.realTimeDispatchId);
         response.departureAddress = realTimeDispatch.departureAddress;
         response.destinationAddress = realTimeDispatch.destinationAddress;
+
+        // 쇼퍼앱에서는 실시간 배차 정보를 간단하게 표시
+        // 출발지, 도착지 정보를 waypoint 형태로 변환
+        response.wayPoints = this.createSimpleWayPointsForChauffeur(realTimeDispatch);
+        response.currentWayPoint = await this.getCurrentWayPointForRealTimeDispatch(chauffeurId, realTimeDispatch);
       } catch (error) {
         // 실시간 배차 정보가 없는 경우
         response.departureAddress = null;
         response.destinationAddress = null;
+        response.wayPoints = [];
+        response.currentWayPoint = null;
+      }
+    } else {
+      // 일반 예약인 경우 기존 로직 유지
+      // 경유지 정보 조회 (운행에서 직접 조회)
+      try {
+        const wayPointPagination = new PaginationQuery();
+        wayPointPagination.page = 1;
+        wayPointPagination.countPerPage = 100;
+
+        const wayPoints = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
+        const sortedWayPoints = wayPoints.data.sort((a, b) => a.order - b.order);
+
+        response.wayPoints = sortedWayPoints.map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
+
+        // 현재 진행 중인 waypoint 식별
+        response.currentWayPoint = await this.getCurrentWayPoint(chauffeurId, sortedWayPoints);
+      } catch (error) {
+        response.wayPoints = [];
+        response.currentWayPoint = null;
       }
     }
 
@@ -541,6 +549,22 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
       const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
 
+      // 실시간 배차인데 WayPoint가 없는 경우 자동 생성
+      if (
+        wayPointsResponse.data.length === 0 &&
+        currentOperation.type === OperationType.REALTIME &&
+        currentOperation.realTimeDispatchId
+      ) {
+        await this.createMissingRealTimeDispatchWayPoints(currentOperation.id, currentOperation.realTimeDispatchId);
+
+        // 다시 조회
+        const updatedWayPointsResponse = await this.wayPointServiceInPort.search(
+          { operationId: currentOperation.id },
+          wayPointPagination,
+        );
+        wayPointsResponse.data = updatedWayPointsResponse.data;
+      }
+
       if (wayPointsResponse.data.length === 0) {
         return; // waypoint가 없으면 업데이트 불필요
       }
@@ -597,6 +621,79 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     } catch (error) {
       // waypoint 업데이트 실패 시 로그만 남기고 전체 플로우는 계속 진행
       console.error('Failed to update waypoint chauffeur status:', error);
+    }
+  }
+
+  /**
+   * 실시간 배차를 위한 WayPoint 자동 생성 (편도 기본)
+   * @param operationId 운행 ID
+   * @param realTimeDispatchId 실시간 배차 ID
+   * @param isRoundTrip 왕복 여부 (기본값: false)
+   */
+  private async createMissingRealTimeDispatchWayPoints(
+    operationId: number,
+    realTimeDispatchId: number,
+    isRoundTrip: boolean = false,
+  ): Promise<void> {
+    try {
+      // 실시간 배차 정보 조회
+      const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(realTimeDispatchId);
+
+      // 1. 출발지 WayPoint 생성 (order=1)
+      await this.wayPointServiceInPort.create({
+        operationId: operationId,
+        name: realTimeDispatch.departureName,
+        address: realTimeDispatch.departureAddress,
+        addressDetail: realTimeDispatch.departureAddressDetail,
+        order: 1,
+      });
+
+      // 2. 왕복인 경우 목적지 WayPoint 생성 (order=2)
+      if (isRoundTrip) {
+        await this.wayPointServiceInPort.create({
+          operationId: operationId,
+          name: realTimeDispatch.destinationName,
+          address: realTimeDispatch.destinationAddress,
+          addressDetail: realTimeDispatch.destinationAddressDetail,
+          order: 2,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create missing real-time dispatch waypoints:', error);
+      // 에러가 발생해도 전체 플로우를 중단하지 않음
+    }
+  }
+
+  /**
+   * 기존 실시간 배차 Operation들에 대해 WayPoint를 일괄 생성
+   * @param isRoundTrip 왕복 여부 (기본값: false - 편도)
+   */
+  async createWayPointsForExistingRealTimeDispatches(isRoundTrip: boolean = false): Promise<void> {
+    try {
+      // 실시간 배차 타입의 Operation들을 조회
+      const operationPagination = new PaginationQuery();
+      operationPagination.page = 1;
+      operationPagination.countPerPage = 1000; // 충분한 수로 설정
+
+      const [operations] = await this.operationServiceOutPort.findAll({ type: OperationType.REALTIME }, operationPagination);
+
+      for (const operation of operations) {
+        if (operation.realTimeDispatchId) {
+          // 이미 WayPoint가 있는지 확인
+          const wayPointPagination = new PaginationQuery();
+          wayPointPagination.page = 1;
+          wayPointPagination.countPerPage = 10;
+
+          const wayPoints = await this.wayPointServiceInPort.search({ operationId: operation.id }, wayPointPagination);
+
+          // WayPoint가 없으면 생성
+          if (wayPoints.data.length === 0) {
+            await this.createMissingRealTimeDispatchWayPoints(operation.id, operation.realTimeDispatchId, isRoundTrip);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create waypoints for existing real-time dispatches:', error);
     }
   }
 
@@ -754,6 +851,104 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       }
     } catch (error) {
       console.error('Failed to update operation status:', error);
+    }
+  }
+
+  /**
+   * 실시간 배차 정보를 쇼퍼앱용 간단한 waypoint 형태로 변환
+   */
+  private createSimpleWayPointsForChauffeur(realTimeDispatch: any): CurrentWayPointDto[] {
+    const wayPoints: CurrentWayPointDto[] = [];
+
+    // 1. 출발지 (항상 표시)
+    wayPoints.push(
+      plainToInstance(
+        CurrentWayPointDto,
+        {
+          id: 0, // 임시 ID
+          name: realTimeDispatch.departureName,
+          address: realTimeDispatch.departureAddress,
+          addressDetail: realTimeDispatch.departureAddressDetail,
+          order: 1,
+          visitTime: null,
+          chauffeurStatus: null,
+        },
+        classTransformDefaultOptions,
+      ),
+    );
+
+    // 2. 도착지 (항상 표시)
+    wayPoints.push(
+      plainToInstance(
+        CurrentWayPointDto,
+        {
+          id: 0, // 임시 ID
+          name: realTimeDispatch.destinationName,
+          address: realTimeDispatch.destinationAddress,
+          addressDetail: realTimeDispatch.destinationAddressDetail,
+          order: 2,
+          visitTime: null,
+          chauffeurStatus: null,
+        },
+        classTransformDefaultOptions,
+      ),
+    );
+
+    return wayPoints;
+  }
+
+  /**
+   * 실시간 배차에서 현재 진행 중인 waypoint 정보 반환
+   */
+  private async getCurrentWayPointForRealTimeDispatch(
+    chauffeurId: number,
+    realTimeDispatch: any,
+  ): Promise<CurrentWayPointDto | null> {
+    try {
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      switch (chauffeur.chauffeurStatus) {
+        case ChauffeurStatus.MOVING_TO_DEPARTURE:
+        case ChauffeurStatus.WAITING_FOR_PASSENGER:
+        case ChauffeurStatus.IN_OPERATION:
+          // 출발지 정보 반환
+          return plainToInstance(
+            CurrentWayPointDto,
+            {
+              id: 0, // 임시 ID
+              name: realTimeDispatch.departureName,
+              address: realTimeDispatch.departureAddress,
+              addressDetail: realTimeDispatch.departureAddressDetail,
+              order: 1,
+              visitTime: null,
+              chauffeurStatus: chauffeur.chauffeurStatus,
+            },
+            classTransformDefaultOptions,
+          );
+
+        case ChauffeurStatus.WAITING_OPERATION:
+        case ChauffeurStatus.OPERATION_COMPLETED:
+          // 도착지 정보 반환
+          return plainToInstance(
+            CurrentWayPointDto,
+            {
+              id: 0, // 임시 ID
+              name: realTimeDispatch.destinationName,
+              address: realTimeDispatch.destinationAddress,
+              addressDetail: realTimeDispatch.destinationAddressDetail,
+              order: 2,
+              visitTime: null,
+              chauffeurStatus: chauffeur.chauffeurStatus,
+            },
+            classTransformDefaultOptions,
+          );
+
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error('Failed to get current waypoint for real-time dispatch:', error);
+      return null;
     }
   }
 }

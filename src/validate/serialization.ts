@@ -3,5 +3,5 @@ import { ClassTransformOptions } from 'class-transformer/types/interfaces/class-
 export const classTransformDefaultOptions: ClassTransformOptions = {
   strategy: 'exposeAll',
   enableImplicitConversion: true,
-  excludeExtraneousValues: true,
+  excludeExtraneousValues: false,
 };

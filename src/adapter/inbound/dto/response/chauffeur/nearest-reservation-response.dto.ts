@@ -8,6 +8,10 @@ export class NextWayPointDto {
   @Expose()
   id: number;
 
+  @ApiProperty({ description: '경유지 이름', required: false })
+  @Expose()
+  name: string | null;
+
   @ApiProperty({ description: '주소' })
   @Expose()
   address: string;
@@ -23,6 +27,10 @@ export class NextWayPointDto {
   @ApiProperty({ description: '경도' })
   @Expose()
   longitude: number | null;
+
+  @ApiProperty({ description: '방문 시간', required: false })
+  @Expose()
+  visitTime: Date | null;
 
   @ApiProperty({ description: '순서' })
   @Expose()

@@ -35,6 +35,10 @@ export class CurrentWayPointDto {
   @Expose()
   id: number;
 
+  @ApiProperty({ description: '경유지 이름', required: false })
+  @Expose()
+  name: string | null;
+
   @ApiProperty({ description: '주소' })
   @Expose()
   address: string;
@@ -42,6 +46,14 @@ export class CurrentWayPointDto {
   @ApiProperty({ description: '상세주소', required: false })
   @Expose()
   addressDetail: string | null;
+
+  @ApiProperty({ description: '위도', required: false })
+  @Expose()
+  latitude: number | null;
+
+  @ApiProperty({ description: '경도', required: false })
+  @Expose()
+  longitude: number | null;
 
   @ApiProperty({ description: '순서' })
   @Expose()

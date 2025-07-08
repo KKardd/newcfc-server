@@ -256,6 +256,10 @@ export class WayPointInfoDto {
   @Expose()
   operationId: number;
 
+  @ApiProperty({ description: '경유지 이름', required: false })
+  @Expose()
+  name: string | null;
+
   @ApiProperty({ description: '주소' })
   @Expose()
   address: string;
@@ -275,6 +279,10 @@ export class WayPointInfoDto {
   @ApiProperty({ description: '경도', required: false })
   @Expose()
   longitude: number | null;
+
+  @ApiProperty({ description: '방문 시간', required: false })
+  @Expose()
+  visitTime: Date | null;
 
   @ApiProperty({ description: '순서' })
   @Expose()

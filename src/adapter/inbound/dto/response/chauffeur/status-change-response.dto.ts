@@ -31,9 +31,21 @@ export class ChauffeurStatusChangeResponseDto {
 }
 
 export class WayPointInfo {
+  @ApiProperty({ description: '경유지 이름', required: false })
+  @Expose()
+  name: string | null;
+
   @ApiProperty({ description: '경유지 주소' })
   @Expose()
   address: string;
+
+  @ApiProperty({ description: '상세 주소', required: false })
+  @Expose()
+  addressDetail: string | null;
+
+  @ApiProperty({ description: '방문 시간', required: false })
+  @Expose()
+  visitTime: Date | null;
 
   @ApiProperty({ description: '순서' })
   @Expose()

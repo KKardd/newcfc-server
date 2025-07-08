@@ -29,6 +29,7 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
       .addSelect('chauffeur.name', 'chauffeur_name')
       .addSelect('chauffeur.phone', 'chauffeur_phone')
       .addSelect('chauffeur.type', 'chauffeur_type')
+      .addSelect('chauffeur.is_vehicle_assigned', 'chauffeur_is_vehicle_assigned')
       .addSelect('vehicle.id', 'vehicle_id')
       .addSelect('vehicle.vehicle_number', 'vehicle_number')
       .addSelect('vehicle.model_name', 'vehicle_model_name')
@@ -107,6 +108,7 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
             name: workHistory.chauffeur_name,
             phone: workHistory.chauffeur_phone,
             type: workHistory.chauffeur_type,
+            isVehicleAssigned: workHistory.chauffeur_is_vehicle_assigned,
           }
         : null,
       // Vehicle 정보

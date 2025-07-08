@@ -618,7 +618,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   }
 
   /**
-   * 행사 쇼퍼의 오늘 배차 상태를 확인하고 필요시 UNASSIGNED로 변경
+   * 행사 쇼퍼의 오늘 배차 상태를 확인하고 필요시 차량 배정 해제
    */
   async checkAndUpdateEventChauffeurStatus(chauffeurId: number): Promise<void> {
     try {
@@ -649,10 +649,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         return opDate >= todayStart && opDate <= todayEnd;
       });
 
-      // 오늘 배차가 없으면 UNASSIGNED로 변경
+      // 오늘 배차가 없으면 차량 배정 해제
       if (todayOperations.length === 0) {
         await this.chauffeurServiceOutPort.update(chauffeurId, {
-          type: ChauffeurType.UNASSIGNED,
+          isVehicleAssigned: false,
           vehicleId: null, // 차량 배정도 해제
         });
       }
@@ -668,6 +668,16 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
 
+      // 차량이 이미 배정되어 있으면 배차 불가능
+      if (chauffeur.isVehicleAssigned) {
+        return false;
+      }
+
+      // 기사 타입이 없으면 배차 불가능
+      if (!chauffeur.type) {
+        return false;
+      }
+
       switch (chauffeur.type) {
         case ChauffeurType.RESIDENT:
         case ChauffeurType.NON_RESIDENT:
@@ -681,10 +691,6 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         case ChauffeurType.HOSPITAL:
           // 병원은 기존 로직 유지 (배차 가능)
           return chauffeur.chauffeurStatus === ChauffeurStatus.OFF_DUTY;
-
-        case ChauffeurType.UNASSIGNED:
-          // 배차차량미정은 배차 불가능
-          return false;
 
         default:
           return false;
@@ -702,6 +708,16 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
 
+      // 차량이 배정되어 있지 않으면 차량 변경 불가능
+      if (!chauffeur.isVehicleAssigned) {
+        return false;
+      }
+
+      // 기사 타입이 없으면 차량 변경 불가능
+      if (!chauffeur.type) {
+        return false;
+      }
+
       switch (chauffeur.type) {
         case ChauffeurType.RESIDENT:
         case ChauffeurType.NON_RESIDENT:
@@ -715,10 +731,6 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         case ChauffeurType.HOSPITAL:
           // 병원은 근무 종료 상태에서 차량 변경 가능
           return chauffeur.chauffeurStatus === ChauffeurStatus.OFF_DUTY;
-
-        case ChauffeurType.UNASSIGNED:
-          // 배차차량미정은 차량 변경 불가능
-          return false;
 
         default:
           return false;

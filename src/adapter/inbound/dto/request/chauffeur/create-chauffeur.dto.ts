@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Matches, IsBoolean } from 'class-validator';
 
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 
@@ -24,6 +24,11 @@ export class CreateChauffeurDto {
   @IsNotEmpty()
   @IsEnum(ChauffeurType)
   type: ChauffeurType;
+
+  @ApiProperty({ description: '차량 배정 여부', default: false })
+  @IsOptional()
+  @IsBoolean()
+  isVehicleAssigned?: boolean;
 
   @ApiProperty({ description: '차량 ID', required: false })
   @IsOptional()

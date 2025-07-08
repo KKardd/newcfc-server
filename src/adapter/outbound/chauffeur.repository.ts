@@ -34,6 +34,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       .leftJoin(Vehicle, 'vehicle', 'chauffeur.vehicle_id = vehicle.id')
       .leftJoin(Garage, 'garage', 'vehicle.garage_id = garage.id')
       .select('chauffeur.*')
+      .addSelect('chauffeur.is_vehicle_assigned', 'is_vehicle_assigned')
       .addSelect('vehicle.id', 'vehicle_id')
       .addSelect('vehicle.vehicle_number', 'vehicle_number')
       .addSelect('vehicle.model_name', 'vehicle_model_name')
@@ -121,6 +122,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       birthDate: chauffeur.birth_date,
       profileImageUrl: chauffeur.profile_image_url,
       type: chauffeur.type,
+      isVehicleAssigned: chauffeur.is_vehicle_assigned,
       chauffeurStatus: chauffeur.chauffeur_status,
       vehicleId: chauffeur.vehicle_id,
       realTimeDispatchId: chauffeur.real_time_dispatch_id,
@@ -186,6 +188,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       .leftJoin(Garage, 'garage', 'vehicle.garage_id = garage.id')
       .leftJoin('operation', 'operation', 'chauffeur.id = operation.chauffeur_id')
       .select('chauffeur.*')
+      .addSelect('chauffeur.is_vehicle_assigned', 'is_vehicle_assigned')
       .addSelect('vehicle.id', 'vehicle_id')
       .addSelect('vehicle.vehicle_number', 'vehicle_number')
       .addSelect('vehicle.model_name', 'vehicle_model_name')
@@ -230,6 +233,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       birthDate: chauffeur.birth_date,
       profileImageUrl: chauffeur.profile_image_url,
       type: chauffeur.type,
+      isVehicleAssigned: chauffeur.is_vehicle_assigned,
       chauffeurStatus: chauffeur.chauffeur_status,
       vehicleId: chauffeur.vehicle_id,
       realTimeDispatchId: chauffeur.real_time_dispatch_id,

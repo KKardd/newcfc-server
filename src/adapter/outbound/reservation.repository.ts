@@ -64,6 +64,7 @@ export class ReservationRepository implements ReservationServiceOutPort {
       .addSelect('chauffeur.birth_date', 'chauffeur_birth_date')
       .addSelect('chauffeur.profile_image_url', 'chauffeur_profile_image_url')
       .addSelect('chauffeur.type', 'chauffeur_type')
+      .addSelect('chauffeur.is_vehicle_assigned', 'chauffeur_is_vehicle_assigned')
       .addSelect('chauffeur.chauffeur_status', 'chauffeur_status')
       .addSelect('chauffeur.vehicle_id', 'chauffeur_vehicle_id')
       .addSelect('chauffeur.role', 'chauffeur_role')
@@ -157,6 +158,7 @@ export class ReservationRepository implements ReservationServiceOutPort {
             birthDate: reservation.chauffeur_birth_date,
             profileImageUrl: reservation.chauffeur_profile_image_url,
             type: reservation.chauffeur_type,
+            isVehicleAssigned: reservation.chauffeur_is_vehicle_assigned,
             chauffeurStatus: reservation.chauffeur_status,
             vehicleId: reservation.chauffeur_vehicle_id,
             role: reservation.chauffeur_role,

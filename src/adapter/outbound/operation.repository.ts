@@ -53,6 +53,7 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('chauffeur.birth_date', 'chauffeur_birth_date')
       .addSelect('chauffeur.profile_image_url', 'chauffeur_profile_image_url')
       .addSelect('chauffeur.type', 'chauffeur_type')
+      .addSelect('chauffeur.is_vehicle_assigned', 'chauffeur_is_vehicle_assigned')
       .addSelect('chauffeur.chauffeur_status', 'chauffeur_status')
       .addSelect('chauffeur.vehicle_id', 'chauffeur_vehicle_id')
       .addSelect('chauffeur.role', 'chauffeur_role')
@@ -229,6 +230,7 @@ export class OperationRepository implements OperationServiceOutPort {
               birthDate: operation.chauffeur_birth_date,
               profileImageUrl: operation.chauffeur_profile_image_url,
               type: operation.chauffeur_type,
+              isVehicleAssigned: operation.chauffeur_is_vehicle_assigned,
               chauffeurStatus: operation.chauffeur_status,
               vehicleId: operation.chauffeur_vehicle_id,
               role: operation.chauffeur_role,
@@ -356,6 +358,7 @@ export class OperationRepository implements OperationServiceOutPort {
       .addSelect('chauffeur.birth_date', 'chauffeur_birth_date')
       .addSelect('chauffeur.profile_image_url', 'chauffeur_profile_image_url')
       .addSelect('chauffeur.type', 'chauffeur_type')
+      .addSelect('chauffeur.is_vehicle_assigned', 'chauffeur_is_vehicle_assigned')
       .addSelect('chauffeur.chauffeur_status', 'chauffeur_status')
       .addSelect('chauffeur.vehicle_id', 'chauffeur_vehicle_id')
       .addSelect('chauffeur.role', 'chauffeur_role')
@@ -457,6 +460,7 @@ export class OperationRepository implements OperationServiceOutPort {
               birthDate: operation.chauffeur_birth_date,
               profileImageUrl: operation.chauffeur_profile_image_url,
               type: operation.chauffeur_type,
+              isVehicleAssigned: operation.chauffeur_is_vehicle_assigned,
               chauffeurStatus: operation.chauffeur_status,
               vehicleId: operation.chauffeur_vehicle_id,
               role: operation.chauffeur_role,

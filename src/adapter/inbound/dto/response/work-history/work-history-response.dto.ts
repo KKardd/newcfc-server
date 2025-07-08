@@ -17,9 +17,13 @@ export class WorkHistoryChauffeurDto {
   @Expose()
   phone: string;
 
-  @ApiProperty({ description: '기사 타입', enum: ChauffeurType })
+  @ApiProperty({ description: '기사 타입', enum: ChauffeurType, required: false })
   @Expose()
-  type: ChauffeurType;
+  type: ChauffeurType | null;
+
+  @ApiProperty({ description: '차량 배정 여부' })
+  @Expose()
+  isVehicleAssigned: boolean;
 }
 
 export class WorkHistoryVehicleDto {

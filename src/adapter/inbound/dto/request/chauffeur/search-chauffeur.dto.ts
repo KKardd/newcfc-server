@@ -69,4 +69,14 @@ export class SearchChauffeurDto {
     return Boolean(value);
   })
   isNonResident?: boolean;
+
+  @ApiProperty({ description: '차량 배정 여부로 필터링', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  isVehicleAssigned?: boolean;
 }

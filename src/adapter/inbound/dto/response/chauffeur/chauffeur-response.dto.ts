@@ -103,9 +103,13 @@ export class ChauffeurResponseDto {
   @Expose()
   profileImageUrl: string | null;
 
-  @ApiProperty({ description: '기사 타입', enum: ChauffeurType })
+  @ApiProperty({ description: '기사 타입', enum: ChauffeurType, required: false })
   @Expose()
-  type: ChauffeurType;
+  type: ChauffeurType | null;
+
+  @ApiProperty({ description: '차량 배정 여부' })
+  @Expose()
+  isVehicleAssigned: boolean;
 
   @ApiProperty({ description: '기사 상태', enum: ChauffeurStatus })
   @Expose()

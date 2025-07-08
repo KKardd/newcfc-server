@@ -118,11 +118,11 @@ export class ChauffeurController {
     await this.chauffeurService.updateMyLocation(user.userId, updateLocationDto);
   }
 
-  @ApiOperation({ summary: '내 현재 위치 조회' })
+  @ApiOperation({ summary: '기사 현재 위치 조회' })
   @ApiSuccessResponse(200, LocationResponseDto)
   @Roles(UserRoleType.CHAUFFEUR)
-  @Get('me/location')
-  async getMyLocation(@UserToken() user: UserAccessTokenPayload): Promise<LocationResponseDto> {
-    return await this.chauffeurService.getMyLocation(user.userId);
+  @Get(':chauffeurId/location')
+  async getMyLocation(@Param('chauffeurId', ParseIntPipe) chauffeurId: number): Promise<LocationResponseDto> {
+    return await this.chauffeurService.getMyLocation(chauffeurId);
   }
 }

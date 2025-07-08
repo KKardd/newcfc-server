@@ -42,4 +42,7 @@ export abstract class ChauffeurServiceInPort {
   abstract updateMyLocation(chauffeurId: number, updateLocationDto: UpdateLocationDto): Promise<void>;
 
   abstract getMyLocation(chauffeurId: number): Promise<LocationResponseDto>;
+
+  // 행사 쇼퍼 상태 관리
+  abstract checkAndUpdateEventChauffeurStatus(chauffeurId: number): Promise<void>;
 }

@@ -43,6 +43,7 @@ import {
   NextReservationDto,
   NextWayPointDto,
 } from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
+import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 
 @Injectable()
 export class ChauffeurService implements ChauffeurServiceInPort {
@@ -141,6 +142,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       case ChauffeurStatus.IN_OPERATION:
         // 고객 탑승대기 -> 운행 중: 목적지 및 경유지 정보 반환
         await this.handleInOperation(chauffeurId, response);
+        // 운행 상태를 USED로 변경
+        await this.updateCurrentOperationStatus(chauffeurId, DataStatus.USED);
         break;
 
       case ChauffeurStatus.WAITING_OPERATION:
@@ -156,6 +159,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       case ChauffeurStatus.OPERATION_COMPLETED:
         // 정보 미기입 -> 운행 종료: operation.endTime 설정 및 운행시간 계산 (operation update 완료 후)
         await this.handleOperationCompleted(chauffeurId, response);
+        // 운행 상태를 COMPLETED로 변경
+        await this.updateCurrentOperationStatus(chauffeurId, DataStatus.COMPLETED);
         break;
     }
 
@@ -206,11 +211,15 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       wayPointPagination.countPerPage = 100;
 
       const wayPoints = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
-      response.wayPoints = wayPoints.data
-        .sort((a, b) => a.order - b.order)
-        .map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
+      const sortedWayPoints = wayPoints.data.sort((a, b) => a.order - b.order);
+
+      response.wayPoints = sortedWayPoints.map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
+
+      // 현재 진행 중인 waypoint 식별
+      response.currentWayPoint = await this.getCurrentWayPoint(chauffeurId, sortedWayPoints);
     } catch (error) {
       response.wayPoints = [];
+      response.currentWayPoint = null;
     }
 
     // 실시간 배차 정보 조회 (실시간 배차인 경우)
@@ -460,6 +469,60 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   }
 
   /**
+   * 현재 진행 중인 waypoint를 식별하는 메서드
+   */
+  private async getCurrentWayPoint(chauffeurId: number, sortedWayPoints: any[]): Promise<CurrentWayPointDto | null> {
+    try {
+      // 기사의 현재 상태 조회
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      if (sortedWayPoints.length === 0) {
+        return null;
+      }
+
+      switch (chauffeur.chauffeurStatus) {
+        case ChauffeurStatus.MOVING_TO_DEPARTURE:
+        case ChauffeurStatus.WAITING_FOR_PASSENGER:
+          // 출발지로 이동 중이거나 고객 탑승 대기 중 → 첫 번째 waypoint
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[0], classTransformDefaultOptions);
+
+        case ChauffeurStatus.IN_OPERATION:
+          // 운행 중 → 다음 목적지 waypoint (아직 방문하지 않은 waypoint 중 첫 번째)
+          const nextWayPoint = sortedWayPoints.find((wp) => !wp.chauffeurStatus || !wp.visitTime);
+          if (nextWayPoint) {
+            return plainToInstance(CurrentWayPointDto, nextWayPoint, classTransformDefaultOptions);
+          }
+          // 모든 waypoint를 방문했다면 마지막 waypoint
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[sortedWayPoints.length - 1], classTransformDefaultOptions);
+
+        case ChauffeurStatus.WAITING_OPERATION:
+          // 운행 대기 → 현재 위치한 waypoint (가장 최근에 방문한 waypoint)
+          const visitedWayPoints = sortedWayPoints.filter((wp) => wp.chauffeurStatus && wp.visitTime);
+          if (visitedWayPoints.length > 0) {
+            // visitTime 기준으로 가장 최근 방문한 waypoint
+            const latestVisited = visitedWayPoints.sort(
+              (a, b) => new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime(),
+            )[0];
+            return plainToInstance(CurrentWayPointDto, latestVisited, classTransformDefaultOptions);
+          }
+          // 방문한 waypoint가 없다면 첫 번째 waypoint
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[0], classTransformDefaultOptions);
+
+        case ChauffeurStatus.OPERATION_COMPLETED:
+          // 운행 완료 → 마지막 waypoint
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[sortedWayPoints.length - 1], classTransformDefaultOptions);
+
+        default:
+          // 기타 상태 → null
+          return null;
+      }
+    } catch (error) {
+      console.error('Failed to get current waypoint:', error);
+      return null;
+    }
+  }
+
+  /**
    * 기사 상태 변경 시 현재 위치의 waypoint에 기사 상태를 저장하는 메서드
    */
   private async updateWayPointChauffeurStatus(chauffeurId: number, chauffeurStatus: ChauffeurStatus): Promise<void> {
@@ -528,6 +591,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       if (targetWayPointId) {
         await this.wayPointServiceOutPort.update(targetWayPointId, {
           chauffeurStatus: chauffeurStatus,
+          visitTime: new Date(), // 방문 시간 기록
         });
       }
     } catch (error) {
@@ -551,5 +615,133 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       },
       classTransformDefaultOptions,
     );
+  }
+
+  /**
+   * 행사 쇼퍼의 오늘 배차 상태를 확인하고 필요시 UNASSIGNED로 변경
+   */
+  async checkAndUpdateEventChauffeurStatus(chauffeurId: number): Promise<void> {
+    try {
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      // 행사 쇼퍼가 아니면 처리하지 않음
+      if (chauffeur.type !== ChauffeurType.EVENT) {
+        return;
+      }
+
+      // 오늘 날짜의 배차(운행) 확인
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const operationPagination = new PaginationQuery();
+      operationPagination.page = 1;
+      operationPagination.countPerPage = 100;
+
+      const [operations] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
+
+      // 오늘 날짜에 해당하는 운행이 있는지 확인
+      const todayOperations = operations.filter((op) => {
+        if (!op.startTime) return false;
+        const opDate = new Date(op.startTime);
+        return opDate >= todayStart && opDate <= todayEnd;
+      });
+
+      // 오늘 배차가 없으면 UNASSIGNED로 변경
+      if (todayOperations.length === 0) {
+        await this.chauffeurServiceOutPort.update(chauffeurId, {
+          type: ChauffeurType.UNASSIGNED,
+          vehicleId: null, // 차량 배정도 해제
+        });
+      }
+    } catch (error) {
+      console.error('Failed to check event chauffeur status:', error);
+    }
+  }
+
+  /**
+   * 기사 타입별 배차 가능 여부 확인
+   */
+  async canAssignVehicle(chauffeurId: number): Promise<boolean> {
+    try {
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      switch (chauffeur.type) {
+        case ChauffeurType.RESIDENT:
+        case ChauffeurType.NON_RESIDENT:
+          // 상주, 비상주는 배차 가능 (근무 종료 상태일 때)
+          return chauffeur.chauffeurStatus === ChauffeurStatus.OFF_DUTY;
+
+        case ChauffeurType.EVENT:
+          // 행사는 예약과 함께만 배차 가능
+          return false;
+
+        case ChauffeurType.HOSPITAL:
+          // 병원은 기존 로직 유지 (배차 가능)
+          return chauffeur.chauffeurStatus === ChauffeurStatus.OFF_DUTY;
+
+        case ChauffeurType.UNASSIGNED:
+          // 배차차량미정은 배차 불가능
+          return false;
+
+        default:
+          return false;
+      }
+    } catch (error) {
+      console.error('Failed to check vehicle assignment eligibility:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 기사 타입별 차량 변경 가능 여부 확인
+   */
+  async canChangeVehicle(chauffeurId: number): Promise<boolean> {
+    try {
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      switch (chauffeur.type) {
+        case ChauffeurType.RESIDENT:
+        case ChauffeurType.NON_RESIDENT:
+          // 상주, 비상주는 근무 종료 상태에서 차량 변경 가능
+          return chauffeur.chauffeurStatus === ChauffeurStatus.OFF_DUTY;
+
+        case ChauffeurType.EVENT:
+          // 행사는 차량 변경 불가능 (예약과 함께만 배차)
+          return false;
+
+        case ChauffeurType.HOSPITAL:
+          // 병원은 근무 종료 상태에서 차량 변경 가능
+          return chauffeur.chauffeurStatus === ChauffeurStatus.OFF_DUTY;
+
+        case ChauffeurType.UNASSIGNED:
+          // 배차차량미정은 차량 변경 불가능
+          return false;
+
+        default:
+          return false;
+      }
+    } catch (error) {
+      console.error('Failed to check vehicle change eligibility:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 현재 운행의 DataStatus를 업데이트하는 메서드
+   */
+  private async updateCurrentOperationStatus(chauffeurId: number, status: DataStatus): Promise<void> {
+    try {
+      const currentOperation = await this.getCurrentOperation(chauffeurId);
+      if (currentOperation) {
+        await this.operationServiceOutPort.update(currentOperation.id, {
+          status: status,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update operation status:', error);
+    }
   }
 }

@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
 import { OperationType } from '@/domain/enum/operation-type.enum';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 
 export class CurrentReservationDto {
   @ApiProperty({ description: '예약 ID' })
@@ -38,9 +39,21 @@ export class CurrentWayPointDto {
   @Expose()
   address: string;
 
+  @ApiProperty({ description: '상세주소', required: false })
+  @Expose()
+  addressDetail: string | null;
+
   @ApiProperty({ description: '순서' })
   @Expose()
   order: number;
+
+  @ApiProperty({ description: '기사 상태', enum: ChauffeurStatus, required: false })
+  @Expose()
+  chauffeurStatus: ChauffeurStatus | null;
+
+  @ApiProperty({ description: '방문 시간', required: false })
+  @Expose()
+  visitTime: Date | null;
 }
 
 export class CurrentOperationResponseDto {
@@ -68,6 +81,11 @@ export class CurrentOperationResponseDto {
   @Expose()
   @Type(() => CurrentReservationDto)
   reservation: CurrentReservationDto | null;
+
+  @ApiProperty({ description: '현재 진행 중인 경유지', type: CurrentWayPointDto, required: false })
+  @Expose()
+  @Type(() => CurrentWayPointDto)
+  currentWayPoint: CurrentWayPointDto | null;
 
   @ApiProperty({ description: '경유지 목록', type: [CurrentWayPointDto] })
   @Expose()

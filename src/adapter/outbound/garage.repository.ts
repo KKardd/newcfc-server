@@ -33,7 +33,8 @@ export class GarageRepository implements GarageServiceOutPort {
     }
 
     if (searchGarage.address) {
-      queryBuilder.andWhere('garage.address LIKE :address', {
+      // address와 detailAddress를 합쳐서 검색하는 통합 검색
+      queryBuilder.andWhere("CONCAT(garage.address, COALESCE(' ' || garage.detail_address, '')) LIKE :address", {
         address: `%${searchGarage.address}%`,
       });
     }
@@ -53,6 +54,7 @@ export class GarageRepository implements GarageServiceOutPort {
       id: garage.id,
       name: garage.name,
       address: garage.address,
+      detailAddress: garage.detail_address,
       vehicleCount: parseInt(garage.vehicle_count) || 0,
       status: garage.status,
       createdAt: garage.created_at,
@@ -85,6 +87,7 @@ export class GarageRepository implements GarageServiceOutPort {
       id: result.id,
       name: result.name,
       address: result.address,
+      detailAddress: result.detail_address,
       vehicleCount: parseInt(result.vehicle_count) || 0,
       status: result.status,
       createdAt: result.created_at,

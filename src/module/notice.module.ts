@@ -3,13 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { NoticeController } from '@/adapter/inbound/controller/notice.controller';
 import { NoticeRepository } from '@/adapter/outbound/notice.repository';
+import { Admin } from '@/domain/entity/admin.entity';
 import { Notice } from '@/domain/entity/notice.entity';
 import { NoticeServiceInPort } from '@/port/inbound/notice-service.in-port';
 import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
 import { NoticeService } from '@/port/service/notice.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Notice])],
+  imports: [TypeOrmModule.forFeature([Notice, Admin])],
   controllers: [NoticeController],
   providers: [
     {

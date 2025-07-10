@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchNoticeDto } from '@/adapter/inbound/dto/request/notice/search-notice.dto';
 import { NoticeResponseDto } from '@/adapter/inbound/dto/response/notice/notice-response.dto';
+import { Admin } from '@/domain/entity/admin.entity';
 import { Notice } from '@/domain/entity/notice.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
@@ -18,7 +19,11 @@ export class NoticeRepository implements NoticeServiceOutPort {
   ) {}
 
   async findAll(searchNotice: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<[NoticeResponseDto[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('notice').select('notice.*');
+    const queryBuilder = this.repository
+      .createQueryBuilder('notice')
+      .leftJoin(Admin, 'admin', 'notice.admin_id = admin.id')
+      .select('notice.*')
+      .addSelect('admin.name', 'admin_name');
 
     if (searchNotice.title) {
       queryBuilder.andWhere('notice.title LIKE :title', {
@@ -57,6 +62,7 @@ export class NoticeRepository implements NoticeServiceOutPort {
       isPopup: notice.is_popup,
       popupStartDate: notice.popup_start_date,
       popupEndDate: notice.popup_end_date,
+      createdBy: notice.admin_name || '',
       createdAt: notice.created_at,
       updatedAt: notice.updated_at,
     }));
@@ -67,7 +73,9 @@ export class NoticeRepository implements NoticeServiceOutPort {
   async findPopupNotices(): Promise<NoticeResponseDto[]> {
     const queryBuilder = this.repository
       .createQueryBuilder('notice')
+      .leftJoin(Admin, 'admin', 'notice.admin_id = admin.id')
       .select('notice.*')
+      .addSelect('admin.name', 'admin_name')
       .where('notice.is_popup = :isPopup', { isPopup: true })
       .andWhere('notice.status = :status', { status: DataStatus.REGISTER })
       .andWhere('(notice.popup_start_date IS NULL OR notice.popup_start_date <= NOW())')
@@ -84,6 +92,7 @@ export class NoticeRepository implements NoticeServiceOutPort {
       isPopup: notice.is_popup,
       popupStartDate: notice.popup_start_date,
       popupEndDate: notice.popup_end_date,
+      createdBy: notice.admin_name || '',
       createdAt: notice.created_at,
       updatedAt: notice.updated_at,
     }));

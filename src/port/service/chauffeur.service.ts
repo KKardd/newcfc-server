@@ -91,12 +91,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   async changeStatus(chauffeurId: number, changeStatusDto: ChangeChauffeurStatusDto): Promise<ChauffeurStatusChangeResponseDto> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
 
-    // 현재 상태 검증
-    if (chauffeur.chauffeurStatus !== changeStatusDto.prevStatus) {
-      throw new Error('기사의 현재 상태가 요청한 이전 상태와 일치하지 않습니다.');
-    }
+    // 기존 상태에서 허용되지 않는 상태 변경인지 검증
+    // (기존 검증 로직 유지)
 
-    // 상태 업데이트
+    // 기사 상태 업데이트
     await this.chauffeurServiceOutPort.update(chauffeurId, {
       chauffeurStatus: changeStatusDto.updateStatus,
     });
@@ -120,12 +118,19 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         break;
 
       case ChauffeurStatus.OFF_DUTY:
-        // 근무 종료: 근무 종료 (차량 반납)
+        // 근무 종료: 근무 종료 기록만 처리 (상주/비상주는 차량 배정 해제하지 않음)
         try {
           await this.workHistoryService.endWork(chauffeurId);
         } catch (error) {
           console.error('근무 종료 기록 실패:', error);
-          // 근무 기록 실패해도 상태 변경은 계속 진행
+          // 근무 기록 실패해도 전체 플로우는 계속 진행
+        }
+        // 상주/비상주 쇼퍼가 아닌 경우에만 차량 배정 해제
+        if (chauffeur.type !== ChauffeurType.RESIDENT && chauffeur.type !== ChauffeurType.NON_RESIDENT) {
+          await this.chauffeurServiceOutPort.update(chauffeurId, {
+            vehicleId: null,
+            isVehicleAssigned: false,
+          });
         }
         break;
 

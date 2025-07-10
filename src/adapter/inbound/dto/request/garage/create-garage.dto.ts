@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateGarageDto {
   @ApiProperty({ description: '차고지 이름' })
@@ -11,4 +11,9 @@ export class CreateGarageDto {
   @IsNotEmpty()
   @IsString()
   address: string;
+
+  @ApiProperty({ description: '차고지 상세 주소', required: false })
+  @IsOptional()
+  @IsString()
+  detailAddress?: string;
 }

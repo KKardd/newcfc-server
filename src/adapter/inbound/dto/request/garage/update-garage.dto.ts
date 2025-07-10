@@ -11,4 +11,9 @@ export class UpdateGarageDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @ApiProperty({ description: '차고지 상세 주소', required: false })
+  @IsOptional()
+  @IsString()
+  detailAddress?: string;
 }

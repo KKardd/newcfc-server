@@ -14,6 +14,9 @@ export class Garage extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: false })
   address: string;
 
+  @Column({ name: 'detail_address', type: 'varchar', length: 255, nullable: true })
+  detailAddress: string | null;
+
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
 }

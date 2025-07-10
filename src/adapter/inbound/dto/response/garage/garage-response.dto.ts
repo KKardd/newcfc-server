@@ -17,6 +17,10 @@ export class GarageResponseDto {
   @Expose()
   address: string;
 
+  @ApiProperty({ description: '차고지 상세 주소', required: false })
+  @Expose()
+  detailAddress: string | null;
+
   @ApiProperty({ description: '배정된 차량 개수' })
   @Expose()
   vehicleCount: number;

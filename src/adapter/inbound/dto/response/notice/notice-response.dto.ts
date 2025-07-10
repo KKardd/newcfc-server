@@ -33,6 +33,10 @@ export class NoticeResponseDto {
   @Expose()
   popupEndDate: Date | null;
 
+  @ApiProperty({ description: '작성자명' })
+  @Expose()
+  createdBy: string;
+
   @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;

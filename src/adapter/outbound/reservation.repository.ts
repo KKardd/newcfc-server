@@ -1,65 +1,57 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Not, Like } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchReservationDto } from '@/adapter/inbound/dto/request/reservation/search-reservation.dto';
 import { Reservation } from '@/domain/entity/reservation.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
-import { CustomRepository } from '@/util/custom-repository.decorator';
-import { CustomRepository as BaseRepository } from './custom.repository';
 
-@CustomRepository(Reservation)
-export class ReservationRepository extends BaseRepository<Reservation> implements ReservationServiceOutPort {
-  async findAll(search: SearchReservationDto, paginationQuery: PaginationQuery): Promise<[Reservation[], number]> {
-    const queryBuilder = this.createQueryBuilder('reservation').leftJoinAndSelect('reservation.operation', 'operation');
+@Injectable()
+export class ReservationRepository implements ReservationServiceOutPort {
+  constructor(
+    @InjectRepository(Reservation)
+    private readonly reservationRepository: Repository<Reservation>,
+  ) {}
 
-    if (search.operationId) {
-      queryBuilder.andWhere('reservation.operation_id = :operationId', {
-        operationId: search.operationId,
-      });
+  async findAll(
+    search: SearchReservationDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[Reservation[], number]> {
+    const where: any = {};
+    if (search.operationId) where.operationId = search.operationId;
+    if (search.passengerName) where.passengerName = Like(`%${search.passengerName}%`);
+    if (search.passengerPhone) where.passengerPhone = Like(`%${search.passengerPhone}%`);
+    if (search.passengerEmail) where.passengerEmail = Like(`%${search.passengerEmail}%`);
+    if (search.passengerCount) where.passengerCount = search.passengerCount;
+    if (status === 'delete') {
+      where.status = Not('delete');
+    } else if (status) {
+      where.status = status;
     }
-
-    if (search.passengerName) {
-      queryBuilder.andWhere('reservation.passenger_name LIKE :passengerName', {
-        passengerName: `%${search.passengerName}%`,
-      });
-    }
-
-    if (search.passengerPhone) {
-      queryBuilder.andWhere('reservation.passenger_phone LIKE :passengerPhone', {
-        passengerPhone: `%${search.passengerPhone}%`,
-      });
-    }
-
-    if (search.passengerEmail) {
-      queryBuilder.andWhere('reservation.passenger_email LIKE :passengerEmail', {
-        passengerEmail: `%${search.passengerEmail}%`,
-      });
-    }
-
-    if (search.passengerCount) {
-      queryBuilder.andWhere('reservation.passenger_count = :passengerCount', {
-        passengerCount: search.passengerCount,
-      });
-    }
-
-    if (search.status) {
-      queryBuilder.andWhere('reservation.status = :status', {
-        status: search.status,
-      });
-    }
-
-    queryBuilder.orderBy('reservation.createdAt', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
-
-    return queryBuilder.getManyAndCount();
-  }
-
-  async findById(id: number): Promise<Reservation> {
-    return this.findOneOrFail({
-      where: { id },
+    return this.reservationRepository.findAndCount({
+      skip: paginationQuery.skip,
+      take: paginationQuery.countPerPage,
+      order: { createdAt: 'DESC' },
+      where,
       relations: ['operation'],
     });
   }
 
+  async findById(id: number): Promise<Reservation | null> {
+    return this.reservationRepository.findOne({ where: { id }, relations: ['operation'] });
+  }
+
+  async save(reservation: Reservation): Promise<Reservation> {
+    return this.reservationRepository.save(reservation);
+  }
+
+  async update(id: number, reservation: Partial<Reservation>) {
+    return this.reservationRepository.update(id, reservation);
+  }
+
   async updateStatus(id: number, status: DataStatus) {
-    return this.update(id, { status });
+    return this.reservationRepository.update(id, { status });
   }
 }

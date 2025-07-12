@@ -6,11 +6,15 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export abstract class AdminServiceOutPort {
-  abstract findAll(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<[AdminResponseDto[], number]>;
+  abstract findAll(
+    searchAdmin: SearchAdminDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[AdminResponseDto[], number]>;
 
   abstract findById(id: number): Promise<Admin | null>;
 
-  abstract save(admin: Admin): Promise<void>;
+  abstract save(admin: Admin): Promise<Admin>;
 
   abstract update(id: number, admin: Partial<Admin>): Promise<UpdateResult>;
 

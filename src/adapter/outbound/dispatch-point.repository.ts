@@ -1,44 +1,53 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Not, Like } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchDispatchPointDto } from '@/adapter/inbound/dto/request/dispatch-point/search-dispatch-point.dto';
 import { DispatchPoint } from '@/domain/entity/dispatch-point.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { DispatchPointServiceOutPort } from '@/port/outbound/dispatch-point-service.out-port';
-import { CustomRepository } from '@/util/custom-repository.decorator';
-import { CustomRepository as BaseRepository } from './custom.repository';
 
-@CustomRepository(DispatchPoint)
-export class DispatchPointRepository extends BaseRepository<DispatchPoint> implements DispatchPointServiceOutPort {
-  async findAll(search: SearchDispatchPointDto, paginationQuery: PaginationQuery): Promise<[DispatchPoint[], number]> {
-    const queryBuilder = this.createQueryBuilder('dispatch_point');
+@Injectable()
+export class DispatchPointRepository implements DispatchPointServiceOutPort {
+  constructor(
+    @InjectRepository(DispatchPoint)
+    private readonly dispatchPointRepository: Repository<DispatchPoint>,
+  ) {}
 
-    if (search.name) {
-      queryBuilder.andWhere('dispatch_point.name LIKE :name', {
-        name: `%${search.name}%`,
-      });
+  async findAll(
+    search: SearchDispatchPointDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[DispatchPoint[], number]> {
+    const where: any = {};
+    if (search.name) where.name = Like(`%${search.name}%`);
+    if (search.address) where.address = Like(`%${search.address}%`);
+    if (status === 'delete') {
+      where.status = Not('delete');
+    } else if (status) {
+      where.status = status;
     }
-
-    if (search.address) {
-      queryBuilder.andWhere('dispatch_point.address LIKE :address', {
-        address: `%${search.address}%`,
-      });
-    }
-
-    if (search.status) {
-      queryBuilder.andWhere('dispatch_point.status = :status', {
-        status: search.status,
-      });
-    }
-
-    queryBuilder.orderBy('dispatch_point.createdAt', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
-
-    return queryBuilder.getManyAndCount();
+    return this.dispatchPointRepository.findAndCount({
+      skip: paginationQuery.skip,
+      take: paginationQuery.countPerPage,
+      order: { createdAt: 'DESC' },
+      where,
+    });
   }
 
-  async findById(id: number): Promise<DispatchPoint> {
-    return this.findOneOrFail({ where: { id } });
+  async findById(id: number): Promise<DispatchPoint | null> {
+    return this.dispatchPointRepository.findOne({ where: { id } });
+  }
+
+  async save(dispatchPoint: DispatchPoint): Promise<DispatchPoint> {
+    return this.dispatchPointRepository.save(dispatchPoint);
+  }
+
+  async update(id: number, dispatchPoint: Partial<DispatchPoint>) {
+    return this.dispatchPointRepository.update(id, dispatchPoint);
   }
 
   async updateStatus(id: number, status: DataStatus) {
-    return this.update(id, { status });
+    return this.dispatchPointRepository.update(id, { status });
   }
 }

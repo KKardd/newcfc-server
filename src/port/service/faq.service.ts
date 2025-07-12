@@ -16,7 +16,8 @@ export class FaqService implements FaqServiceInPort {
   constructor(private readonly faqServiceOutPort: FaqServiceOutPort) {}
 
   async search(paginationQuery: PaginationQuery): Promise<PaginationResponse<FaqResponseDto>> {
-    const [faqs, totalCount] = await this.faqServiceOutPort.findAll(paginationQuery);
+    // 삭제 제외 조회
+    const [faqs, totalCount] = await this.faqServiceOutPort.findAll(paginationQuery, 'delete');
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(FaqResponseDto, faqs, classTransformDefaultOptions);

@@ -8,6 +8,7 @@ export abstract class RealTimeDispatchServiceOutPort {
   abstract findAll(
     searchRealTimeDispatch: SearchRealTimeDispatchDto,
     paginationQuery: PaginationQuery,
+    status?: string,
   ): Promise<[RealTimeDispatch[], number]>;
 
   abstract findById(id: number): Promise<RealTimeDispatch | null>;

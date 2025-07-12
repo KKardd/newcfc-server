@@ -22,7 +22,11 @@ export class DispatchPointService implements DispatchPointServiceInPort {
     searchDispatchPoint: SearchDispatchPointDto,
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<DispatchPointResponseDto>> {
-    const [dispatchPoints, totalCount] = await this.dispatchPointServiceOutPort.findAll(searchDispatchPoint, paginationQuery);
+    const [dispatchPoints, totalCount] = await this.dispatchPointServiceOutPort.findAll(
+      searchDispatchPoint,
+      paginationQuery,
+      'delete',
+    );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(DispatchPointResponseDto, dispatchPoints, classTransformDefaultOptions);

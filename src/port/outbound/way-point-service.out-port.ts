@@ -5,7 +5,11 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export abstract class WayPointServiceOutPort {
-  abstract findAll(searchWayPoint: SearchWayPointDto, paginationQuery: PaginationQuery): Promise<[WayPoint[], number]>;
+  abstract findAll(
+    searchWayPoint: SearchWayPointDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[WayPoint[], number]>;
 
   abstract findById(id: number): Promise<WayPoint | null>;
 

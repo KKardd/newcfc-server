@@ -8,6 +8,7 @@ export abstract class DispatchPointServiceOutPort {
   abstract findAll(
     searchDispatchPoint: SearchDispatchPointDto,
     paginationQuery: PaginationQuery,
+    status?: string,
   ): Promise<[DispatchPoint[], number]>;
 
   abstract findById(id: number): Promise<DispatchPoint | null>;

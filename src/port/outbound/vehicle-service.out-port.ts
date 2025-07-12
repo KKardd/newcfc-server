@@ -5,7 +5,11 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export abstract class VehicleServiceOutPort {
-  abstract findAll(searchVehicle: SearchVehicleDto, paginationQuery: PaginationQuery): Promise<[Vehicle[], number]>;
+  abstract findAll(
+    searchVehicle: SearchVehicleDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[Vehicle[], number]>;
 
   abstract findById(id: number): Promise<Vehicle | null>;
 

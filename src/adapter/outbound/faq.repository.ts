@@ -1,22 +1,45 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Not } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { Faq } from '@/domain/entity/faq.entity';
 import { FaqServiceOutPort } from '@/port/outbound/faq-service.out-port';
-import { CustomRepository } from '@/util/custom-repository.decorator';
-import { CustomRepository as BaseRepository } from './custom.repository';
 
-@CustomRepository(Faq)
-export class FaqRepository extends BaseRepository<Faq> implements FaqServiceOutPort {
-  async findAll(paginationQuery: PaginationQuery): Promise<[Faq[], number]> {
-    return this.findAndCount({
+@Injectable()
+export class FaqRepository implements FaqServiceOutPort {
+  constructor(
+    @InjectRepository(Faq)
+    private readonly faqRepository: Repository<Faq>,
+  ) {}
+
+  async findAll(paginationQuery: PaginationQuery, status?: string): Promise<[Faq[], number]> {
+    const where: any = {};
+    if (status === 'delete') {
+      where.status = Not('delete');
+    } else if (status) {
+      where.status = status;
+    }
+    return this.faqRepository.findAndCount({
       skip: paginationQuery.skip,
       take: paginationQuery.countPerPage,
-      order: {
-        createdAt: 'DESC',
-      },
+      order: { createdAt: 'DESC' },
+      where,
     });
   }
 
-  async findById(id: number): Promise<Faq> {
-    return this.findOneOrFail({ where: { id } });
+  async findById(id: number): Promise<Faq | null> {
+    return this.faqRepository.findOne({ where: { id } });
+  }
+
+  async save(faq: Faq): Promise<void> {
+    await this.faqRepository.save(faq);
+  }
+
+  async update(id: number, faq: Partial<Faq>) {
+    return this.faqRepository.update(id, faq);
+  }
+
+  async delete(id: number) {
+    return this.faqRepository.delete(id);
   }
 }

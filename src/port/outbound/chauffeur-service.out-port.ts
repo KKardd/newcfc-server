@@ -5,15 +5,17 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export abstract class ChauffeurServiceOutPort {
-  abstract findAll(searchChauffeur: SearchChauffeurDto, paginationQuery: PaginationQuery): Promise<[Chauffeur[], number]>;
+  abstract findAll(
+    searchChauffeur: SearchChauffeurDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[Chauffeur[], number]>;
 
   abstract findById(id: number): Promise<Chauffeur | null>;
 
   abstract save(chauffeur: Chauffeur): Promise<Chauffeur>;
 
   abstract update(id: number, chauffeur: Partial<Chauffeur>): Promise<UpdateResult>;
-
-  abstract updateStatus(id: number, status: DataStatus): Promise<UpdateResult>;
 
   abstract findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<Chauffeur[]>;
 

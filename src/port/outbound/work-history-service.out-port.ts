@@ -5,7 +5,11 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export interface WorkHistoryServiceOutPort {
-  findAll(searchWorkHistory: SearchWorkHistoryDto, paginationQuery: PaginationQuery): Promise<[WorkHistory[], number]>;
+  findAll(
+    searchWorkHistory: SearchWorkHistoryDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[WorkHistory[], number]>;
 
   findById(id: number): Promise<WorkHistory | null>;
 

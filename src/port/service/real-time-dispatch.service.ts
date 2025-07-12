@@ -25,6 +25,7 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
     const [realTimeDispatches, totalCount] = await this.realTimeDispatchServiceOutPort.findAll(
       searchRealTimeDispatch,
       paginationQuery,
+      'delete',
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 

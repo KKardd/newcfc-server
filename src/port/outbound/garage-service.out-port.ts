@@ -5,7 +5,7 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export abstract class GarageServiceOutPort {
-  abstract findAll(searchGarage: SearchGarageDto, paginationQuery: PaginationQuery): Promise<[Garage[], number]>;
+  abstract findAll(searchGarage: SearchGarageDto, paginationQuery: PaginationQuery, status?: string): Promise<[Garage[], number]>;
 
   abstract findById(id: number): Promise<Garage | null>;
 

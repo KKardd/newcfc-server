@@ -3,7 +3,7 @@ import { Faq } from '@/domain/entity/faq.entity';
 import { DeleteResult, UpdateResult } from 'typeorm';
 
 export abstract class FaqServiceOutPort {
-  abstract findAll(paginationQuery: PaginationQuery): Promise<[Faq[], number]>;
+  abstract findAll(paginationQuery: PaginationQuery, status?: string): Promise<[Faq[], number]>;
 
   abstract findById(id: number): Promise<Faq | null>;
 

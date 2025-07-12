@@ -1,51 +1,54 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like, Not } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchGarageDto } from '@/adapter/inbound/dto/request/garage/search-garage.dto';
 import { Garage } from '@/domain/entity/garage.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
-import { CustomRepository } from '@/util/custom-repository.decorator';
-import { CustomRepository as BaseRepository } from './custom.repository';
 
-@CustomRepository(Garage)
-export class GarageRepository extends BaseRepository<Garage> implements GarageServiceOutPort {
-  async findAll(search: SearchGarageDto, paginationQuery: PaginationQuery): Promise<[Garage[], number]> {
-    const queryBuilder = this.createQueryBuilder('garage').leftJoinAndSelect('garage.vehicles', 'vehicle');
+@Injectable()
+export class GarageRepository implements GarageServiceOutPort {
+  constructor(
+    @InjectRepository(Garage)
+    private readonly garageRepository: Repository<Garage>,
+  ) {}
 
-    if (search.name) {
-      queryBuilder.andWhere('garage.name LIKE :name', {
-        name: `%${search.name}%`,
-      });
+  async findAll(search: SearchGarageDto, paginationQuery: PaginationQuery, status?: string): Promise<[Garage[], number]> {
+    const where: any = {};
+    if (search.name) where.name = Like(`%${search.name}%`);
+    if (search.address) where.address = Like(`%${search.address}%`);
+    if (status === 'delete') {
+      where.status = Not('delete');
+    } else if (status) {
+      where.status = status;
     }
-
-    if (search.address) {
-      queryBuilder.andWhere('garage.address LIKE :address', {
-        address: `%${search.address}%`,
-      });
-    }
-
-    if (search.status) {
-      queryBuilder.andWhere('garage.status = :status', {
-        status: search.status,
-      });
-    }
-
-    queryBuilder.orderBy('garage.createdAt', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
-
-    return queryBuilder.getManyAndCount();
+    return this.garageRepository.findAndCount({
+      skip: paginationQuery.skip,
+      take: paginationQuery.countPerPage,
+      order: { createdAt: 'DESC' },
+      where,
+      relations: ['vehicles'],
+    });
   }
 
-  async findById(id: number): Promise<Garage> {
-    return this.findOneOrFail({ where: { id } });
+  async findById(id: number): Promise<Garage | null> {
+    return this.garageRepository.findOne({ where: { id } });
   }
 
-  async findByIdWithVehicleCount(id: number): Promise<Garage> {
-    return this.createQueryBuilder('garage')
-      .leftJoinAndSelect('garage.vehicles', 'vehicle')
-      .where('garage.id = :id', { id })
-      .getOneOrFail();
+  async findByIdWithVehicleCount(id: number): Promise<Garage | null> {
+    return this.garageRepository.findOne({ where: { id }, relations: ['vehicles'] });
+  }
+
+  async save(garage: Garage): Promise<Garage> {
+    return this.garageRepository.save(garage);
+  }
+
+  async update(id: number, garage: Partial<Garage>) {
+    return this.garageRepository.update(id, garage);
   }
 
   async updateStatus(id: number, status: DataStatus) {
-    return this.update(id, { status });
+    return this.garageRepository.update(id, { status });
   }
 }

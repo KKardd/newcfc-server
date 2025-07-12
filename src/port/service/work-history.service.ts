@@ -21,7 +21,8 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     searchWorkHistory: SearchWorkHistoryDto,
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<WorkHistoryResponseDto>> {
-    const [workHistories, totalCount] = await this.workHistoryRepository.findAll(searchWorkHistory, paginationQuery);
+    // 삭제 제외 조회
+    const [workHistories, totalCount] = await this.workHistoryRepository.findAll(searchWorkHistory, paginationQuery, 'delete');
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(WorkHistoryResponseDto, workHistories, classTransformDefaultOptions);
@@ -72,7 +73,7 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
       // 총 근무 시간 계산 (분) - totalMinutes가 명시적으로 설정되지 않은 경우에만
       if (updateWorkHistory.totalMinutes === undefined) {
         const existingWorkHistory = await this.workHistoryRepository.findById(id);
-        const startTime = updateData.startTime || existingWorkHistory.startTime;
+        const startTime = updateData.startTime || existingWorkHistory?.startTime;
         const endTime = updateData.endTime;
 
         if (startTime && endTime) {

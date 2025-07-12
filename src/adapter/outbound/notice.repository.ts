@@ -1,62 +1,60 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like, MoreThanOrEqual, LessThanOrEqual, Not } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchNoticeDto } from '@/adapter/inbound/dto/request/notice/search-notice.dto';
 import { Notice } from '@/domain/entity/notice.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
-import { CustomRepository } from '@/util/custom-repository.decorator';
-import { CustomRepository as BaseRepository } from './custom.repository';
 
-@CustomRepository(Notice)
-export class NoticeRepository extends BaseRepository<Notice> implements NoticeServiceOutPort {
-  async findAll(search: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<[Notice[], number]> {
-    const queryBuilder = this.createQueryBuilder('notice');
+@Injectable()
+export class NoticeRepository implements NoticeServiceOutPort {
+  constructor(
+    @InjectRepository(Notice)
+    private readonly noticeRepository: Repository<Notice>,
+  ) {}
 
-    if (search.title) {
-      queryBuilder.andWhere('notice.title LIKE :title', {
-        title: `%${search.title}%`,
-      });
+  async findAll(search: SearchNoticeDto, paginationQuery: PaginationQuery, status?: string): Promise<[Notice[], number]> {
+    const where: any = {};
+    if (search.title) where.title = Like(`%${search.title}%`);
+    if (status === 'delete') {
+      where.status = Not('delete');
+    } else if (status) {
+      where.status = status;
     }
-
-    if (search.status) {
-      queryBuilder.andWhere('notice.status = :status', {
-        status: search.status,
-      });
-    }
-
-    if (search.startDate) {
-      queryBuilder.andWhere('notice.createdAt >= :startDate', {
-        startDate: search.startDate,
-      });
-    }
-
-    if (search.endDate) {
-      queryBuilder.andWhere('notice.createdAt <= :endDate', {
-        endDate: search.endDate,
-      });
-    }
-
-    queryBuilder.orderBy('notice.createdAt', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
-
-    return queryBuilder.getManyAndCount();
+    if (search.startDate) where.createdAt = MoreThanOrEqual(search.startDate);
+    if (search.endDate) where.createdAt = LessThanOrEqual(search.endDate);
+    return this.noticeRepository.findAndCount({
+      skip: paginationQuery.skip,
+      take: paginationQuery.countPerPage,
+      order: { createdAt: 'DESC' },
+      where,
+    });
   }
 
   async findPopupNotices(): Promise<Notice[]> {
-    return this.find({
+    return this.noticeRepository.find({
       where: {
         isPopup: true,
         status: DataStatus.REGISTER,
       },
-      order: {
-        createdAt: 'DESC',
-      },
+      order: { createdAt: 'DESC' },
     });
   }
 
   async findByNoticeId(id: number): Promise<Notice> {
-    return this.findOneOrFail({ where: { id } });
+    return this.noticeRepository.findOneOrFail({ where: { id } });
+  }
+
+  async save(notice: Notice): Promise<Notice> {
+    return this.noticeRepository.save(notice);
+  }
+
+  async update(id: number, notice: Partial<Notice>) {
+    return this.noticeRepository.update(id, notice);
   }
 
   async updateStatus(id: number, status: DataStatus) {
-    return this.update(id, { status });
+    return this.noticeRepository.update(id, { status });
   }
 }

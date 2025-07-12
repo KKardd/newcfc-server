@@ -1,68 +1,57 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like, Not } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchRealTimeDispatchDto } from '@/adapter/inbound/dto/request/real-time-dispatch/search-real-time-dispatch.dto';
 import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
-import { CustomRepository } from '@/util/custom-repository.decorator';
-import { CustomRepository as BaseRepository } from './custom.repository';
 
-@CustomRepository(RealTimeDispatch)
-export class RealTimeDispatchRepository extends BaseRepository<RealTimeDispatch> implements RealTimeDispatchServiceOutPort {
-  async findAll(search: SearchRealTimeDispatchDto, paginationQuery: PaginationQuery): Promise<[RealTimeDispatch[], number]> {
-    const queryBuilder = this.createQueryBuilder('real_time_dispatch');
+@Injectable()
+export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPort {
+  constructor(
+    @InjectRepository(RealTimeDispatch)
+    private readonly realTimeDispatchRepository: Repository<RealTimeDispatch>,
+  ) {}
 
-    if (search.departureName) {
-      queryBuilder.andWhere('real_time_dispatch.departureName LIKE :departureName', {
-        departureName: `%${search.departureName}%`,
-      });
+  async findAll(
+    search: SearchRealTimeDispatchDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[RealTimeDispatch[], number]> {
+    const where: any = {};
+    if (search.departureName) where.departureName = Like(`%${search.departureName}%`);
+    if (search.departureAddress) where.departureAddress = Like(`%${search.departureAddress}%`);
+    if (search.destinationName) where.destinationName = Like(`%${search.destinationName}%`);
+    if (search.destinationAddress) where.destinationAddress = Like(`%${search.destinationAddress}%`);
+    if (search.departureAddressDetail) where.departureAddressDetail = Like(`%${search.departureAddressDetail}%`);
+    if (search.destinationAddressDetail) where.destinationAddressDetail = Like(`%${search.destinationAddressDetail}%`);
+    if (status === 'delete') {
+      where.status = Not('delete');
+    } else if (status) {
+      where.status = status;
     }
-
-    if (search.departureAddress) {
-      queryBuilder.andWhere('real_time_dispatch.departure_address LIKE :departureAddress', {
-        departureAddress: `%${search.departureAddress}%`,
-      });
-    }
-
-    if (search.destinationName) {
-      queryBuilder.andWhere('real_time_dispatch.destination_name LIKE :destinationName', {
-        destinationName: `%${search.destinationName}%`,
-      });
-    }
-
-    if (search.destinationAddress) {
-      queryBuilder.andWhere('real_time_dispatch.destination_address LIKE :destinationAddress', {
-        destinationAddress: `%${search.destinationAddress}%`,
-      });
-    }
-
-    if (search.departureAddressDetail) {
-      queryBuilder.andWhere('real_time_dispatch.departure_address_detail LIKE :departureAddressDetail', {
-        departureAddressDetail: `%${search.departureAddressDetail}%`,
-      });
-    }
-
-    if (search.destinationAddressDetail) {
-      queryBuilder.andWhere('real_time_dispatch.destination_address_detail LIKE :destinationAddressDetail', {
-        destinationAddressDetail: `%${search.destinationAddressDetail}%`,
-      });
-    }
-
-    if (search.status) {
-      queryBuilder.andWhere('real_time_dispatch.status = :status', {
-        status: search.status,
-      });
-    }
-
-    queryBuilder.orderBy('real_time_dispatch.createdAt', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
-
-    return queryBuilder.getManyAndCount();
+    return this.realTimeDispatchRepository.findAndCount({
+      skip: paginationQuery.skip,
+      take: paginationQuery.countPerPage,
+      order: { createdAt: 'DESC' },
+      where,
+    });
   }
 
-  async findById(id: number): Promise<RealTimeDispatch> {
-    return this.findOneOrFail({ where: { id } });
+  async findById(id: number): Promise<RealTimeDispatch | null> {
+    return this.realTimeDispatchRepository.findOne({ where: { id } });
+  }
+
+  async save(realTimeDispatch: RealTimeDispatch): Promise<RealTimeDispatch> {
+    return this.realTimeDispatchRepository.save(realTimeDispatch);
+  }
+
+  async update(id: number, realTimeDispatch: Partial<RealTimeDispatch>) {
+    return this.realTimeDispatchRepository.update(id, realTimeDispatch);
   }
 
   async updateStatus(id: number, status: DataStatus) {
-    return this.update(id, { status });
+    return this.realTimeDispatchRepository.update(id, { status });
   }
 }

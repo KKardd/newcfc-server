@@ -5,7 +5,11 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UpdateResult } from 'typeorm';
 
 export abstract class ReservationServiceOutPort {
-  abstract findAll(searchReservation: SearchReservationDto, paginationQuery: PaginationQuery): Promise<[Reservation[], number]>;
+  abstract findAll(
+    searchReservation: SearchReservationDto,
+    paginationQuery: PaginationQuery,
+    status?: string,
+  ): Promise<[Reservation[], number]>;
 
   abstract findById(id: number): Promise<Reservation | null>;
 

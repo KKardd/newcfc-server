@@ -6,7 +6,7 @@ export class Notice extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 200 })
   title: string;
 
   @Column({ type: 'text' })

@@ -24,7 +24,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
       // 할당 여부는 별도 쿼리 필요, 여기서는 단순화
     }
     if (status === 'delete') {
-      where.status = Not('delete');
+      where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }

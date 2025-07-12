@@ -18,7 +18,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
     const where: any = {};
     // TODO: search 필드별 where 조건 추가
     if (status === 'delete') {
-      where.status = Not('delete');
+      where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }

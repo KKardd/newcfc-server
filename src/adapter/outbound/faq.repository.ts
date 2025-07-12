@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { Faq } from '@/domain/entity/faq.entity';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 import { FaqServiceOutPort } from '@/port/outbound/faq-service.out-port';
 
 @Injectable()
@@ -15,7 +16,7 @@ export class FaqRepository implements FaqServiceOutPort {
   async findAll(paginationQuery: PaginationQuery, status?: string): Promise<[Faq[], number]> {
     const where: any = {};
     if (status === 'delete') {
-      where.status = Not('delete');
+      where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }

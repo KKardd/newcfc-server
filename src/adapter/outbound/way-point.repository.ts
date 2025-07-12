@@ -19,7 +19,7 @@ export class WayPointRepository implements WayPointServiceOutPort {
     if (search.operationId) where.operationId = search.operationId;
     if (search.address) where.address = Like(`%${search.address}%`);
     if (status === 'delete') {
-      where.status = Not('delete');
+      where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }

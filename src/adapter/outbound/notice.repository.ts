@@ -18,7 +18,7 @@ export class NoticeRepository implements NoticeServiceOutPort {
     const where: any = {};
     if (search.title) where.title = Like(`%${search.title}%`);
     if (status === 'delete') {
-      where.status = Not('delete');
+      where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }

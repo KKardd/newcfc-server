@@ -23,7 +23,7 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
     if (search.chauffeurId) where.chauffeurId = search.chauffeurId;
     if (search.vehicleId) where.vehicleId = search.vehicleId;
     if (status === 'delete') {
-      where.status = Not('delete');
+      where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }

@@ -24,7 +24,9 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     const [workHistories, totalCount] = await this.workHistoryRepository.findAll(searchWorkHistory, paginationQuery);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    return new PaginationResponse(workHistories, pagination);
+    const response = plainToInstance(WorkHistoryResponseDto, workHistories, classTransformDefaultOptions);
+
+    return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<WorkHistoryResponseDto> {

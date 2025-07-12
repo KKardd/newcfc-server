@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchVehicleDto } from '@/adapter/inbound/dto/request/vehicle/search-vehicle.dto';
@@ -66,16 +66,12 @@ export class VehicleRepository extends BaseRepository<Vehicle> implements Vehicl
     });
   }
 
-  async save(vehicle: Vehicle): Promise<void> {
-    await this.repository.save(vehicle);
+  async update(id: number, vehicle: Partial<Vehicle>): Promise<UpdateResult> {
+    return await super.update(id, vehicle);
   }
 
-  async update(id: number, vehicle: Partial<Vehicle>): Promise<void> {
-    await this.repository.update(id, vehicle);
-  }
-
-  async updateStatus(id: number, status: DataStatus) {
-    return this.update(id, { status });
+  async updateStatus(id: number, status: DataStatus): Promise<UpdateResult> {
+    return await this.update(id, { status });
   }
 
   async findUnassignedVehicles(): Promise<Vehicle[]> {

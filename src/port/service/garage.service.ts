@@ -28,7 +28,9 @@ export class GarageService implements GarageServiceInPort {
   }
 
   async detail(id: number): Promise<GarageResponseDto> {
-    return await this.garageServiceOutPort.findByIdWithVehicleCount(id);
+    const garage = await this.garageServiceOutPort.findByIdWithVehicleCount(id);
+    if (!garage) throw new Error('차고지를 찾을 수 없습니다.');
+    return plainToInstance(GarageResponseDto, garage, classTransformDefaultOptions);
   }
 
   async create(createGarage: CreateGarageDto): Promise<void> {

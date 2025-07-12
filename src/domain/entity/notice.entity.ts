@@ -20,4 +20,7 @@ export class Notice extends BaseEntity {
 
   @Column({ name: 'popup_end_date', type: 'timestamp', nullable: true })
   popupEndDate: Date | null;
+
+  @Column({ name: 'admin_id', type: 'int' })
+  adminId: number;
 }

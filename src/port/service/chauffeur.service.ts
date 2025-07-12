@@ -110,6 +110,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       case ChauffeurStatus.RECEIVED_VEHICLE:
         // 차량 인수: 근무 시작
         try {
+          if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
           await this.workHistoryService.startWork(chauffeurId, chauffeur.vehicleId || undefined);
         } catch (error) {
           console.error('근무 시작 기록 실패:', error);
@@ -120,13 +121,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       case ChauffeurStatus.OFF_DUTY:
         // 근무 종료: 근무 종료 기록만 처리 (상주/비상주는 차량 배정 해제하지 않음)
         try {
+          if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
           await this.workHistoryService.endWork(chauffeurId);
         } catch (error) {
           console.error('근무 종료 기록 실패:', error);
           // 근무 기록 실패해도 전체 플로우는 계속 진행
         }
         // 상주/비상주 쇼퍼가 아닌 경우에만 차량 배정 해제
-        if (chauffeur.type !== ChauffeurType.RESIDENT && chauffeur.type !== ChauffeurType.NON_RESIDENT) {
+        if (chauffeur && chauffeur.type !== ChauffeurType.RESIDENT && chauffeur.type !== ChauffeurType.NON_RESIDENT) {
           await this.chauffeurServiceOutPort.update(chauffeurId, {
             vehicleId: null,
             isVehicleAssigned: false,
@@ -181,6 +183,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   async getMyAssignedVehicle(chauffeurId: number): Promise<AssignedVehicleResponseDto | null> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
 
+    if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
+
     if (!chauffeur.vehicleId) {
       return null;
     }
@@ -213,6 +217,13 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     if (currentOperation.type === OperationType.REALTIME && currentOperation.realTimeDispatchId) {
       try {
         const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(currentOperation.realTimeDispatchId);
+        if (!realTimeDispatch) {
+          response.departureAddress = null;
+          response.destinationAddress = null;
+          response.wayPoints = [];
+          response.currentWayPoint = null;
+          return response;
+        }
         response.departureAddress = realTimeDispatch.departureAddress;
         response.destinationAddress = realTimeDispatch.destinationAddress;
 
@@ -343,6 +354,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     if (nearestOperation.type === OperationType.REALTIME && nearestOperation.realTimeDispatchId) {
       try {
         const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(nearestOperation.realTimeDispatchId);
+        if (!realTimeDispatch) throw new Error('실시간 배차 정보를 찾을 수 없습니다.');
         response.departureAddress = realTimeDispatch.departureAddress;
         response.destinationAddress = realTimeDispatch.destinationAddress;
       } catch (error) {
@@ -488,6 +500,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     try {
       // 기사의 현재 상태 조회
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      if (!chauffeur) {
+        return null;
+      }
 
       if (sortedWayPoints.length === 0) {
         return null;
@@ -643,6 +659,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     try {
       // 실시간 배차 정보 조회
       const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(realTimeDispatchId);
+      if (!realTimeDispatch) throw new Error('실시간 배차 정보를 찾을 수 없습니다.');
 
       // 1. 출발지 WayPoint 생성 (order=1)
       await this.wayPointServiceInPort.create({
@@ -704,11 +721,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
   // 위치 관련 메서드들
   async updateMyLocation(chauffeurId: number, updateLocationDto: UpdateLocationDto): Promise<void> {
+    const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+    if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
     await this.chauffeurServiceOutPort.updateLocation(chauffeurId, updateLocationDto.latitude, updateLocationDto.longitude);
   }
 
   async getMyLocation(chauffeurId: number): Promise<LocationResponseDto> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+    if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
     return plainToInstance(
       LocationResponseDto,
       {
@@ -725,6 +745,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   async checkAndUpdateEventChauffeurStatus(chauffeurId: number): Promise<void> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
 
       // 행사 쇼퍼가 아니면 처리하지 않음
       if (chauffeur.type !== ChauffeurType.EVENT) {
@@ -770,6 +792,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
 
+      if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
+
       // 차량이 이미 배정되어 있으면 배차 불가능
       if (chauffeur.isVehicleAssigned) {
         return false;
@@ -809,6 +833,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   async canChangeVehicle(chauffeurId: number): Promise<boolean> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
 
       // 차량이 배정되어 있지 않으면 차량 변경 불가능
       if (!chauffeur.isVehicleAssigned) {
@@ -911,6 +937,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   ): Promise<CurrentWayPointDto | null> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      if (!chauffeur) {
+        return null;
+      }
 
       switch (chauffeur.chauffeurStatus) {
         case ChauffeurStatus.MOVING_TO_DEPARTURE:

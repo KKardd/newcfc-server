@@ -19,7 +19,9 @@ export class FaqService implements FaqServiceInPort {
     const [faqs, totalCount] = await this.faqServiceOutPort.findAll(paginationQuery);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    return new PaginationResponse(faqs, pagination);
+    const response = plainToInstance(FaqResponseDto, faqs, classTransformDefaultOptions);
+
+    return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<FaqResponseDto> {
@@ -36,7 +38,7 @@ export class FaqService implements FaqServiceInPort {
   }
 
   async update(id: number, updateFaqDto: UpdateFaqDto): Promise<void> {
-    await this.faqServiceOutPort.update(id, updateFaqDto);
+    await this.faqServiceOutPort.update(id, updateFaqDto as Partial<Faq>);
   }
 
   async delete(id: number): Promise<void> {

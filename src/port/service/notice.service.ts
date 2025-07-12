@@ -33,7 +33,7 @@ export class NoticeService implements NoticeServiceInPort {
   }
 
   async detail(id: number): Promise<NoticeResponseDto> {
-    const notice = await this.noticeServiceOutPort.findById(id);
+    const notice = await this.noticeServiceOutPort.findByNoticeId(id);
     return plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
   }
 

@@ -27,6 +27,7 @@ import { VehicleModule } from '@/module/vehicle.module';
 import { WayPointModule } from '@/module/way-point.module';
 import { WorkHistoryModule } from '@/module/work-history.module';
 import { RequestContext } from '@/port/audit/request-context.middleware';
+import { FaqModule } from '@/module/faq.module';
 
 const typeOrmModules = [
   TypeOrmModule.forRootAsync({
@@ -67,6 +68,7 @@ const typeOrmModules = [
     WayPointModule,
     RealTimeDispatchModule,
     WorkHistoryModule,
+    FaqModule,
   ],
   controllers: [AppController],
 })

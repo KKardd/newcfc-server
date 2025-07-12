@@ -86,19 +86,23 @@ export class OperationService implements OperationServiceInPort {
     const [operations, totalCount] = await this.operationServiceOutPort.findAll(searchOperation, paginationQuery);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    return new PaginationResponse(operations, pagination);
+    // Operation[] → OperationResponseDto[] 변환
+    const operationDtos = operations.map((op) => plainToInstance(OperationResponseDto, op, classTransformDefaultOptions));
+    return new PaginationResponse(operationDtos, pagination);
   }
 
   async detail(id: number): Promise<OperationResponseDto> {
-    return await this.operationServiceOutPort.findByIdWithDetails(id);
+    const result = await this.operationServiceOutPort.findByIdWithDetails(id);
+    if (!result) throw new Error('운행 정보를 찾을 수 없습니다.');
+    return plainToInstance(OperationResponseDto, result, classTransformDefaultOptions);
   }
 
   /**
    * 관리자용 운행 상세 조회 - waypoint 진행 상태 포함
    */
   async getAdminOperationDetail(id: number): Promise<AdminOperationDetailResponseDto> {
-    // findByIdWithDetails와 동일한 방식으로 상세 정보 조회
     const operationDetail = await this.operationServiceOutPort.findByIdWithDetails(id);
+    if (!operationDetail) throw new Error('운행 정보를 찾을 수 없습니다.');
 
     // 기본 응답 구성 (기존 OperationResponseDto와 동일한 정보)
     const response = new AdminOperationDetailResponseDto();
@@ -109,9 +113,9 @@ export class OperationService implements OperationServiceInPort {
     response.endTime = operationDetail.endTime;
     response.distance = operationDetail.distance;
     response.chauffeurId = operationDetail.chauffeurId;
-    response.chauffeurName = operationDetail.chauffeurName;
-    response.chauffeurPhone = operationDetail.chauffeurPhone;
-    response.passengerCount = operationDetail.passengerCount;
+    response.chauffeurName = (operationDetail as any).chauffeurName;
+    response.chauffeurPhone = (operationDetail as any).chauffeurPhone;
+    response.passengerCount = (operationDetail as any).passengerCount;
     response.vehicleId = operationDetail.vehicleId;
     response.realTimeDispatchId = operationDetail.realTimeDispatchId;
     response.additionalCosts = operationDetail.additionalCosts;
@@ -124,21 +128,21 @@ export class OperationService implements OperationServiceInPort {
     response.updatedAt = operationDetail.updatedAt;
 
     // 관련 엔티티 정보 설정
-    response.chauffeur = operationDetail.chauffeur;
-    response.vehicle = operationDetail.vehicle;
-    response.garage = operationDetail.garage;
-    response.realTimeDispatch = operationDetail.realTimeDispatch;
-    response.reservation = operationDetail.reservation;
+    response.chauffeur = (operationDetail as any).chauffeur;
+    response.vehicle = (operationDetail as any).vehicle;
+    response.garage = (operationDetail as any).garage;
+    response.realTimeDispatch = (operationDetail as any).realTimeDispatch;
+    response.reservation = (operationDetail as any).reservation;
 
     // 기사의 현재 상태 조회 (진행상태 계산을 위해)
     let chauffeurStatus: ChauffeurStatus | null = null;
-    if (operationDetail.chauffeur) {
-      chauffeurStatus = operationDetail.chauffeur.chauffeurStatus;
+    if ((operationDetail as any).chauffeur) {
+      chauffeurStatus = (operationDetail as any).chauffeur.chauffeurStatus;
     }
 
     // WayPoint 정보를 진행 상태와 함께 계산
-    const sortedWayPoints = operationDetail.wayPoints.sort((a, b) => a.order - b.order);
-    response.wayPoints = sortedWayPoints.map((wp) => this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints));
+    const sortedWayPoints = ((operationDetail as any).wayPoints || []).sort((a: any, b: any) => a.order - b.order);
+    response.wayPoints = sortedWayPoints.map((wp: any) => this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints));
 
     return response;
   }
@@ -305,15 +309,17 @@ export class OperationService implements OperationServiceInPort {
       );
     } else {
       // 일반 예약인 경우 기존 로직 유지
-      for (const wayPointInfo of createOperation.schedule.wayPoints) {
-        await this.wayPointServiceInPort.create({
-          operationId: operation.id,
-          address: wayPointInfo.address,
-          addressDetail: wayPointInfo.addressDetail,
-          latitude: wayPointInfo.latitude,
-          longitude: wayPointInfo.longitude,
-          order: wayPointInfo.order,
-        });
+      if (createOperation.schedule.wayPoints && createOperation.schedule.wayPoints.length > 0) {
+        for (const wayPointInfo of createOperation.schedule.wayPoints) {
+          await this.wayPointServiceInPort.create({
+            operationId: operation.id,
+            address: wayPointInfo.address,
+            addressDetail: wayPointInfo.addressDetail,
+            latitude: wayPointInfo.latitude,
+            longitude: wayPointInfo.longitude,
+            order: wayPointInfo.order,
+          });
+        }
       }
     }
 
@@ -336,6 +342,7 @@ export class OperationService implements OperationServiceInPort {
     try {
       // 실시간 배차 정보 조회
       const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(realTimeDispatchId);
+      if (!realTimeDispatch) throw new Error('실시간 배차 정보를 찾을 수 없습니다.');
 
       // 1. 출발지 WayPoint 생성 (order=1)
       await this.wayPointServiceInPort.create({
@@ -346,14 +353,23 @@ export class OperationService implements OperationServiceInPort {
         order: 1,
       });
 
-      // 2. 왕복인 경우 목적지 WayPoint 생성 (order=2)
+      // 2. 도착지 WayPoint 생성 (order=2)
+      await this.wayPointServiceInPort.create({
+        operationId: operationId,
+        name: realTimeDispatch.destinationName,
+        address: realTimeDispatch.destinationAddress,
+        addressDetail: realTimeDispatch.destinationAddressDetail,
+        order: 2,
+      });
+
+      // 3. 왕복인 경우 출발지로 돌아오는 WayPoint 추가 (order=3)
       if (isReverse) {
         await this.wayPointServiceInPort.create({
           operationId: operationId,
-          name: realTimeDispatch.destinationName,
-          address: realTimeDispatch.destinationAddress,
-          addressDetail: realTimeDispatch.destinationAddressDetail,
-          order: 2,
+          name: realTimeDispatch.departureName,
+          address: realTimeDispatch.departureAddress,
+          addressDetail: realTimeDispatch.departureAddressDetail,
+          order: 3,
         });
       }
     } catch (error) {
@@ -370,6 +386,7 @@ export class OperationService implements OperationServiceInPort {
   async createMissingRealTimeDispatchWayPoints(operationId: number, isReverse: boolean = false): Promise<void> {
     try {
       const operation = await this.operationServiceOutPort.findById(operationId);
+      if (!operation) throw new Error('운행 정보를 찾을 수 없습니다.');
 
       // 실시간 배차가 아니면 무시
       if (operation.type !== OperationType.REALTIME || !operation.realTimeDispatchId) {
@@ -407,9 +424,11 @@ export class OperationService implements OperationServiceInPort {
     // 3. 영수증이나 추가비용이 업데이트된 경우, 기사 상태 확인 및 변경
     if (hasReceiptUpdate || hasAdditionalCostsUpdate) {
       const operation = await this.operationServiceOutPort.findById(id);
+      if (!operation) throw new Error('운행 정보를 찾을 수 없습니다.');
 
       if (operation.chauffeurId) {
         const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
+        if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
 
         // 기사가 정보 미기입 상태인 경우 운행 완료 상태로 변경
         if (chauffeur.chauffeurStatus === ChauffeurStatus.PENDING_RECEIPT_INPUT) {
@@ -428,9 +447,11 @@ export class OperationService implements OperationServiceInPort {
   async assignChauffeur(assignDto: AssignChauffeurDto): Promise<AssignChauffeurResponseDto> {
     // 1. 운행 정보 조회
     const operation = await this.operationServiceOutPort.findById(assignDto.operationId);
+    if (!operation) throw new Error('운행 정보를 찾을 수 없습니다.');
 
     // 2. 새로 배정할 기사 정보 조회
     const newChauffeur = await this.chauffeurServiceOutPort.findById(assignDto.chauffeurId);
+    if (!newChauffeur) throw new Error('기사를 찾을 수 없습니다.');
 
     // 3. 이전 기사 정보 저장 (있다면)
     let previousChauffeur = null;

@@ -1,19 +1,14 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity } from './base.entity';
 
 @Entity('faq')
-export class Faq {
+export class Faq extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'varchar', length: 255 })
-  title: string;
+  question: string;
 
   @Column({ type: 'text' })
-  content: string;
-
-  @Column({ name: 'created_by', type: 'varchar', length: 100, nullable: true })
-  createdBy: string | null;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  answer: string;
 }

@@ -1,154 +1,67 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
-
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history/search-work-history.dto';
-import { WorkHistoryResponseDto } from '@/adapter/inbound/dto/response/work-history/work-history-response.dto';
 import { WorkHistory } from '@/domain/entity/work-history.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { WorkHistoryServiceOutPort } from '@/port/outbound/work-history-service.out-port';
+import { CustomRepository } from '@/util/custom-repository.decorator';
+import { CustomRepository as BaseRepository } from './custom.repository';
 
-@Injectable()
-export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
-  constructor(
-    @InjectRepository(WorkHistory)
-    private readonly repository: Repository<WorkHistory>,
-  ) {}
+@CustomRepository(WorkHistory)
+export class WorkHistoryRepository extends BaseRepository<WorkHistory> implements WorkHistoryServiceOutPort {
+  async findAll(search: SearchWorkHistoryDto, paginationQuery: PaginationQuery): Promise<[WorkHistory[], number]> {
+    const queryBuilder = this.createQueryBuilder('work_history')
+      .leftJoinAndSelect('work_history.chauffeur', 'chauffeur')
+      .leftJoinAndSelect('work_history.vehicle', 'vehicle');
 
-  async findAll(
-    searchWorkHistory: SearchWorkHistoryDto,
-    paginationQuery: PaginationQuery,
-  ): Promise<[WorkHistoryResponseDto[], number]> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('work_history')
-      .leftJoin('chauffeur', 'chauffeur', 'work_history.chauffeur_id = chauffeur.id')
-      .leftJoin('vehicle', 'vehicle', 'work_history.vehicle_id = vehicle.id')
-      .select('work_history.*')
-      .addSelect('chauffeur.id', 'chauffeur_id')
-      .addSelect('chauffeur.name', 'chauffeur_name')
-      .addSelect('chauffeur.phone', 'chauffeur_phone')
-      .addSelect('chauffeur.type', 'chauffeur_type')
-      .addSelect('chauffeur.is_vehicle_assigned', 'chauffeur_is_vehicle_assigned')
-      .addSelect('vehicle.id', 'vehicle_id')
-      .addSelect('vehicle.vehicle_number', 'vehicle_number')
-      .addSelect('vehicle.model_name', 'vehicle_model_name')
-      .addSelect('vehicle.vehicle_status', 'vehicle_status')
-      .where('work_history.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
-
-    if (searchWorkHistory.chauffeurId) {
-      queryBuilder.andWhere('work_history.chauffeur_id = :chauffeurId', {
-        chauffeurId: searchWorkHistory.chauffeurId,
+    if (search.chauffeurId) {
+      queryBuilder.andWhere('work_history.chauffeurId = :chauffeurId', {
+        chauffeurId: search.chauffeurId,
       });
     }
 
-    if (searchWorkHistory.vehicleId) {
-      queryBuilder.andWhere('work_history.vehicle_id = :vehicleId', {
-        vehicleId: searchWorkHistory.vehicleId,
+    if (search.vehicleId) {
+      queryBuilder.andWhere('work_history.vehicleId = :vehicleId', {
+        vehicleId: search.vehicleId,
       });
     }
 
-    if (searchWorkHistory.startDate) {
-      queryBuilder.andWhere('DATE(work_history.start_time) >= :startDate', {
-        startDate: searchWorkHistory.startDate,
-      });
-    }
-
-    if (searchWorkHistory.endDate) {
-      queryBuilder.andWhere('DATE(work_history.start_time) <= :endDate', {
-        endDate: searchWorkHistory.endDate,
-      });
-    }
-
-    // 연도별 필터링
-    if (searchWorkHistory.year) {
-      queryBuilder.andWhere('EXTRACT(YEAR FROM work_history.start_time) = :year', {
-        year: searchWorkHistory.year,
-      });
-    }
-
-    // 월별 필터링
-    if (searchWorkHistory.month) {
-      queryBuilder.andWhere('EXTRACT(MONTH FROM work_history.start_time) = :month', {
-        month: searchWorkHistory.month,
-      });
-    }
-
-    if (searchWorkHistory.status) {
+    if (search.status) {
       queryBuilder.andWhere('work_history.status = :status', {
-        status: searchWorkHistory.status,
+        status: search.status,
       });
     }
 
-    queryBuilder.orderBy('work_history.start_time', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+    if (search.startDate) {
+      queryBuilder.andWhere('work_history.startTime >= :startDate', {
+        startDate: search.startDate,
+      });
+    }
 
-    const workHistories = await queryBuilder.getRawMany();
-    const totalCount = await queryBuilder.getCount();
+    if (search.endDate) {
+      queryBuilder.andWhere('work_history.endTime <= :endDate', {
+        endDate: search.endDate,
+      });
+    }
 
-    const workHistoriesResponse: WorkHistoryResponseDto[] = workHistories.map((workHistory) => ({
-      id: workHistory.id,
-      chauffeurId: workHistory.chauffeur_id,
-      chauffeurName: workHistory.chauffeur_name || null,
-      chauffeurPhone: workHistory.chauffeur_phone || null,
-      vehicleId: workHistory.vehicle_id,
-      vehicleNumber: workHistory.vehicle_number || null,
-      startTime: workHistory.start_time,
-      endTime: workHistory.end_time,
-      totalMinutes: workHistory.total_minutes,
-      memo: workHistory.memo,
-      status: workHistory.status,
-      createdBy: workHistory.created_by,
-      createdAt: workHistory.created_at,
-      updatedBy: workHistory.updated_by,
-      updatedAt: workHistory.updated_at,
-      // Chauffeur 정보
-      chauffeur: workHistory.chauffeur_id
-        ? {
-            id: workHistory.chauffeur_id,
-            name: workHistory.chauffeur_name,
-            phone: workHistory.chauffeur_phone,
-            type: workHistory.chauffeur_type,
-            isVehicleAssigned: workHistory.chauffeur_is_vehicle_assigned,
-          }
-        : null,
-      // Vehicle 정보
-      vehicle: workHistory.vehicle_id
-        ? {
-            id: workHistory.vehicle_id,
-            vehicleNumber: workHistory.vehicle_number,
-            modelName: workHistory.vehicle_model_name,
-            vehicleStatus: workHistory.vehicle_status,
-          }
-        : null,
-    }));
+    queryBuilder.orderBy('work_history.startTime', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
 
-    return [workHistoriesResponse, totalCount];
+    return queryBuilder.getManyAndCount();
   }
 
   async findById(id: number): Promise<WorkHistory> {
-    return await this.repository.findOneOrFail({ where: { id } });
+    return this.findOneOrFail({ where: { id } });
   }
 
   async findActiveByChauffeurId(chauffeurId: number): Promise<WorkHistory | null> {
-    return await this.repository.findOne({
+    return this.findOne({
       where: {
         chauffeurId,
-        endTime: IsNull(),
-        status: DataStatus.REGISTER,
+        status: DataStatus.USED,
       },
-      order: { startTime: 'DESC' },
     });
   }
 
-  async save(workHistory: WorkHistory): Promise<void> {
-    await this.repository.save(workHistory);
-  }
-
-  async update(id: number, workHistory: Partial<WorkHistory>): Promise<void> {
-    await this.repository.update(id, workHistory);
-  }
-
-  async updateStatus(id: number, status: DataStatus): Promise<void> {
-    await this.repository.update(id, { status });
+  async updateStatus(id: number, status: DataStatus) {
+    return this.update(id, { status });
   }
 }

@@ -74,11 +74,12 @@ export class CreateScheduleInfoDto {
   @IsBoolean()
   isRepeat?: boolean;
 
-  @ApiProperty({ description: '경유지 목록', type: [CreateWayPointInfoDto] })
+  @ApiProperty({ description: '경유지 목록', type: [CreateWayPointInfoDto], required: false })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateWayPointInfoDto)
-  wayPoints: CreateWayPointInfoDto[];
+  wayPoints?: CreateWayPointInfoDto[];
 }
 
 export class CreateManagerInfoDto {

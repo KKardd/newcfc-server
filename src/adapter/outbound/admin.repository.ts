@@ -1,24 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-
-import { Repository } from 'typeorm';
-
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin.dto';
-import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
 import { Admin } from '@/domain/entity/admin.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
+import { CustomRepository } from '@/util/custom-repository.decorator';
+import { CustomRepository as BaseRepository } from './custom.repository';
 
-@Injectable()
-export class AdminRepository implements AdminServiceOutPort {
-  constructor(
-    @InjectRepository(Admin)
-    private readonly repository: Repository<Admin>,
-  ) {}
-
-  async findAll(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<[AdminResponseDto[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('admin').select('admin.*');
+@CustomRepository(Admin)
+export class AdminRepository extends BaseRepository<Admin> implements AdminServiceOutPort {
+  async findAll(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<[Admin[], number]> {
+    const queryBuilder = this.createQueryBuilder('admin');
 
     if (searchAdmin.email) {
       queryBuilder.andWhere('admin.email LIKE :email', {
@@ -63,37 +54,14 @@ export class AdminRepository implements AdminServiceOutPort {
       .offset(paginationQuery.skip)
       .limit(paginationQuery.countPerPage);
 
-    const admins = await queryBuilder.getRawMany();
-    const totalCount = await queryBuilder.getCount();
-
-    const adminsResponse: AdminResponseDto[] = admins.map((admin) => ({
-      id: admin.id,
-      email: admin.email,
-      name: admin.name,
-      phone: admin.phone,
-      role: admin.role,
-      approved: admin.approved,
-      status: admin.status,
-      createdAt: admin.created_at,
-      updatedAt: admin.updated_at,
-    }));
-
-    return [adminsResponse, totalCount];
+    return queryBuilder.getManyAndCount();
   }
 
   async findById(id: number): Promise<Admin> {
-    return await this.repository.findOneOrFail({ where: { id } });
+    return this.findOneOrFail({ where: { id } });
   }
 
-  async save(admin: Admin): Promise<void> {
-    await this.repository.save(admin);
-  }
-
-  async update(id: number, admin: Partial<Admin>): Promise<void> {
-    await this.repository.update(id, admin);
-  }
-
-  async updateStatus(id: number, status: DataStatus): Promise<void> {
-    await this.repository.update(id, { status });
+  async updateStatus(id: number, status: DataStatus) {
+    return this.update(id, { status });
   }
 }

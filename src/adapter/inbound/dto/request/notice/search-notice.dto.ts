@@ -1,27 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-import { IsEnum, IsOptional, IsString, IsBoolean } from 'class-validator';
-
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 export class SearchNoticeDto {
-  @ApiProperty({ description: '공지사항 제목', required: false })
-  @IsOptional()
+  @ApiProperty({ description: '제목', required: false })
   @IsString()
+  @IsOptional()
   title?: string;
 
-  @ApiProperty({ description: '공지사항 내용', required: false })
-  @IsOptional()
+  @ApiProperty({ description: '작성자', required: false })
   @IsString()
-  content?: string;
-
-  @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()
+  author?: string;
+
+  @ApiProperty({ enum: DataStatus, description: '상태', required: false })
   @IsEnum(DataStatus)
+  @IsOptional()
   status?: DataStatus;
 
-  @ApiProperty({ description: '팝업 공지사항 여부', required: false })
+  @ApiProperty({ description: '검색 시작일', required: false })
+  @IsDateString()
   @IsOptional()
-  @IsBoolean()
-  isPopup?: boolean;
+  startDate?: string;
+
+  @ApiProperty({ description: '검색 종료일', required: false })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 }

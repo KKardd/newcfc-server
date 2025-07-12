@@ -1,22 +1,19 @@
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/search-operation.dto';
-import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { UpdateResult } from 'typeorm';
 
 export abstract class OperationServiceOutPort {
-  abstract findAll(
-    searchOperation: SearchOperationDto,
-    paginationQuery: PaginationQuery,
-  ): Promise<[OperationResponseDto[], number]>;
+  abstract findAll(searchOperation: SearchOperationDto, paginationQuery: PaginationQuery): Promise<[Operation[], number]>;
 
-  abstract findById(id: number): Promise<Operation>;
+  abstract findById(id: number): Promise<Operation | null>;
 
-  abstract findByIdWithDetails(id: number): Promise<OperationResponseDto>;
+  abstract findByIdWithDetails(id: number): Promise<Operation | null>;
 
-  abstract save(operation: Operation): Promise<void>;
+  abstract save(operation: Operation): Promise<Operation>;
 
-  abstract update(id: number, operation: Partial<Operation>): Promise<void>;
+  abstract update(id: number, operation: Partial<Operation>): Promise<UpdateResult>;
 
-  abstract updateStatus(id: number, status: DataStatus): Promise<void>;
+  abstract updateStatus(id: number, status: DataStatus): Promise<UpdateResult>;
 }

@@ -1,4 +1,4 @@
-export const GLOBAL_PREFIX = 'api';
+export const GLOBAL_PREFIX = '/newcfc';
 
 export const BUILT_IN_TYPES = [String, Boolean, Number, Object, Array];
 

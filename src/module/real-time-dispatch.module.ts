@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { RealTimeDispatchController } from '@/adapter/inbound/controller/real-time-dispatch.controller';
@@ -8,8 +8,10 @@ import { RealTimeDispatchServiceInPort } from '@/port/inbound/real-time-dispatch
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
 import { RealTimeDispatchService } from '@/port/service/real-time-dispatch.service';
 
+import { OperationModule } from './operation.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([RealTimeDispatch])],
+  imports: [TypeOrmModule.forFeature([RealTimeDispatch]), forwardRef(() => OperationModule)],
   controllers: [RealTimeDispatchController],
   providers: [
     {

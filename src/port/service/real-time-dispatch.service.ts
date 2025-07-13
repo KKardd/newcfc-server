@@ -12,11 +12,15 @@ import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { RealTimeDispatchServiceInPort } from '@/port/inbound/real-time-dispatch-service.in-port';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
+import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
-  constructor(private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort) {}
+  constructor(
+    private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
+    private readonly operationServiceOutPort: OperationServiceOutPort,
+  ) {}
 
   async search(
     searchRealTimeDispatch: SearchRealTimeDispatchDto,
@@ -25,13 +29,35 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
     const [realTimeDispatches, totalCount] = await this.realTimeDispatchServiceOutPort.findAll(
       searchRealTimeDispatch,
       paginationQuery,
-      'delete',
+      DataStatus.DELETED,
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(RealTimeDispatchResponseDto, realTimeDispatches, classTransformDefaultOptions);
+    // 각 실시간 배차지에 대해 쇼퍼 카운트 계산
+    const responseData = await Promise.all(
+      realTimeDispatches.map(async (dispatch) => {
+        const dispatchDto = plainToInstance(RealTimeDispatchResponseDto, dispatch, classTransformDefaultOptions);
 
-    return new PaginationResponse(response, pagination);
+        // 해당 실시간 배차지에 배정된 운행(Operation) 조회하여 쇼퍼 카운트 계산
+        const operationPagination = new PaginationQuery();
+        operationPagination.page = 1;
+        operationPagination.countPerPage = 1000; // 충분한 수로 설정
+
+        const [operations] = await this.operationServiceOutPort.findAll(
+          { realTimeDispatchId: dispatch.id },
+          operationPagination,
+          DataStatus.DELETED,
+        );
+
+        // 중복 제거: 같은 기사가 여러 운행에 배정될 수 있으므로 고유한 chauffeurId만 카운트
+        const uniqueChauffeurIds = new Set(operations.filter((op) => op.chauffeurId !== null).map((op) => op.chauffeurId));
+
+        dispatchDto.chauffeurCount = uniqueChauffeurIds.size;
+        return dispatchDto;
+      }),
+    );
+
+    return new PaginationResponse(responseData, pagination);
   }
 
   async detail(id: number): Promise<RealTimeDispatchResponseDto> {

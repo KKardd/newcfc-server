@@ -54,7 +54,7 @@ export class AdminRepository implements AdminServiceOutPort {
     }
 
     // status 파라미터 처리
-    if (status === 'delete') {
+    if (status === DataStatus.DELETED) {
       queryBuilder.andWhere('admin.status != :deleteStatus', { deleteStatus: DataStatus.DELETED });
     } else if (status) {
       queryBuilder.andWhere('admin.status = :statusParam', { statusParam: status });

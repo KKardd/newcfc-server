@@ -7,6 +7,7 @@ import { CreateFaqDto } from '@/adapter/inbound/dto/request/faq/create-faq.dto';
 import { UpdateFaqDto } from '@/adapter/inbound/dto/request/faq/update-faq.dto';
 import { FaqResponseDto } from '@/adapter/inbound/dto/response/faq/faq-response.dto';
 import { Faq } from '@/domain/entity/faq.entity';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 import { FaqServiceInPort } from '@/port/inbound/faq-service.in-port';
 import { FaqServiceOutPort } from '@/port/outbound/faq-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
@@ -17,7 +18,7 @@ export class FaqService implements FaqServiceInPort {
 
   async search(paginationQuery: PaginationQuery): Promise<PaginationResponse<FaqResponseDto>> {
     // 삭제 제외 조회
-    const [faqs, totalCount] = await this.faqServiceOutPort.findAll(paginationQuery, 'delete');
+    const [faqs, totalCount] = await this.faqServiceOutPort.findAll(paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(FaqResponseDto, faqs, classTransformDefaultOptions);

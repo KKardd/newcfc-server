@@ -23,7 +23,7 @@ export class VehicleService implements VehicleServiceInPort {
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<VehicleResponseDto>> {
     // 삭제 제외 조회
-    const [vehicles, totalCount] = await this.vehicleServiceOutPort.findAll(searchVehicle, paginationQuery, 'delete');
+    const [vehicles, totalCount] = await this.vehicleServiceOutPort.findAll(searchVehicle, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(VehicleResponseDto, vehicles, classTransformDefaultOptions);

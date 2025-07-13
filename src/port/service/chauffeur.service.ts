@@ -62,7 +62,11 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     searchChauffeur: SearchChauffeurDto,
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<ChauffeurResponseDto>> {
-    const [chauffeurs, totalCount] = await this.chauffeurServiceOutPort.findAll(searchChauffeur, paginationQuery, 'delete');
+    const [chauffeurs, totalCount] = await this.chauffeurServiceOutPort.findAll(
+      searchChauffeur,
+      paginationQuery,
+      DataStatus.DELETED,
+    );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(ChauffeurResponseDto, chauffeurs, classTransformDefaultOptions);

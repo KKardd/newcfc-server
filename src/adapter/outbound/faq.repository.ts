@@ -15,7 +15,7 @@ export class FaqRepository implements FaqServiceOutPort {
 
   async findAll(paginationQuery: PaginationQuery, status?: string): Promise<[Faq[], number]> {
     const where: any = {};
-    if (status === 'delete') {
+    if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;

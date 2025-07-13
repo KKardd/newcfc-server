@@ -26,7 +26,7 @@ export class RealTimeDispatchRepository implements RealTimeDispatchServiceOutPor
     if (search.destinationAddress) where.destinationAddress = Like(`%${search.destinationAddress}%`);
     if (search.departureAddressDetail) where.departureAddressDetail = Like(`%${search.departureAddressDetail}%`);
     if (search.destinationAddressDetail) where.destinationAddressDetail = Like(`%${search.destinationAddressDetail}%`);
-    if (status === 'delete') {
+    if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;

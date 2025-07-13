@@ -22,7 +22,11 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<WorkHistoryResponseDto>> {
     // 삭제 제외 조회
-    const [workHistories, totalCount] = await this.workHistoryRepository.findAll(searchWorkHistory, paginationQuery, 'delete');
+    const [workHistories, totalCount] = await this.workHistoryRepository.findAll(
+      searchWorkHistory,
+      paginationQuery,
+      DataStatus.DELETED,
+    );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(WorkHistoryResponseDto, workHistories, classTransformDefaultOptions);

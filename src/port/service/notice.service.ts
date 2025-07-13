@@ -19,7 +19,7 @@ export class NoticeService implements NoticeServiceInPort {
   constructor(private readonly noticeServiceOutPort: NoticeServiceOutPort) {}
 
   async search(searchNotice: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<PaginationResponse<NoticeResponseDto>> {
-    const [notices, totalCount] = await this.noticeServiceOutPort.findAll(searchNotice, paginationQuery, 'delete');
+    const [notices, totalCount] = await this.noticeServiceOutPort.findAll(searchNotice, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(NoticeResponseDto, notices, classTransformDefaultOptions);

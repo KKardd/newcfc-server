@@ -22,7 +22,7 @@ export class WayPointService implements WayPointServiceInPort {
     searchWayPoint: SearchWayPointDto,
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<WayPointResponseDto>> {
-    const [wayPoints, total] = await this.wayPointServiceOutPort.findAll(searchWayPoint, paginationQuery, 'delete');
+    const [wayPoints, total] = await this.wayPointServiceOutPort.findAll(searchWayPoint, paginationQuery, DataStatus.DELETED);
 
     const pagination = new Pagination({ totalCount: total, paginationQuery });
 

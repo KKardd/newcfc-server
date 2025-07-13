@@ -25,7 +25,7 @@ export class DispatchPointService implements DispatchPointServiceInPort {
     const [dispatchPoints, totalCount] = await this.dispatchPointServiceOutPort.findAll(
       searchDispatchPoint,
       paginationQuery,
-      'delete',
+      DataStatus.DELETED,
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 

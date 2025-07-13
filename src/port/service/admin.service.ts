@@ -32,7 +32,7 @@ export class AdminService implements AdminServiceInPort {
   ) {}
 
   async search(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<PaginationResponse<AdminResponseDto>> {
-    const [admins, totalCount] = await this.adminServiceOutPort.findAll(searchAdmin, paginationQuery, 'delete');
+    const [admins, totalCount] = await this.adminServiceOutPort.findAll(searchAdmin, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(AdminResponseDto, admins, classTransformDefaultOptions);

@@ -25,7 +25,7 @@ export class ReservationRepository implements ReservationServiceOutPort {
     if (search.passengerPhone) where.passengerPhone = Like(`%${search.passengerPhone}%`);
     if (search.passengerEmail) where.passengerEmail = Like(`%${search.passengerEmail}%`);
     if (search.passengerCount) where.passengerCount = search.passengerCount;
-    if (status === 'delete') {
+    if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;

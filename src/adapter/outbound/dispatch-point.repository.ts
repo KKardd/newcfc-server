@@ -22,7 +22,7 @@ export class DispatchPointRepository implements DispatchPointServiceOutPort {
     const where: any = {};
     if (search.name) where.name = Like(`%${search.name}%`);
     if (search.address) where.address = Like(`%${search.address}%`);
-    if (status === 'delete') {
+    if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;

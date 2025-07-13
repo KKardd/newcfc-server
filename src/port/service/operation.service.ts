@@ -83,7 +83,11 @@ export class OperationService implements OperationServiceInPort {
     searchOperation: SearchOperationDto,
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<OperationResponseDto>> {
-    const [operations, totalCount] = await this.operationServiceOutPort.findAll(searchOperation, paginationQuery, 'delete');
+    const [operations, totalCount] = await this.operationServiceOutPort.findAll(
+      searchOperation,
+      paginationQuery,
+      DataStatus.DELETED,
+    );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     // Operation[] → OperationResponseDto[] 변환

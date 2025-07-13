@@ -17,7 +17,7 @@ export class NoticeRepository implements NoticeServiceOutPort {
   async findAll(search: SearchNoticeDto, paginationQuery: PaginationQuery, status?: string): Promise<[Notice[], number]> {
     const where: any = {};
     if (search.title) where.title = Like(`%${search.title}%`);
-    if (status === 'delete') {
+    if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, UpdateResult } from 'typeorm';
+import { Repository, Not, UpdateResult, Like } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
@@ -16,12 +16,33 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
 
   async findAll(search: SearchChauffeurDto, paginationQuery: PaginationQuery, status?: string): Promise<[Chauffeur[], number]> {
     const where: any = {};
-    // TODO: search 필드별 where 조건 추가
-    if (status === 'delete') {
+
+    // 기본 검색 필드들
+    if (search.name) where.name = Like(`%${search.name}%`);
+    if (search.phone) where.phone = Like(`%${search.phone}%`);
+    if (search.birthDate) where.birthDate = search.birthDate;
+    if (search.type) where.type = search.type;
+    if (search.chauffeurStatus) where.chauffeurStatus = search.chauffeurStatus;
+    if (search.realTimeDispatchId !== undefined) where.realTimeDispatchId = search.realTimeDispatchId;
+    if (search.isVehicleAssigned !== undefined) where.isVehicleAssigned = search.isVehicleAssigned;
+
+    // 실시간 배차지가 null인 기사만 조회
+    if (search.isRealTimeDispatchNull === true) {
+      where.realTimeDispatchId = null;
+    }
+
+    // 비상주 쇼퍼만 조회
+    if (search.isNonResident === true) {
+      where.type = 'NON_RESIDENT';
+    }
+
+    // 상태 필터링
+    if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }
+
     return this.chauffeurRepository.findAndCount({
       skip: paginationQuery.skip,
       take: paginationQuery.countPerPage,

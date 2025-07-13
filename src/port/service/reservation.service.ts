@@ -22,7 +22,11 @@ export class ReservationService implements ReservationServiceInPort {
     searchReservation: SearchReservationDto,
     paginationQuery: PaginationQuery,
   ): Promise<PaginationResponse<ReservationResponseDto>> {
-    const [reservations, totalCount] = await this.reservationServiceOutPort.findAll(searchReservation, paginationQuery, 'delete');
+    const [reservations, totalCount] = await this.reservationServiceOutPort.findAll(
+      searchReservation,
+      paginationQuery,
+      DataStatus.DELETED,
+    );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(ReservationResponseDto, reservations, classTransformDefaultOptions);

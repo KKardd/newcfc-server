@@ -19,7 +19,7 @@ export class GarageService implements GarageServiceInPort {
   constructor(private readonly garageServiceOutPort: GarageServiceOutPort) {}
 
   async search(searchGarage: SearchGarageDto, paginationQuery: PaginationQuery): Promise<PaginationResponse<GarageResponseDto>> {
-    const [garages, totalCount] = await this.garageServiceOutPort.findAll(searchGarage, paginationQuery, 'delete');
+    const [garages, totalCount] = await this.garageServiceOutPort.findAll(searchGarage, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
     const response = plainToInstance(GarageResponseDto, garages, classTransformDefaultOptions);

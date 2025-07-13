@@ -35,12 +35,11 @@ export class ReservationRepository implements ReservationServiceOutPort {
       take: paginationQuery.countPerPage,
       order: { createdAt: 'DESC' },
       where,
-      relations: ['operation'],
     });
   }
 
   async findById(id: number): Promise<Reservation | null> {
-    return this.reservationRepository.findOne({ where: { id }, relations: ['operation'] });
+    return this.reservationRepository.findOne({ where: { id } });
   }
 
   async save(reservation: Reservation): Promise<Reservation> {

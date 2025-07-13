@@ -12,14 +12,14 @@ import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { RealTimeDispatchServiceInPort } from '@/port/inbound/real-time-dispatch-service.in-port';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
-import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
+import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
   constructor(
     private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
-    private readonly operationServiceOutPort: OperationServiceOutPort,
+    private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
   ) {}
 
   async search(
@@ -38,21 +38,18 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
       realTimeDispatches.map(async (dispatch) => {
         const dispatchDto = plainToInstance(RealTimeDispatchResponseDto, dispatch, classTransformDefaultOptions);
 
-        // 해당 실시간 배차지에 배정된 운행(Operation) 조회하여 쇼퍼 카운트 계산
-        const operationPagination = new PaginationQuery();
-        operationPagination.page = 1;
-        operationPagination.countPerPage = 1000; // 충분한 수로 설정
+        // 해당 실시간 배차지에 배정된 쇼퍼 카운트 조회
+        const chauffeurPagination = new PaginationQuery();
+        chauffeurPagination.page = 1;
+        chauffeurPagination.countPerPage = 1000; // 충분한 수로 설정
 
-        const [operations] = await this.operationServiceOutPort.findAll(
+        const [chauffeurs] = await this.chauffeurServiceOutPort.findAll(
           { realTimeDispatchId: dispatch.id },
-          operationPagination,
+          chauffeurPagination,
           DataStatus.DELETED,
         );
 
-        // 중복 제거: 같은 기사가 여러 운행에 배정될 수 있으므로 고유한 chauffeurId만 카운트
-        const uniqueChauffeurIds = new Set(operations.filter((op) => op.chauffeurId !== null).map((op) => op.chauffeurId));
-
-        dispatchDto.chauffeurCount = uniqueChauffeurIds.size;
+        dispatchDto.chauffeurCount = chauffeurs.length;
         return dispatchDto;
       }),
     );

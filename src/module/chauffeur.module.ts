@@ -23,7 +23,7 @@ import { WorkHistoryModule } from './work-history.module';
     ReservationModule,
     WayPointModule,
     VehicleModule,
-    RealTimeDispatchModule,
+    forwardRef(() => RealTimeDispatchModule),
     WorkHistoryModule,
   ],
   controllers: [ChauffeurController],

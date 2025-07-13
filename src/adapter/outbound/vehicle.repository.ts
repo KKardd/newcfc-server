@@ -33,12 +33,11 @@ export class VehicleRepository implements VehicleServiceOutPort {
       take: paginationQuery.countPerPage,
       order: { createdAt: 'DESC' },
       where,
-      relations: ['garage'],
     });
   }
 
   async findById(id: number): Promise<Vehicle | null> {
-    return this.vehicleRepository.findOne({ where: { id }, relations: ['garage'] });
+    return this.vehicleRepository.findOne({ where: { id } });
   }
 
   async save(vehicle: Vehicle): Promise<Vehicle> {

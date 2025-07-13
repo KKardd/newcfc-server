@@ -8,10 +8,10 @@ import { RealTimeDispatchServiceInPort } from '@/port/inbound/real-time-dispatch
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
 import { RealTimeDispatchService } from '@/port/service/real-time-dispatch.service';
 
-import { OperationModule } from './operation.module';
+import { ChauffeurModule } from './chauffeur.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RealTimeDispatch]), forwardRef(() => OperationModule)],
+  imports: [TypeOrmModule.forFeature([RealTimeDispatch]), forwardRef(() => ChauffeurModule)],
   controllers: [RealTimeDispatchController],
   providers: [
     {

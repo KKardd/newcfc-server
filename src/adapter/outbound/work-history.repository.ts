@@ -34,7 +34,6 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
       take: paginationQuery.countPerPage,
       order: { startTime: 'DESC' },
       where,
-      relations: ['chauffeur', 'vehicle'],
     });
   }
 

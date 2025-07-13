@@ -36,7 +36,6 @@ export class OperationRepository implements OperationServiceOutPort {
       take: paginationQuery.countPerPage,
       order: { startTime: 'DESC' },
       where,
-      relations: ['chauffeur', 'vehicle', 'realTimeDispatch', 'realTimeDispatch.wayPoints'],
     });
   }
 
@@ -47,7 +46,6 @@ export class OperationRepository implements OperationServiceOutPort {
   async findByIdWithDetails(id: number): Promise<Operation | null> {
     return this.operationRepository.findOne({
       where: { id },
-      relations: ['chauffeur', 'vehicle', 'realTimeDispatch', 'realTimeDispatch.wayPoints'],
     });
   }
 

@@ -28,7 +28,6 @@ export class GarageRepository implements GarageServiceOutPort {
       take: paginationQuery.countPerPage,
       order: { createdAt: 'DESC' },
       where,
-      relations: ['vehicles'],
     });
   }
 
@@ -37,7 +36,7 @@ export class GarageRepository implements GarageServiceOutPort {
   }
 
   async findByIdWithVehicleCount(id: number): Promise<Garage | null> {
-    return this.garageRepository.findOne({ where: { id }, relations: ['vehicles'] });
+    return this.garageRepository.findOne({ where: { id } });
   }
 
   async save(garage: Garage): Promise<Garage> {

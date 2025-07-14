@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class FaqResponseDto {
   @ApiProperty({ description: 'FAQ ID', example: 1 })
@@ -8,6 +8,7 @@ export class FaqResponseDto {
 
   @ApiProperty({ description: 'FAQ 제목', example: '사이트 이용 문의' })
   @Expose()
+  @Transform(({ obj }) => obj.question, { toPlainOnly: true })
   title: string;
 
   @ApiProperty({
@@ -15,6 +16,7 @@ export class FaqResponseDto {
     example: '사이트 이용에 대한 상세 안내입니다.',
   })
   @Expose()
+  @Transform(({ obj }) => obj.answer, { toPlainOnly: true })
   content: string;
 
   @ApiProperty({ description: '작성자', example: 'admin' })

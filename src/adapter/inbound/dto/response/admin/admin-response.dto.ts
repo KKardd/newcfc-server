@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';

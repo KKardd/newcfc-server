@@ -1,39 +1,83 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, Like } from 'typeorm';
+
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchVehicleDto } from '@/adapter/inbound/dto/request/vehicle/search-vehicle.dto';
 import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
+import { UpdateResult } from 'typeorm';
 
 @Injectable()
 export class VehicleRepository implements VehicleServiceOutPort {
   constructor(
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(Chauffeur)
+    private readonly chauffeurRepository: Repository<Chauffeur>,
   ) {}
 
   async findAll(search: SearchVehicleDto, paginationQuery: PaginationQuery, status?: string): Promise<[Vehicle[], number]> {
-    const where: any = {};
-    if (search.vehicleNumber) where.vehicleNumber = Like(`%${search.vehicleNumber}%`);
-    if (search.modelName) where.modelName = Like(`%${search.modelName}%`);
-    if (search.garageId) where.garageId = search.garageId;
-    if (search.vehicleStatus) where.vehicleStatus = search.vehicleStatus;
+    const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle').leftJoinAndSelect('vehicle.garage', 'garage');
+
+    // 기본 검색 조건들
+    if (search.vehicleNumber) {
+      queryBuilder.andWhere('vehicle.vehicleNumber LIKE :vehicleNumber', {
+        vehicleNumber: `%${search.vehicleNumber}%`,
+      });
+    }
+
+    if (search.modelName) {
+      queryBuilder.andWhere('vehicle.modelName LIKE :modelName', {
+        modelName: `%${search.modelName}%`,
+      });
+    }
+
+    if (search.garageId) {
+      queryBuilder.andWhere('vehicle.garageId = :garageId', {
+        garageId: search.garageId,
+      });
+    }
+
+    if (search.vehicleStatus) {
+      queryBuilder.andWhere('vehicle.vehicleStatus = :vehicleStatus', {
+        vehicleStatus: search.vehicleStatus,
+      });
+    }
+
+    // 배정 여부 필터링
     if (search.assigned !== undefined) {
-      // 할당 여부는 별도 쿼리 필요, 여기서는 단순화
+      if (search.assigned) {
+        // 배정된 차량만 조회 (기사가 배정되어 있는 차량)
+        queryBuilder.andWhere(
+          'EXISTS (SELECT 1 FROM chauffeur c WHERE c.vehicleId = vehicle.id AND c.status != :deletedStatus)',
+          {
+            deletedStatus: DataStatus.DELETED,
+          },
+        );
+      } else {
+        // 미배정 차량만 조회 (기사가 배정되지 않은 차량)
+        queryBuilder.andWhere(
+          'NOT EXISTS (SELECT 1 FROM chauffeur c WHERE c.vehicleId = vehicle.id AND c.status != :deletedStatus)',
+          {
+            deletedStatus: DataStatus.DELETED,
+          },
+        );
+      }
     }
+
+    // 상태 필터링
     if (status === DataStatus.DELETED) {
-      where.status = Not(DataStatus.DELETED);
+      queryBuilder.andWhere('vehicle.status != :deleteStatus', { deleteStatus: DataStatus.DELETED });
     } else if (status) {
-      where.status = status;
+      queryBuilder.andWhere('vehicle.status = :statusParam', { statusParam: status });
     }
-    return this.vehicleRepository.findAndCount({
-      skip: paginationQuery.skip,
-      take: paginationQuery.countPerPage,
-      order: { createdAt: 'DESC' },
-      where,
-    });
+
+    queryBuilder.orderBy('vehicle.createdAt', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+
+    return queryBuilder.getManyAndCount();
   }
 
   async findById(id: number): Promise<Vehicle | null> {

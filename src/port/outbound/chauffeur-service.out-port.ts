@@ -13,6 +13,8 @@ export abstract class ChauffeurServiceOutPort {
 
   abstract findById(id: number): Promise<Chauffeur | null>;
 
+  abstract findByVehicleId(vehicleId: number): Promise<Chauffeur[]>;
+
   abstract save(chauffeur: Chauffeur): Promise<Chauffeur>;
 
   abstract update(id: number, chauffeur: Partial<Chauffeur>): Promise<UpdateResult>;

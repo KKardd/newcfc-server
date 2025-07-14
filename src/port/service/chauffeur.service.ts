@@ -76,6 +76,13 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
   async detail(id: number): Promise<ChauffeurResponseDto> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(id);
+    if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
+
+    // 삭제된 쇼퍼인 경우 예외 처리
+    if (chauffeur.status === DataStatus.DELETED) {
+      throw new Error('삭제된 기사 정보는 조회할 수 없습니다.');
+    }
+
     return plainToInstance(ChauffeurResponseDto, chauffeur, classTransformDefaultOptions);
   }
 
@@ -85,10 +92,43 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   }
 
   async update(id: number, updateChauffeur: UpdateChauffeurDto): Promise<void> {
+    const existingChauffeur = await this.chauffeurServiceOutPort.findById(id);
+    if (!existingChauffeur) throw new Error('기사를 찾을 수 없습니다.');
+
+    // 타입 변경이 시도된 경우 검증
+    if (updateChauffeur.type !== undefined && updateChauffeur.type !== existingChauffeur.type) {
+      // 현재 또는 미래 운행이 있는지 확인
+      const operationPagination = new PaginationQuery();
+      operationPagination.page = 1;
+      operationPagination.countPerPage = 100;
+
+      const [operations] = await this.operationServiceOutPort.findAll({ chauffeurId: id }, operationPagination);
+
+      const currentTime = new Date();
+      const hasActiveOperations = operations.some((op) => {
+        // 진행 중이거나 미래의 운행이 있는지 확인
+        return (
+          op.status !== DataStatus.DELETED && op.status !== DataStatus.COMPLETED && (!op.startTime || op.startTime >= currentTime)
+        );
+      });
+
+      if (hasActiveOperations) {
+        throw new Error('진행 중이거나 예정된 운행이 있는 쇼퍼의 타입은 변경할 수 없습니다.');
+      }
+    }
+
     await this.chauffeurServiceOutPort.update(id, updateChauffeur);
   }
 
   async delete(id: number): Promise<void> {
+    const chauffeur = await this.chauffeurServiceOutPort.findById(id);
+    if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
+
+    // 이미 삭제된 쇼퍼인 경우 예외 처리
+    if (chauffeur.status === DataStatus.DELETED) {
+      throw new Error('이미 삭제된 기사입니다.');
+    }
+
     await this.chauffeurServiceOutPort.update(id, { status: DataStatus.DELETED });
   }
 

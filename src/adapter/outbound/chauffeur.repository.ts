@@ -15,44 +15,81 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   ) {}
 
   async findAll(search: SearchChauffeurDto, paginationQuery: PaginationQuery, status?: string): Promise<[Chauffeur[], number]> {
-    const where: any = {};
+    const queryBuilder = this.chauffeurRepository
+      .createQueryBuilder('chauffeur')
+      .leftJoinAndSelect('chauffeur.vehicle', 'vehicle')
+      .leftJoinAndSelect('vehicle.garage', 'garage');
 
     // 기본 검색 필드들
-    if (search.name) where.name = Like(`%${search.name}%`);
-    if (search.phone) where.phone = Like(`%${search.phone}%`);
-    if (search.birthDate) where.birthDate = search.birthDate;
-    if (search.type) where.type = search.type;
-    if (search.chauffeurStatus) where.chauffeurStatus = search.chauffeurStatus;
-    if (search.realTimeDispatchId !== undefined) where.realTimeDispatchId = search.realTimeDispatchId;
-    if (search.isVehicleAssigned !== undefined) where.isVehicleAssigned = search.isVehicleAssigned;
+    if (search.name) {
+      queryBuilder.andWhere('chauffeur.name LIKE :name', { name: `%${search.name}%` });
+    }
+
+    if (search.phone) {
+      queryBuilder.andWhere('chauffeur.phone LIKE :phone', { phone: `%${search.phone}%` });
+    }
+
+    if (search.birthDate) {
+      queryBuilder.andWhere('chauffeur.birthDate = :birthDate', { birthDate: search.birthDate });
+    }
+
+    if (search.type) {
+      queryBuilder.andWhere('chauffeur.type = :type', { type: search.type });
+    }
+
+    if (search.chauffeurStatus) {
+      queryBuilder.andWhere('chauffeur.chauffeurStatus = :chauffeurStatus', { chauffeurStatus: search.chauffeurStatus });
+    }
+
+    if (search.realTimeDispatchId !== undefined) {
+      queryBuilder.andWhere('chauffeur.realTimeDispatchId = :realTimeDispatchId', {
+        realTimeDispatchId: search.realTimeDispatchId,
+      });
+    }
+
+    if (search.isVehicleAssigned !== undefined) {
+      queryBuilder.andWhere('chauffeur.isVehicleAssigned = :isVehicleAssigned', { isVehicleAssigned: search.isVehicleAssigned });
+    }
 
     // 실시간 배차지가 null인 기사만 조회
     if (search.isRealTimeDispatchNull === true) {
-      where.realTimeDispatchId = null;
+      queryBuilder.andWhere('chauffeur.realTimeDispatchId IS NULL');
     }
 
     // 비상주 쇼퍼만 조회
     if (search.isNonResident === true) {
-      where.type = 'NON_RESIDENT';
+      queryBuilder.andWhere('chauffeur.type = :nonResident', { nonResident: 'NON_RESIDENT' });
     }
 
     // 상태 필터링
     if (status === DataStatus.DELETED) {
-      where.status = Not(DataStatus.DELETED);
+      queryBuilder.andWhere('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
     } else if (status) {
-      where.status = status;
+      queryBuilder.andWhere('chauffeur.status = :status', { status });
     }
 
-    return this.chauffeurRepository.findAndCount({
-      skip: paginationQuery.skip,
-      take: paginationQuery.countPerPage,
-      order: { createdAt: 'DESC' },
-      where,
-    });
+    queryBuilder.orderBy('chauffeur.createdAt', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+
+    return queryBuilder.getManyAndCount();
   }
 
   async findById(id: number): Promise<Chauffeur | null> {
-    return this.chauffeurRepository.findOne({ where: { id } });
+    return this.chauffeurRepository
+      .createQueryBuilder('chauffeur')
+      .leftJoinAndSelect('chauffeur.vehicle', 'vehicle')
+      .leftJoinAndSelect('vehicle.garage', 'garage')
+      .where('chauffeur.id = :id', { id })
+      .getOne();
+  }
+
+  async findByVehicleId(vehicleId: number): Promise<Chauffeur[]> {
+    return this.chauffeurRepository.find({
+      where: {
+        vehicleId: vehicleId,
+        isVehicleAssigned: true,
+        status: Not(DataStatus.DELETED),
+      },
+    });
   }
 
   async findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<Chauffeur[]> {

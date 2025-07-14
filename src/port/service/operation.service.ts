@@ -9,7 +9,15 @@ import { CreateOperationDto } from '@/adapter/inbound/dto/request/operation/crea
 import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/search-operation.dto';
 import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/update-operation.dto';
 import { AssignChauffeurResponseDto } from '@/adapter/inbound/dto/response/admin/assign-chauffeur-response.dto';
-import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
+import {
+  OperationResponseDto,
+  ChauffeurInfoDto,
+  VehicleInfoDto,
+  GarageInfoDto,
+  RealTimeDispatchInfoDto,
+  ReservationInfoDto,
+  WayPointInfoDto,
+} from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
@@ -20,6 +28,9 @@ import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port'
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
+import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
+import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
+import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 // 관리자용 운행 상세 응답 DTO
@@ -74,7 +85,10 @@ export class OperationService implements OperationServiceInPort {
   constructor(
     private readonly operationServiceOutPort: OperationServiceOutPort,
     private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
+    private readonly vehicleServiceOutPort: VehicleServiceOutPort,
+    private readonly garageServiceOutPort: GarageServiceOutPort,
     private readonly reservationServiceInPort: ReservationServiceInPort,
+    private readonly reservationServiceOutPort: ReservationServiceOutPort,
     private readonly wayPointServiceInPort: WayPointServiceInPort,
     private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
   ) {}
@@ -90,15 +104,405 @@ export class OperationService implements OperationServiceInPort {
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    // Operation[] → OperationResponseDto[] 변환
-    const operationDtos = operations.map((op) => plainToInstance(OperationResponseDto, op, classTransformDefaultOptions));
+    // 각 운행에 대해 관련 데이터를 조회하고 매핑
+    const operationDtos = await Promise.all(
+      operations.map(async (operation) => {
+        const operationDto = plainToInstance(OperationResponseDto, operation, classTransformDefaultOptions);
+
+        // 기사 정보 조회
+        if (operation.chauffeurId) {
+          try {
+            const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
+            if (chauffeur) {
+              operationDto.chauffeur = plainToInstance(
+                ChauffeurInfoDto,
+                {
+                  id: chauffeur.id,
+                  name: chauffeur.name,
+                  phone: chauffeur.phone,
+                  birthDate: chauffeur.birthDate,
+                  profileImageUrl: chauffeur.profileImageUrl,
+                  type: chauffeur.type,
+                  isVehicleAssigned: chauffeur.isVehicleAssigned,
+                  chauffeurStatus: chauffeur.chauffeurStatus,
+                  vehicleId: chauffeur.vehicleId,
+                  role: chauffeur.role,
+                  status: chauffeur.status,
+                  createdBy: chauffeur.createdBy,
+                  createdAt: chauffeur.createdAt,
+                  updatedBy: chauffeur.updatedBy,
+                  updatedAt: chauffeur.updatedAt,
+                },
+                classTransformDefaultOptions,
+              );
+            }
+          } catch (error) {
+            // 기사 정보를 찾을 수 없는 경우
+            operationDto.chauffeur = null;
+          }
+        }
+
+        // 차량 정보 조회
+        if (operation.vehicleId) {
+          try {
+            const vehicle = await this.vehicleServiceOutPort.findById(operation.vehicleId);
+            if (vehicle) {
+              operationDto.vehicle = plainToInstance(
+                VehicleInfoDto,
+                {
+                  id: vehicle.id,
+                  vehicleNumber: vehicle.vehicleNumber,
+                  modelName: vehicle.modelName,
+                  garageId: vehicle.garageId,
+                  vehicleStatus: vehicle.vehicleStatus,
+                  status: vehicle.status,
+                  createdBy: vehicle.createdBy,
+                  createdAt: vehicle.createdAt,
+                  updatedBy: vehicle.updatedBy,
+                  updatedAt: vehicle.updatedAt,
+                },
+                classTransformDefaultOptions,
+              );
+
+              // 차고지 정보 조회
+              if (vehicle.garageId) {
+                try {
+                  const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
+                  if (garage) {
+                    operationDto.garage = plainToInstance(
+                      GarageInfoDto,
+                      {
+                        id: garage.id,
+                        name: garage.name,
+                        address: garage.address,
+                        addressDetail: garage.detailAddress,
+                        status: garage.status,
+                        createdBy: garage.createdBy,
+                        createdAt: garage.createdAt,
+                        updatedBy: garage.updatedBy,
+                        updatedAt: garage.updatedAt,
+                      },
+                      classTransformDefaultOptions,
+                    );
+                  }
+                } catch (error) {
+                  operationDto.garage = null;
+                }
+              }
+            }
+          } catch (error) {
+            operationDto.vehicle = null;
+          }
+        }
+
+        // 실시간 배차 정보 조회
+        if (operation.realTimeDispatchId) {
+          try {
+            const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(operation.realTimeDispatchId);
+            if (realTimeDispatch) {
+              operationDto.realTimeDispatch = plainToInstance(
+                RealTimeDispatchInfoDto,
+                {
+                  id: realTimeDispatch.id,
+                  departureName: realTimeDispatch.departureName,
+                  departureAddress: realTimeDispatch.departureAddress,
+                  departureAddressDetail: realTimeDispatch.departureAddressDetail,
+                  destinationName: realTimeDispatch.destinationName,
+                  destinationAddress: realTimeDispatch.destinationAddress,
+                  destinationAddressDetail: realTimeDispatch.destinationAddressDetail,
+                  status: realTimeDispatch.status,
+                  createdBy: realTimeDispatch.createdBy,
+                  createdAt: realTimeDispatch.createdAt,
+                  updatedBy: realTimeDispatch.updatedBy,
+                  updatedAt: realTimeDispatch.updatedAt,
+                },
+                classTransformDefaultOptions,
+              );
+            }
+          } catch (error) {
+            operationDto.realTimeDispatch = null;
+          }
+        }
+
+        // 예약 정보 조회
+        try {
+          const reservationPagination = new PaginationQuery();
+          reservationPagination.page = 1;
+          reservationPagination.countPerPage = 1;
+
+          const [reservations] = await this.reservationServiceOutPort.findAll(
+            { operationId: operation.id },
+            reservationPagination,
+            DataStatus.DELETED,
+          );
+
+          if (reservations.length > 0) {
+            const reservation = reservations[0];
+            operationDto.reservation = plainToInstance(
+              ReservationInfoDto,
+              {
+                id: reservation.id,
+                operationId: reservation.operationId,
+                passengerName: reservation.passengerName,
+                passengerPhone: reservation.passengerPhone,
+                passengerEmail: reservation.passengerEmail,
+                passengerCount: reservation.passengerCount,
+                safetyPhone: reservation.safetyPhone,
+                memo: reservation.memo,
+                status: reservation.status,
+                createdBy: reservation.createdBy,
+                createdAt: reservation.createdAt,
+                updatedBy: reservation.updatedBy,
+                updatedAt: reservation.updatedAt,
+              },
+              classTransformDefaultOptions,
+            );
+          }
+        } catch (error) {
+          operationDto.reservation = null;
+        }
+
+        // 경유지 정보 조회
+        try {
+          const wayPointPagination = new PaginationQuery();
+          wayPointPagination.page = 1;
+          wayPointPagination.countPerPage = 100;
+
+          const wayPoints = await this.wayPointServiceInPort.search({ operationId: operation.id }, wayPointPagination);
+          operationDto.wayPoints = wayPoints.data
+            .sort((a, b) => a.order - b.order)
+            .map((wp) =>
+              plainToInstance(
+                WayPointInfoDto,
+                {
+                  id: wp.id,
+                  operationId: wp.operationId,
+                  name: wp.name,
+                  address: wp.address,
+                  addressDetail: wp.addressDetail,
+                  chauffeurStatus: wp.chauffeurStatus,
+                  latitude: wp.latitude,
+                  longitude: wp.longitude,
+                  visitTime: wp.visitTime,
+                  order: wp.order,
+                  status: wp.status,
+                  createdBy: wp.createdBy,
+                  createdAt: wp.createdAt,
+                  updatedBy: wp.updatedBy,
+                  updatedAt: wp.updatedAt,
+                },
+                classTransformDefaultOptions,
+              ),
+            );
+        } catch (error) {
+          operationDto.wayPoints = [];
+        }
+
+        return operationDto;
+      }),
+    );
+
     return new PaginationResponse(operationDtos, pagination);
   }
 
   async detail(id: number): Promise<OperationResponseDto> {
-    const result = await this.operationServiceOutPort.findByIdWithDetails(id);
-    if (!result) throw new Error('운행 정보를 찾을 수 없습니다.');
-    return plainToInstance(OperationResponseDto, result, classTransformDefaultOptions);
+    const operation = await this.operationServiceOutPort.findByIdWithDetails(id);
+    if (!operation) throw new Error('운행 정보를 찾을 수 없습니다.');
+
+    // search 메서드와 동일한 로직으로 관련 데이터 조회 및 매핑
+    const operationDto = plainToInstance(OperationResponseDto, operation, classTransformDefaultOptions);
+
+    // 기사, 차량, 실시간 배차, 예약, 경유지 정보 매핑 (위와 동일한 로직을 반복)
+    // 기사 정보 조회
+    if (operation.chauffeurId) {
+      try {
+        const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
+        if (chauffeur) {
+          operationDto.chauffeur = plainToInstance(
+            ChauffeurInfoDto,
+            {
+              id: chauffeur.id,
+              name: chauffeur.name,
+              phone: chauffeur.phone,
+              birthDate: chauffeur.birthDate,
+              profileImageUrl: chauffeur.profileImageUrl,
+              type: chauffeur.type,
+              isVehicleAssigned: chauffeur.isVehicleAssigned,
+              chauffeurStatus: chauffeur.chauffeurStatus,
+              vehicleId: chauffeur.vehicleId,
+              role: chauffeur.role,
+              status: chauffeur.status,
+              createdBy: chauffeur.createdBy,
+              createdAt: chauffeur.createdAt,
+              updatedBy: chauffeur.updatedBy,
+              updatedAt: chauffeur.updatedAt,
+            },
+            classTransformDefaultOptions,
+          );
+        }
+      } catch (error) {
+        // 기사 정보를 찾을 수 없는 경우
+        operationDto.chauffeur = null;
+      }
+    }
+
+    // 차량 정보 조회
+    if (operation.vehicleId) {
+      try {
+        const vehicle = await this.vehicleServiceOutPort.findById(operation.vehicleId);
+        if (vehicle) {
+          operationDto.vehicle = plainToInstance(
+            VehicleInfoDto,
+            {
+              id: vehicle.id,
+              vehicleNumber: vehicle.vehicleNumber,
+              modelName: vehicle.modelName,
+              garageId: vehicle.garageId,
+              vehicleStatus: vehicle.vehicleStatus,
+              status: vehicle.status,
+              createdBy: vehicle.createdBy,
+              createdAt: vehicle.createdAt,
+              updatedBy: vehicle.updatedBy,
+              updatedAt: vehicle.updatedAt,
+            },
+            classTransformDefaultOptions,
+          );
+
+          // 차고지 정보 조회
+          if (vehicle.garageId) {
+            try {
+              const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
+              if (garage) {
+                operationDto.garage = plainToInstance(
+                  GarageInfoDto,
+                  {
+                    id: garage.id,
+                    name: garage.name,
+                    address: garage.address,
+                    addressDetail: garage.detailAddress,
+                    status: garage.status,
+                    createdBy: garage.createdBy,
+                    createdAt: garage.createdAt,
+                    updatedBy: garage.updatedBy,
+                    updatedAt: garage.updatedAt,
+                  },
+                  classTransformDefaultOptions,
+                );
+              }
+            } catch (error) {
+              operationDto.garage = null;
+            }
+          }
+        }
+      } catch (error) {
+        operationDto.vehicle = null;
+      }
+    }
+
+    // 실시간 배차 정보 조회
+    if (operation.realTimeDispatchId) {
+      try {
+        const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(operation.realTimeDispatchId);
+        if (realTimeDispatch) {
+          operationDto.realTimeDispatch = plainToInstance(
+            RealTimeDispatchInfoDto,
+            {
+              id: realTimeDispatch.id,
+              departureName: realTimeDispatch.departureName,
+              departureAddress: realTimeDispatch.departureAddress,
+              departureAddressDetail: realTimeDispatch.departureAddressDetail,
+              destinationName: realTimeDispatch.destinationName,
+              destinationAddress: realTimeDispatch.destinationAddress,
+              destinationAddressDetail: realTimeDispatch.destinationAddressDetail,
+              status: realTimeDispatch.status,
+              createdBy: realTimeDispatch.createdBy,
+              createdAt: realTimeDispatch.createdAt,
+              updatedBy: realTimeDispatch.updatedBy,
+              updatedAt: realTimeDispatch.updatedAt,
+            },
+            classTransformDefaultOptions,
+          );
+        }
+      } catch (error) {
+        operationDto.realTimeDispatch = null;
+      }
+    }
+
+    // 예약 정보 조회
+    try {
+      const reservationPagination = new PaginationQuery();
+      reservationPagination.page = 1;
+      reservationPagination.countPerPage = 1;
+
+      const [reservations] = await this.reservationServiceOutPort.findAll(
+        { operationId: operation.id },
+        reservationPagination,
+        DataStatus.DELETED,
+      );
+
+      if (reservations.length > 0) {
+        const reservation = reservations[0];
+        operationDto.reservation = plainToInstance(
+          ReservationInfoDto,
+          {
+            id: reservation.id,
+            operationId: reservation.operationId,
+            passengerName: reservation.passengerName,
+            passengerPhone: reservation.passengerPhone,
+            passengerEmail: reservation.passengerEmail,
+            passengerCount: reservation.passengerCount,
+            safetyPhone: reservation.safetyPhone,
+            memo: reservation.memo,
+            status: reservation.status,
+            createdBy: reservation.createdBy,
+            createdAt: reservation.createdAt,
+            updatedBy: reservation.updatedBy,
+            updatedAt: reservation.updatedAt,
+          },
+          classTransformDefaultOptions,
+        );
+      }
+    } catch (error) {
+      operationDto.reservation = null;
+    }
+
+    // 경유지 정보 조회
+    try {
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const wayPoints = await this.wayPointServiceInPort.search({ operationId: operation.id }, wayPointPagination);
+      operationDto.wayPoints = wayPoints.data
+        .sort((a, b) => a.order - b.order)
+        .map((wp) =>
+          plainToInstance(
+            WayPointInfoDto,
+            {
+              id: wp.id,
+              operationId: wp.operationId,
+              name: wp.name,
+              address: wp.address,
+              addressDetail: wp.addressDetail,
+              chauffeurStatus: wp.chauffeurStatus,
+              latitude: wp.latitude,
+              longitude: wp.longitude,
+              visitTime: wp.visitTime,
+              order: wp.order,
+              status: wp.status,
+              createdBy: wp.createdBy,
+              createdAt: wp.createdAt,
+              updatedBy: wp.updatedBy,
+              updatedAt: wp.updatedAt,
+            },
+            classTransformDefaultOptions,
+          ),
+        );
+    } catch (error) {
+      operationDto.wayPoints = [];
+    }
+
+    return operationDto;
   }
 
   /**

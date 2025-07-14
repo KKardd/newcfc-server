@@ -1,6 +1,7 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '@/domain/entity/base.entity';
+import { Garage } from '@/domain/entity/garage.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 
@@ -24,4 +25,9 @@ export class Vehicle extends BaseEntity {
 
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
+
+  // 관계 설정
+  @ManyToOne(() => Garage, { nullable: false })
+  @JoinColumn({ name: 'garage_id' })
+  garage: Garage;
 }

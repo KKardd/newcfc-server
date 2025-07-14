@@ -15,9 +15,6 @@ export class OperationRepository implements OperationServiceOutPort {
   ) {}
 
   async findAll(search: SearchOperationDto, paginationQuery: PaginationQuery, status?: string): Promise<[Operation[], number]> {
-    // 기존 queryBuilder 로직을 this.operationRepository.createQueryBuilder로 옮겨서 사용해도 됨
-    // 또는 where 객체로 단순화 가능
-    // 여기서는 where 객체 방식으로 예시
     const where: any = {};
     if (search.type) where.type = search.type;
     if (search.isRepeated !== undefined) where.isRepeated = search.isRepeated;
@@ -34,7 +31,7 @@ export class OperationRepository implements OperationServiceOutPort {
     return this.operationRepository.findAndCount({
       skip: paginationQuery.skip,
       take: paginationQuery.countPerPage,
-      order: { startTime: 'DESC' },
+      order: { startTime: 'DESC', createdAt: 'DESC' },
       where,
     });
   }
@@ -44,9 +41,7 @@ export class OperationRepository implements OperationServiceOutPort {
   }
 
   async findByIdWithDetails(id: number): Promise<Operation | null> {
-    return this.operationRepository.findOne({
-      where: { id },
-    });
+    return this.operationRepository.findOne({ where: { id } });
   }
 
   async save(operation: Operation): Promise<Operation> {

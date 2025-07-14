@@ -126,6 +126,10 @@ export class GarageInfoDto {
   @Expose()
   address: string;
 
+  @ApiProperty({ description: '차고지 상세 주소', required: false })
+  @Expose()
+  addressDetail: string | null;
+
   @ApiProperty({ description: '데이터 상태', enum: DataStatus })
   @Expose()
   status: DataStatus;

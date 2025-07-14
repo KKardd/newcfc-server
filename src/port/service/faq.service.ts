@@ -32,15 +32,24 @@ export class FaqService implements FaqServiceInPort {
   }
 
   async create(createFaqDto: CreateFaqDto): Promise<void> {
-    const faq = plainToInstance(Faq, {
-      ...createFaqDto,
-      createdBy: null,
-    });
+    const faq = new Faq();
+    faq.question = createFaqDto.title;
+    faq.answer = createFaqDto.content;
     await this.faqServiceOutPort.save(faq);
   }
 
   async update(id: number, updateFaqDto: UpdateFaqDto): Promise<void> {
-    await this.faqServiceOutPort.update(id, updateFaqDto as Partial<Faq>);
+    const updateData: Partial<Faq> = {};
+
+    if (updateFaqDto.title !== undefined) {
+      updateData.question = updateFaqDto.title;
+    }
+
+    if (updateFaqDto.content !== undefined) {
+      updateData.answer = updateFaqDto.content;
+    }
+
+    await this.faqServiceOutPort.update(id, updateData);
   }
 
   async delete(id: number): Promise<void> {

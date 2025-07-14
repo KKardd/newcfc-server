@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, MoreThanOrEqual, LessThanOrEqual, Not } from 'typeorm';
+import { Repository, Not, Like, LessThanOrEqual, MoreThanOrEqual, IsNull, Or } from 'typeorm';
+
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchNoticeDto } from '@/adapter/inbound/dto/request/notice/search-notice.dto';
 import { Notice } from '@/domain/entity/notice.entity';
@@ -33,10 +34,16 @@ export class NoticeRepository implements NoticeServiceOutPort {
   }
 
   async findPopupNotices(): Promise<Notice[]> {
+    const currentDate = new Date();
+
     return this.noticeRepository.find({
       where: {
         isPopup: true,
         status: DataStatus.REGISTER,
+        // 팝업 시작일이 null이거나 현재 시간보다 이전이어야 함
+        popupStartDate: Or(IsNull(), LessThanOrEqual(currentDate)),
+        // 팝업 종료일이 null이거나 현재 시간보다 이후여야 함
+        popupEndDate: Or(IsNull(), MoreThanOrEqual(currentDate)),
       },
       order: { createdAt: 'DESC' },
     });

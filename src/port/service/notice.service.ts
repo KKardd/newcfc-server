@@ -43,8 +43,16 @@ export class NoticeService implements NoticeServiceInPort {
     notice.content = createNotice.content;
     notice.adminId = createNotice.adminId;
     notice.isPopup = createNotice.isPopup || false;
-    notice.popupStartDate = createNotice.popupStartDate ? new Date(createNotice.popupStartDate) : null;
-    notice.popupEndDate = createNotice.popupEndDate ? new Date(createNotice.popupEndDate) : null;
+
+    // isPopup이 false이면 팝업 날짜를 null로 설정
+    if (notice.isPopup) {
+      notice.popupStartDate = createNotice.popupStartDate ? new Date(createNotice.popupStartDate) : null;
+      notice.popupEndDate = createNotice.popupEndDate ? new Date(createNotice.popupEndDate) : null;
+    } else {
+      notice.popupStartDate = null;
+      notice.popupEndDate = null;
+    }
+
     await this.noticeServiceOutPort.save(notice);
   }
 
@@ -55,12 +63,29 @@ export class NoticeService implements NoticeServiceInPort {
       isPopup: updateNotice.isPopup,
     };
 
-    if (updateNotice.popupStartDate) {
-      updateData.popupStartDate = new Date(updateNotice.popupStartDate);
-    }
-
-    if (updateNotice.popupEndDate) {
-      updateData.popupEndDate = new Date(updateNotice.popupEndDate);
+    // isPopup이 명시적으로 설정된 경우에만 팝업 날짜 처리
+    if (updateNotice.isPopup !== undefined) {
+      if (updateNotice.isPopup) {
+        // 팝업이 활성화된 경우에만 날짜 설정
+        if (updateNotice.popupStartDate) {
+          updateData.popupStartDate = new Date(updateNotice.popupStartDate);
+        }
+        if (updateNotice.popupEndDate) {
+          updateData.popupEndDate = new Date(updateNotice.popupEndDate);
+        }
+      } else {
+        // 팝업이 비활성화된 경우 날짜를 null로 설정
+        updateData.popupStartDate = null;
+        updateData.popupEndDate = null;
+      }
+    } else {
+      // isPopup이 설정되지 않은 경우에는 개별 날짜 필드만 업데이트
+      if (updateNotice.popupStartDate) {
+        updateData.popupStartDate = new Date(updateNotice.popupStartDate);
+      }
+      if (updateNotice.popupEndDate) {
+        updateData.popupEndDate = new Date(updateNotice.popupEndDate);
+      }
     }
 
     await this.noticeServiceOutPort.update(id, updateData);

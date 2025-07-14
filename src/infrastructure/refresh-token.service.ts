@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 
 import { RefreshToken } from '../domain/entity/refresh-token.entity';
 
@@ -29,7 +29,21 @@ export class RefreshTokenService {
     return refreshToken?.token ?? null;
   }
 
+  async validateToken(token: string): Promise<RefreshToken | null> {
+    const refreshToken = await this.refreshTokenRepository.findOne({
+      where: {
+        token,
+        expiresAt: MoreThan(new Date()),
+      },
+    });
+    return refreshToken;
+  }
+
   async deleteToken(userId: string): Promise<void> {
     await this.refreshTokenRepository.delete({ userId });
+  }
+
+  async deleteTokenByValue(token: string): Promise<void> {
+    await this.refreshTokenRepository.delete({ token });
   }
 }

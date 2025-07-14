@@ -7,9 +7,10 @@ import { Admin } from '@/domain/entity/admin.entity';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 
 import { TokenProviderModule } from './token-provider.module';
+import { RefreshTokenModule } from './refresh-token.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Admin, Chauffeur]), TokenProviderModule],
+  imports: [TypeOrmModule.forFeature([Admin, Chauffeur]), TokenProviderModule, RefreshTokenModule],
   controllers: [AuthController],
   providers: [AuthService],
   exports: [AuthService],

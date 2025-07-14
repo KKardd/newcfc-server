@@ -2,6 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AdminLoginDto, ChauffeurLoginDto } from '@/adapter/inbound/dto/request/login.dto';
+import { RefreshTokenDto } from '@/adapter/inbound/dto/request/refresh-token.dto';
 import { ResponseTokenDto } from '@/adapter/inbound/dto/response/response-token.dto';
 import { AuthService } from '@/application/service/auth.service';
 
@@ -38,5 +39,20 @@ export class AuthController {
   })
   async chauffeurLogin(@Body() loginDto: ChauffeurLoginDto): Promise<ResponseTokenDto> {
     return this.authService.chauffeurLogin(loginDto);
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: '토큰 재발급' })
+  @ApiResponse({
+    status: 200,
+    description: '토큰 재발급 성공',
+    type: ResponseTokenDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: '유효하지 않은 Refresh Token',
+  })
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto): Promise<ResponseTokenDto> {
+    return this.authService.refreshToken(refreshTokenDto);
   }
 }

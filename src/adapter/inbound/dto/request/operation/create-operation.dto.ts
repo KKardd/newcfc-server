@@ -97,6 +97,18 @@ export class CreateOperationDto {
   @IsEnum(OperationType)
   type: OperationType;
 
+  @ApiProperty({ description: '시작 날짜 및 시간', required: false })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startTime?: Date;
+
+  @ApiProperty({ description: '종료 날짜 및 시간', required: false })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  endTime?: Date;
+
   @ApiProperty({ description: '탑승자 정보', type: CreateReservationInfoDto })
   @ValidateNested()
   @Type(() => CreateReservationInfoDto)

@@ -12,29 +12,81 @@ import { Notice } from '@/domain/entity/notice.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { NoticeServiceInPort } from '@/port/inbound/notice-service.in-port';
 import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
+import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class NoticeService implements NoticeServiceInPort {
-  constructor(private readonly noticeServiceOutPort: NoticeServiceOutPort) {}
+  constructor(
+    private readonly noticeServiceOutPort: NoticeServiceOutPort,
+    private readonly adminServiceOutPort: AdminServiceOutPort,
+  ) {}
 
   async search(searchNotice: SearchNoticeDto, paginationQuery: PaginationQuery): Promise<PaginationResponse<NoticeResponseDto>> {
     const [notices, totalCount] = await this.noticeServiceOutPort.findAll(searchNotice, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(NoticeResponseDto, notices, classTransformDefaultOptions);
+    // 각 Notice에 대해 관리자 이름 조회
+    const response = await Promise.all(
+      notices.map(async (notice) => {
+        const noticeDto = plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+
+        // 관리자 이름 조회 (adminId 또는 createdBy 사용)
+        try {
+          const adminId = notice.adminId || notice.createdBy;
+          const admin = await this.adminServiceOutPort.findById(adminId);
+          noticeDto.createdBy = admin?.name || '알 수 없음';
+        } catch (error) {
+          noticeDto.createdBy = '알 수 없음';
+        }
+
+        return noticeDto;
+      }),
+    );
 
     return new PaginationResponse(response, pagination);
   }
 
   async getPopupNotices(): Promise<NoticeResponseDto[]> {
     const notices = await this.noticeServiceOutPort.findPopupNotices();
-    return plainToInstance(NoticeResponseDto, notices, classTransformDefaultOptions);
+
+    // 각 Notice에 대해 관리자 이름 조회
+    const response = await Promise.all(
+      notices.map(async (notice) => {
+        const noticeDto = plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+
+        // 관리자 이름 조회 (adminId 또는 createdBy 사용)
+        try {
+          const adminId = notice.adminId || notice.createdBy;
+          const admin = await this.adminServiceOutPort.findById(adminId);
+          noticeDto.createdBy = admin?.name || '알 수 없음';
+        } catch (error) {
+          noticeDto.createdBy = '알 수 없음';
+        }
+
+        return noticeDto;
+      }),
+    );
+
+    return response;
   }
 
   async detail(id: number): Promise<NoticeResponseDto> {
     const notice = await this.noticeServiceOutPort.findByNoticeId(id);
-    return plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+    if (!notice) throw new Error('공지사항을 찾을 수 없습니다.');
+
+    const noticeDto = plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+
+    // 관리자 이름 조회 (adminId 또는 createdBy 사용)
+    try {
+      const adminId = notice.adminId || notice.createdBy;
+      const admin = await this.adminServiceOutPort.findById(adminId);
+      noticeDto.createdBy = admin?.name || '알 수 없음';
+    } catch (error) {
+      noticeDto.createdBy = '알 수 없음';
+    }
+
+    return noticeDto;
   }
 
   async create(createNotice: CreateNoticeDto): Promise<void> {

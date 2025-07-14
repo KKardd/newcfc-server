@@ -10,25 +10,56 @@ import { Faq } from '@/domain/entity/faq.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { FaqServiceInPort } from '@/port/inbound/faq-service.in-port';
 import { FaqServiceOutPort } from '@/port/outbound/faq-service.out-port';
+import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class FaqService implements FaqServiceInPort {
-  constructor(private readonly faqServiceOutPort: FaqServiceOutPort) {}
+  constructor(
+    private readonly faqServiceOutPort: FaqServiceOutPort,
+    private readonly adminServiceOutPort: AdminServiceOutPort,
+  ) {}
 
   async search(paginationQuery: PaginationQuery): Promise<PaginationResponse<FaqResponseDto>> {
     // 삭제 제외 조회
     const [faqs, totalCount] = await this.faqServiceOutPort.findAll(paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(FaqResponseDto, faqs, classTransformDefaultOptions);
+    // 각 FAQ에 대해 관리자 이름 조회
+    const response = await Promise.all(
+      faqs.map(async (faq) => {
+        const faqDto = plainToInstance(FaqResponseDto, faq, classTransformDefaultOptions);
+
+        // 관리자 이름 조회
+        try {
+          const admin = await this.adminServiceOutPort.findById(faq.createdBy);
+          faqDto.createdBy = admin?.name || '알 수 없음';
+        } catch (error) {
+          faqDto.createdBy = '알 수 없음';
+        }
+
+        return faqDto;
+      }),
+    );
 
     return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<FaqResponseDto> {
     const faq = await this.faqServiceOutPort.findById(id);
-    return plainToInstance(FaqResponseDto, faq, classTransformDefaultOptions);
+    if (!faq) throw new Error('FAQ를 찾을 수 없습니다.');
+
+    const faqDto = plainToInstance(FaqResponseDto, faq, classTransformDefaultOptions);
+
+    // 관리자 이름 조회
+    try {
+      const admin = await this.adminServiceOutPort.findById(faq.createdBy);
+      faqDto.createdBy = admin?.name || '알 수 없음';
+    } catch (error) {
+      faqDto.createdBy = '알 수 없음';
+    }
+
+    return faqDto;
   }
 
   async create(createFaqDto: CreateFaqDto): Promise<void> {

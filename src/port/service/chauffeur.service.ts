@@ -149,7 +149,62 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       throw new Error('삭제된 기사 정보는 조회할 수 없습니다.');
     }
 
-    return plainToInstance(ChauffeurResponseDto, chauffeur, classTransformDefaultOptions);
+    const chauffeurDto = plainToInstance(ChauffeurResponseDto, chauffeur, classTransformDefaultOptions);
+
+    // 차량 정보 조회
+    if (chauffeur.vehicleId) {
+      try {
+        const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
+        if (vehicle) {
+          chauffeurDto.vehicle = plainToInstance(
+            VehicleInfoDto,
+            {
+              id: vehicle.id,
+              vehicleNumber: vehicle.vehicleNumber,
+              modelName: vehicle.modelName,
+              garageId: vehicle.garageId,
+              vehicleStatus: vehicle.vehicleStatus,
+              status: vehicle.status,
+              createdBy: vehicle.createdBy,
+              createdAt: vehicle.createdAt,
+              updatedBy: vehicle.updatedBy,
+              updatedAt: vehicle.updatedAt,
+            },
+            classTransformDefaultOptions,
+          );
+
+          // 차고지 정보 조회 (차량이 있는 경우)
+          if (vehicle.garageId) {
+            try {
+              const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
+              if (garage) {
+                chauffeurDto.garage = plainToInstance(
+                  GarageInfoDto,
+                  {
+                    id: garage.id,
+                    name: garage.name,
+                    address: garage.address,
+                    addressDetail: garage.detailAddress,
+                    status: garage.status,
+                    createdBy: garage.createdBy,
+                    createdAt: garage.createdAt,
+                    updatedBy: garage.updatedBy,
+                    updatedAt: garage.updatedAt,
+                  },
+                  classTransformDefaultOptions,
+                );
+              }
+            } catch (error) {
+              chauffeurDto.garage = null;
+            }
+          }
+        }
+      } catch (error) {
+        chauffeurDto.vehicle = null;
+      }
+    }
+
+    return chauffeurDto;
   }
 
   async create(createChauffeur: CreateChauffeurDto): Promise<void> {

@@ -11,7 +11,11 @@ import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/upda
 import { UpdateLocationDto } from '@/adapter/inbound/dto/request/chauffeur/update-location.dto';
 import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
 import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
-import { ChauffeurResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
+import {
+  ChauffeurResponseDto,
+  VehicleInfoDto,
+  GarageInfoDto,
+} from '@/adapter/inbound/dto/response/chauffeur/chauffeur-response.dto';
 import {
   ChauffeurStatusChangeResponseDto,
   WayPointInfo,
@@ -44,6 +48,7 @@ import {
   NextWayPointDto,
 } from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
+import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 
 @Injectable()
 export class ChauffeurService implements ChauffeurServiceInPort {
@@ -56,6 +61,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     private readonly wayPointServiceInPort: WayPointServiceInPort,
     private readonly wayPointServiceOutPort: WayPointServiceOutPort,
     private readonly workHistoryService: WorkHistoryService,
+    private readonly garageServiceOutPort: GarageServiceOutPort,
   ) {}
 
   async search(
@@ -69,9 +75,69 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(ChauffeurResponseDto, chauffeurs, classTransformDefaultOptions);
+    // 각 기사에 대해 관련 데이터를 조회하고 매핑
+    const chauffeurDtos = await Promise.all(
+      chauffeurs.map(async (chauffeur) => {
+        const chauffeurDto = plainToInstance(ChauffeurResponseDto, chauffeur, classTransformDefaultOptions);
 
-    return new PaginationResponse(response, pagination);
+        // 차량 정보 조회
+        if (chauffeur.vehicleId) {
+          try {
+            const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
+            if (vehicle) {
+              chauffeurDto.vehicle = plainToInstance(
+                VehicleInfoDto,
+                {
+                  id: vehicle.id,
+                  vehicleNumber: vehicle.vehicleNumber,
+                  modelName: vehicle.modelName,
+                  garageId: vehicle.garageId,
+                  vehicleStatus: vehicle.vehicleStatus,
+                  status: vehicle.status,
+                  createdBy: vehicle.createdBy,
+                  createdAt: vehicle.createdAt,
+                  updatedBy: vehicle.updatedBy,
+                  updatedAt: vehicle.updatedAt,
+                },
+                classTransformDefaultOptions,
+              );
+
+              // 차고지 정보 조회 (차량이 있는 경우)
+              if (vehicle.garageId) {
+                try {
+                  const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
+                  if (garage) {
+                    chauffeurDto.garage = plainToInstance(
+                      GarageInfoDto,
+                      {
+                        id: garage.id,
+                        name: garage.name,
+                        address: garage.address,
+                        addressDetail: garage.detailAddress,
+                        status: garage.status,
+                        createdBy: garage.createdBy,
+                        createdAt: garage.createdAt,
+                        updatedBy: garage.updatedBy,
+                        updatedAt: garage.updatedAt,
+                      },
+                      classTransformDefaultOptions,
+                    );
+                  }
+                } catch (error) {
+                  chauffeurDto.garage = null;
+                }
+              }
+            }
+          } catch (error) {
+            chauffeurDto.vehicle = null;
+          }
+        }
+
+        return chauffeurDto;
+      }),
+    );
+
+    return new PaginationResponse(chauffeurDtos, pagination);
   }
 
   async detail(id: number): Promise<ChauffeurResponseDto> {

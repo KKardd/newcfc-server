@@ -20,7 +20,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
   ) {}
 
   async findAll(search: SearchVehicleDto, paginationQuery: PaginationQuery, status?: string): Promise<[Vehicle[], number]> {
-    const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle').leftJoinAndSelect('vehicle.garage', 'garage');
+    const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle');
 
     // 기본 검색 조건들
     if (search.vehicleNumber) {

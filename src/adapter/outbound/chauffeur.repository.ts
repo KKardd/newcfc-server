@@ -15,10 +15,7 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   ) {}
 
   async findAll(search: SearchChauffeurDto, paginationQuery: PaginationQuery, status?: string): Promise<[Chauffeur[], number]> {
-    const queryBuilder = this.chauffeurRepository
-      .createQueryBuilder('chauffeur')
-      .leftJoinAndSelect('chauffeur.vehicle', 'vehicle')
-      .leftJoinAndSelect('vehicle.garage', 'garage');
+    const queryBuilder = this.chauffeurRepository.createQueryBuilder('chauffeur');
 
     // 기본 검색 필드들
     if (search.name) {
@@ -63,23 +60,18 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
 
     // 상태 필터링
     if (status === DataStatus.DELETED) {
-      queryBuilder.andWhere('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
+      queryBuilder.andWhere('chauffeur.status != :deleteStatus', { deleteStatus: DataStatus.DELETED });
     } else if (status) {
-      queryBuilder.andWhere('chauffeur.status = :status', { status });
+      queryBuilder.andWhere('chauffeur.status = :statusParam', { statusParam: status });
     }
 
-    queryBuilder.orderBy('chauffeur.createdAt', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+    queryBuilder.orderBy('chauffeur.name', 'ASC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
 
     return queryBuilder.getManyAndCount();
   }
 
   async findById(id: number): Promise<Chauffeur | null> {
-    return this.chauffeurRepository
-      .createQueryBuilder('chauffeur')
-      .leftJoinAndSelect('chauffeur.vehicle', 'vehicle')
-      .leftJoinAndSelect('vehicle.garage', 'garage')
-      .where('chauffeur.id = :id', { id })
-      .getOne();
+    return this.chauffeurRepository.createQueryBuilder('chauffeur').where('chauffeur.id = :id', { id }).getOne();
   }
 
   async findByVehicleId(vehicleId: number): Promise<Chauffeur[]> {

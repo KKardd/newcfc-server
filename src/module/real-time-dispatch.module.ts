@@ -9,9 +9,18 @@ import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispat
 import { RealTimeDispatchService } from '@/port/service/real-time-dispatch.service';
 
 import { ChauffeurModule } from './chauffeur.module';
+import { ReservationModule } from '@/module/reservation.module';
+import { OperationModule } from '@/module/operation.module';
+import { WayPointModule } from '@/module/way-point.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RealTimeDispatch]), forwardRef(() => ChauffeurModule)],
+  imports: [
+    TypeOrmModule.forFeature([RealTimeDispatch]),
+    forwardRef(() => ChauffeurModule),
+    forwardRef(() => ReservationModule),
+    forwardRef(() => OperationModule),
+    forwardRef(() => WayPointModule),
+  ],
   controllers: [RealTimeDispatchController],
   providers: [
     {

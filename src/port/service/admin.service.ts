@@ -35,14 +35,19 @@ export class AdminService implements AdminServiceInPort {
     const [admins, totalCount] = await this.adminServiceOutPort.findAll(searchAdmin, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(AdminResponseDto, admins, classTransformDefaultOptions);
+    const response = plainToInstance(AdminResponseDto, admins, classTransformDefaultOptions).map((admin) => {
+      admin.adminName = admin.name;
+      return admin;
+    });
 
     return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<AdminResponseDto> {
     const admin = await this.adminServiceOutPort.findById(id);
-    return plainToInstance(AdminResponseDto, admin, classTransformDefaultOptions);
+    const response = plainToInstance(AdminResponseDto, admin, classTransformDefaultOptions);
+    response.adminName = response.name;
+    return response;
   }
 
   async create(createAdmin: CreateAdminDto): Promise<void> {

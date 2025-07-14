@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Expose, Transform } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
@@ -17,6 +17,10 @@ export class AdminResponseDto {
   @ApiProperty({ description: '이름' })
   @Expose()
   name: string;
+
+  @ApiProperty({ description: '관리자 이름', required: false })
+  @Expose()
+  adminName?: string;
 
   @ApiProperty({ description: '핸드폰 번호' })
   @Expose()

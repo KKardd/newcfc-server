@@ -20,4 +20,6 @@ export abstract class VehicleServiceOutPort {
   abstract updateStatus(id: number, status: DataStatus): Promise<UpdateResult>;
 
   abstract findUnassignedVehicles(): Promise<Vehicle[]>;
+
+  abstract countByGarageId(garageId: number): Promise<number>;
 }

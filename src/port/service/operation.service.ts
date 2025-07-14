@@ -688,8 +688,8 @@ export class OperationService implements OperationServiceInPort {
     const operation = plainToInstance(Operation, {
       type: createOperation.type,
       isRepeated: createOperation.schedule.isRepeat || false,
-      startTime: createOperation.startTime || null,
-      endTime: createOperation.endTime || null,
+      startTime: createOperation.startTime ? new Date(createOperation.startTime) : null,
+      endTime: createOperation.endTime ? new Date(createOperation.endTime) : null,
       chauffeurId: createOperation.chauffeurId,
       vehicleId: createOperation.vehicleId,
       realTimeDispatchId: createOperation.schedule.realTimeDispatchId,

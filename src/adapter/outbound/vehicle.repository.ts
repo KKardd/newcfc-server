@@ -100,4 +100,13 @@ export class VehicleRepository implements VehicleServiceOutPort {
     // 실제 구현 필요
     return [];
   }
+
+  async countByGarageId(garageId: number): Promise<number> {
+    return this.vehicleRepository.count({
+      where: {
+        garageId,
+        status: Not(DataStatus.DELETED),
+      },
+    });
+  }
 }

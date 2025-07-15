@@ -23,11 +23,17 @@ export class OperationRepository implements OperationServiceOutPort {
     if (search.chauffeurId) where.chauffeurId = search.chauffeurId;
     if (search.vehicleId) where.vehicleId = search.vehicleId;
     if (search.realTimeDispatchId) where.realTimeDispatchId = search.realTimeDispatchId;
-    if (status === DataStatus.DELETED) {
+
+    // search.status가 있으면 우선적으로 사용
+    if (search.status) {
+      where.status = search.status;
+    } else if (status === DataStatus.DELETED) {
+      // search.status가 없고 세번째 파라미터가 DELETED면 삭제된 것 제외
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status;
     }
+
     return this.operationRepository.findAndCount({
       skip: paginationQuery.skip,
       take: paginationQuery.countPerPage,

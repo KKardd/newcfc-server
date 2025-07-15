@@ -52,7 +52,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
       if (search.assigned) {
         // 배정된 차량만 조회 (기사가 배정되어 있는 차량)
         queryBuilder.andWhere(
-          'EXISTS (SELECT 1 FROM chauffeur c WHERE c.vehicle_id = vehicle.id AND c.status != :deletedStatus)',
+          'EXISTS (SELECT 1 FROM chauffeur c WHERE c.vehicle_id = vehicle.id AND c.is_vehicle_assigned = true AND c.status != :deletedStatus)',
           {
             deletedStatus: DataStatus.DELETED,
           },
@@ -60,7 +60,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
       } else {
         // 미배정 차량만 조회 (기사가 배정되지 않은 차량)
         queryBuilder.andWhere(
-          'NOT EXISTS (SELECT 1 FROM chauffeur c WHERE c.vehicle_id = vehicle.id AND c.status != :deletedStatus)',
+          'NOT EXISTS (SELECT 1 FROM chauffeur c WHERE c.vehicle_id = vehicle.id AND c.is_vehicle_assigned = true AND c.status != :deletedStatus)',
           {
             deletedStatus: DataStatus.DELETED,
           },

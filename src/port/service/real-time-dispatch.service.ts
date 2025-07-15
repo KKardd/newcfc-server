@@ -169,7 +169,7 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
   }
 
   async delete(id: number): Promise<void> {
-    // 1. 먼저 해당 실시간 배차지에 할당된 쇼퍼들의 realTimeDispatchId를 null로 설정
+    // 먼저 해당 실시간 배차지에 할당된 쇼퍼가 있는지 확인
     const chauffeurPagination = new PaginationQuery();
     chauffeurPagination.page = 1;
     chauffeurPagination.countPerPage = 1000;
@@ -180,14 +180,14 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
       DataStatus.DELETED,
     );
 
-    // 모든 할당된 쇼퍼들의 실시간 배차지 ID를 null로 설정
-    const updatePromises = assignedChauffeurs.map((chauffeur) =>
-      this.chauffeurServiceOutPort.update(chauffeur.id, { realTimeDispatchId: null }),
-    );
+    // 할당된 쇼퍼가 있는 경우 삭제 불가
+    if (assignedChauffeurs.length > 0) {
+      const error = new Error('할당된 쇼퍼가 있는 실시간 배차지는 삭제할 수 없습니다.');
+      (error as any).statusCode = 400;
+      throw error;
+    }
 
-    await Promise.all(updatePromises);
-
-    // 2. 실시간 배차지 삭제
+    // 실시간 배차지 삭제
     await this.realTimeDispatchServiceOutPort.updateStatus(id, DataStatus.DELETED);
   }
 }

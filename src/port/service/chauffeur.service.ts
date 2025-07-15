@@ -229,12 +229,16 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       const hasActiveOperations = operations.some((op) => {
         // 진행 중이거나 미래의 운행이 있는지 확인
         return (
-          op.status !== DataStatus.DELETED && op.status !== DataStatus.COMPLETED && (!op.startTime || op.startTime >= currentTime)
+          op.status !== DataStatus.DELETED &&
+          op.status !== DataStatus.COMPLETED &&
+          (!op.startTime || op.startTime >= currentTime || !op.endTime)
         );
       });
 
       if (hasActiveOperations) {
-        throw new Error('진행 중이거나 예정된 운행이 있는 쇼퍼의 타입은 변경할 수 없습니다.');
+        const error = new Error('행사 예약이 있는 쇼퍼의 타입은 변경할 수 없습니다.');
+        (error as any).statusCode = 400;
+        throw error;
       }
     }
 
@@ -355,6 +359,12 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     }
 
     const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
+
+    // 차량이 없거나 삭제된 경우 null 반환
+    if (!vehicle || vehicle.status === DataStatus.DELETED) {
+      return null;
+    }
+
     return plainToInstance(AssignedVehicleResponseDto, vehicle, classTransformDefaultOptions);
   }
 
@@ -441,8 +451,15 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
     const currentTime = new Date();
 
-    // 미래의 운행들만 필터링 (시작 시간이 없거나, 시작 시간이 현재보다 미래인 것들)
-    const futureOperations = operations.filter((op) => !op.startTime || op.startTime > currentTime);
+    // 미래의 운행들만 필터링 (시작 시간이 현재보다 미래이고, 종료 시간이 지나지 않은 것들)
+    const futureOperations = operations.filter((op) => {
+      // endTime이 있고 현재 시간보다 이전이면 제외
+      if (op.endTime && op.endTime <= currentTime) {
+        return false;
+      }
+      // startTime이 없거나, startTime이 현재보다 미래인 경우만 포함
+      return !op.startTime || op.startTime > currentTime;
+    });
 
     if (futureOperations.length === 0) {
       return null;
@@ -637,11 +654,11 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     operationPagination.page = 1;
     operationPagination.countPerPage = 10; // 충분한 수의 운행을 조회
 
-    const operations = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
+    const [operations, totalCount] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
 
-    if (operations[1] > 0) {
+    if (totalCount > 0) {
       // 현재 진행 중인 운행: endTime이 없고 기사에게 배정된 운행
-      const currentOperations = operations[0].filter((op) => !op.endTime);
+      const currentOperations = operations.filter((op) => !op.endTime);
 
       // 가장 최근에 시작된 운행을 반환 (startTime 기준으로 정렬)
       if (currentOperations.length > 0) {

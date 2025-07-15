@@ -175,6 +175,15 @@ export class VehicleService implements VehicleServiceInPort {
   }
 
   async delete(id: number): Promise<void> {
+    // 해당 차량에 배정된 기사가 있는지 확인
+    const assignedChauffeurs = await this.chauffeurServiceOutPort.findByVehicleId(id);
+
+    if (assignedChauffeurs.length > 0) {
+      const error = new Error('배정된 기사가 있는 차량은 삭제할 수 없습니다.');
+      (error as any).statusCode = 400;
+      throw error;
+    }
+
     await this.vehicleServiceOutPort.updateStatus(id, DataStatus.DELETED);
   }
 }

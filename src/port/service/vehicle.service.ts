@@ -184,6 +184,11 @@ export class VehicleService implements VehicleServiceInPort {
       throw error;
     }
 
-    await this.vehicleServiceOutPort.updateStatus(id, DataStatus.DELETED);
+    // 차량 정보(번호, 모델명) 빈문자열 처리 + 상태 DELETED
+    await this.vehicleServiceOutPort.update(id, {
+      vehicleNumber: '',
+      modelName: '',
+      status: DataStatus.DELETED,
+    });
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, Not, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeorm';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history/search-work-history.dto';
 import { WorkHistory } from '@/domain/entity/work-history.entity';
@@ -45,7 +45,8 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
     return this.workHistoryRepository.findOne({
       where: {
         chauffeurId,
-        status: DataStatus.USED,
+        endTime: IsNull(),
+        status: Not(DataStatus.DELETED),
       },
     });
   }

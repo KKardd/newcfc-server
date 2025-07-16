@@ -78,7 +78,6 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
     return this.chauffeurRepository.find({
       where: {
         vehicleId: vehicleId,
-        isVehicleAssigned: true,
         status: Not(DataStatus.DELETED),
       },
     });

@@ -124,6 +124,7 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     await this.workHistoryRepository.update(activeWork.id, {
       endTime,
       totalMinutes,
+      status: DataStatus.COMPLETED,
     });
   }
 }

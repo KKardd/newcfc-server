@@ -26,7 +26,7 @@ export class SearchVehicleDto {
   @IsEnum(VehicleStatus)
   vehicleStatus?: VehicleStatus;
 
-  @ApiProperty({ description: '배정 여부 (특정 쇼퍼에게 배정되었는지)', required: false })
+  @ApiProperty({ description: '배정 여부 (기사가 배정되었는지 여부: true=배정됨, false=미배정)', required: false })
   @IsOptional()
   @IsBoolean()
   assigned?: boolean;

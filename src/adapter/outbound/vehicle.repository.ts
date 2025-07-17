@@ -27,7 +27,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
         'garage.id',
         'garage.name', 
         'garage.address',
-        'garage.address_detail',
+        'garage.detail_address',
         'garage.status',
         'garage.created_by',
         'garage.created_at',

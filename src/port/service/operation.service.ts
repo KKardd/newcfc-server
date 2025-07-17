@@ -784,25 +784,29 @@ export class OperationService implements OperationServiceInPort {
       if (!realTimeDispatch) throw new Error('실시간 배차 정보를 찾을 수 없습니다.');
 
       // isReverse가 true인 경우 출발지와 도착지를 바꿔서 생성
-      const firstWayPoint = isReverse ? {
-        name: realTimeDispatch.destinationName,
-        address: realTimeDispatch.destinationAddress,
-        addressDetail: realTimeDispatch.destinationAddressDetail,
-      } : {
-        name: realTimeDispatch.departureName,
-        address: realTimeDispatch.departureAddress,
-        addressDetail: realTimeDispatch.departureAddressDetail,
-      };
+      const firstWayPoint = isReverse
+        ? {
+            name: realTimeDispatch.destinationName,
+            address: realTimeDispatch.destinationAddress,
+            addressDetail: realTimeDispatch.destinationAddressDetail,
+          }
+        : {
+            name: realTimeDispatch.departureName,
+            address: realTimeDispatch.departureAddress,
+            addressDetail: realTimeDispatch.departureAddressDetail,
+          };
 
-      const secondWayPoint = isReverse ? {
-        name: realTimeDispatch.departureName,
-        address: realTimeDispatch.departureAddress,
-        addressDetail: realTimeDispatch.departureAddressDetail,
-      } : {
-        name: realTimeDispatch.destinationName,
-        address: realTimeDispatch.destinationAddress,
-        addressDetail: realTimeDispatch.destinationAddressDetail,
-      };
+      const secondWayPoint = isReverse
+        ? {
+            name: realTimeDispatch.departureName,
+            address: realTimeDispatch.departureAddress,
+            addressDetail: realTimeDispatch.departureAddressDetail,
+          }
+        : {
+            name: realTimeDispatch.destinationName,
+            address: realTimeDispatch.destinationAddress,
+            addressDetail: realTimeDispatch.destinationAddressDetail,
+          };
 
       // 1. 첫 번째 WayPoint 생성 (order=1)
       await this.wayPointServiceInPort.create({

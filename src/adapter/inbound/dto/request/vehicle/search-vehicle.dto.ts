@@ -31,11 +31,13 @@ export class SearchVehicleDto {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    if (value === '1' || value === 1) return true;
+    if (value === '0' || value === 0) return false;
     return value;
   })
-  assigned?: boolean;
+  assigned?: boolean | string;
 
   @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })
   @IsOptional()

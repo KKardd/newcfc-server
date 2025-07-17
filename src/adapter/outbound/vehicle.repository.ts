@@ -63,14 +63,27 @@ export class VehicleRepository implements VehicleServiceOutPort {
     const applyAssignedFilter = (queryBuilder: any) => {
       if (search.assigned !== undefined) {
         console.log('DEBUG: assigned filter value:', search.assigned, 'type:', typeof search.assigned);
+<<<<<<< Updated upstream
         if (search.assigned === true || search.assigned === 'true') {
+=======
+        
+        // boolean 또는 string으로 전달될 수 있으므로 명시적으로 비교
+        const isAssignedFilter = search.assigned === true || search.assigned === 'true';
+        const isUnassignedFilter = search.assigned === false || search.assigned === 'false';
+        
+        if (isAssignedFilter) {
+>>>>>>> Stashed changes
           // 배정된 차량만 조회 (기사가 배정되어 있는 차량)
           queryBuilder.andWhere(`EXISTS (
             SELECT 1 FROM chauffeur c 
             WHERE c.vehicle_id = vehicle.id 
             AND c.status != :chauffeurDeletedStatus
           )`, { chauffeurDeletedStatus: DataStatus.DELETED });
+<<<<<<< Updated upstream
         } else if (search.assigned === false || search.assigned === 'false') {
+=======
+        } else if (isUnassignedFilter) {
+>>>>>>> Stashed changes
           // 미배정 차량만 조회 (기사가 배정되지 않은 차량)
           queryBuilder.andWhere(`NOT EXISTS (
             SELECT 1 FROM chauffeur c 

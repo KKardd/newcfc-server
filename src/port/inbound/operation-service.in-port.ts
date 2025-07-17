@@ -21,6 +21,8 @@ export abstract class OperationServiceInPort {
 
   abstract update(id: number, updateOperation: UpdateOperationDto): Promise<void>;
 
+  abstract updateAdmin(id: number, updateOperation: any): Promise<void>;
+
   abstract delete(id: number): Promise<void>;
 
   abstract assignChauffeur(assignDto: AssignChauffeurDto): Promise<AssignChauffeurResponseDto>;

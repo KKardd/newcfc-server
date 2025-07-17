@@ -236,7 +236,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
       if (hasActiveOperations) {
         const error = new Error('행사 예약이 있는 쇼퍼의 타입은 변경할 수 없습니다.');
-        (error as unknown).statusCode = 400;
+        (error as any).statusCode = 400;
         throw error;
       }
     }
@@ -437,10 +437,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   }
 
   async getMyNearestReservation(chauffeurId: number): Promise<NearestReservationResponseDto | null> {
-    // 기사에게 할당된 모든 미래 운행 조회
+    // 기사에게 할당된 모든 운행 조회
     const operationPagination = new PaginationQuery();
     operationPagination.page = 1;
-    operationPagination.countPerPage = 100; // 충분한 수의 운행을 조회
+    operationPagination.countPerPage = 100;
 
     const [operations] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
 
@@ -450,19 +450,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
     const currentTime = new Date();
 
-    // 미래의 운행들만 필터링
+    // 미래의 운행들만 필터링 (아직 시작하지 않은 운행)
     const futureOperations = operations.filter((op) => {
       // 삭제되거나 완료된 운행 제외
       if (op.status === DataStatus.DELETED || op.status === DataStatus.COMPLETED) {
         return false;
       }
 
-      // endTime이 있고 현재 시간보다 이전이면 제외
-      if (op.endTime && op.endTime <= currentTime) {
-        return false;
-      }
-
-      // startTime이 있는 경우: 현재 시간 이후만 포함
+      // startTime이 있는 경우: 현재 시간 이후만 포함 (미래 운행)
       if (op.startTime) {
         return op.startTime > currentTime;
       }
@@ -508,28 +503,23 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       classTransformDefaultOptions,
     );
 
-    // 예약 정보 조회 (일반 예약인 경우)
-    if (nearestOperation.type === OperationType.REGULAR) {
-      try {
-        // operationId로 예약 검색
-        const reservationPagination = new PaginationQuery();
-        reservationPagination.page = 1;
-        reservationPagination.countPerPage = 1;
+    // 예약 정보 조회 (모든 운행 타입에 대해 조회 시도)
+    try {
+      const reservationPagination = new PaginationQuery();
+      reservationPagination.page = 1;
+      reservationPagination.countPerPage = 1;
 
-        const reservations = await this.reservationServiceInPort.search(
-          { operationId: nearestOperation.id },
-          reservationPagination,
-        );
+      const reservations = await this.reservationServiceInPort.search(
+        { operationId: nearestOperation.id },
+        reservationPagination,
+      );
 
-        if (reservations.data.length > 0) {
-          response.reservation = plainToInstance(NextReservationDto, reservations.data[0], classTransformDefaultOptions);
-        } else {
-          response.reservation = null;
-        }
-      } catch {
+      if (reservations.data.length > 0) {
+        response.reservation = plainToInstance(NextReservationDto, reservations.data[0], classTransformDefaultOptions);
+      } else {
         response.reservation = null;
       }
-    } else {
+    } catch {
       response.reservation = null;
     }
 
@@ -674,6 +664,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     if (totalCount > 0) {
       const currentTime = new Date();
 
+      // 기사의 현재 상태 확인
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      // 예약 대기 중인 경우는 현재 운행으로 반환하지 않음
+      if (chauffeur && chauffeur.chauffeurStatus === ChauffeurStatus.WAITING_FOR_RESERVATION) {
+        return null;
+      }
+
       // 현재 진행 중인 운행: 삭제되지 않고, 완료되지 않은 운행
       const currentOperations = operations.filter((op) => {
         // 삭제되거나 완료된 운행 제외
@@ -736,7 +734,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
         case ChauffeurStatus.IN_OPERATION:
           // 운행 중 → 다음 목적지 waypoint (아직 방문하지 않은 waypoint 중 첫 번째)
-          const nextWayPoint = sortedWayPoints.find((wp) => !wp.chauffeurStatus || !wp.visitTime);
+          const nextWayPoint = sortedWayPoints.find((wp: any) => !wp.chauffeurStatus || !wp.visitTime);
           if (nextWayPoint) {
             return plainToInstance(CurrentWayPointDto, nextWayPoint, classTransformDefaultOptions);
           }
@@ -745,11 +743,11 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
         case ChauffeurStatus.WAITING_OPERATION:
           // 운행 대기 → 현재 위치한 waypoint (가장 최근에 방문한 waypoint)
-          const visitedWayPoints = sortedWayPoints.filter((wp) => wp.chauffeurStatus && wp.visitTime);
+          const visitedWayPoints = sortedWayPoints.filter((wp: any) => wp.chauffeurStatus && wp.visitTime);
           if (visitedWayPoints.length > 0) {
             // visitTime 기준으로 가장 최근 방문한 waypoint
             const latestVisited = visitedWayPoints.sort(
-              (a, b) => new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime(),
+              (a: any, b: any) => new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime(),
             )[0];
             return plainToInstance(CurrentWayPointDto, latestVisited, classTransformDefaultOptions);
           }
@@ -1142,7 +1140,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   /**
    * 실시간 배차 정보를 쇼퍼앱용 간단한 waypoint 형태로 변환
    */
-  private createSimpleWayPointsForChauffeur(realTimeDispatch: unknown): CurrentWayPointDto[] {
+  private createSimpleWayPointsForChauffeur(realTimeDispatch: any): CurrentWayPointDto[] {
     const wayPoints: CurrentWayPointDto[] = [];
 
     // 1. 출발지 (항상 표시)
@@ -1151,9 +1149,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         CurrentWayPointDto,
         {
           id: 0, // 임시 ID
-          name: realTimeDispatch.departureName,
-          address: realTimeDispatch.departureAddress,
-          addressDetail: realTimeDispatch.departureAddressDetail,
+          name: (realTimeDispatch as any).departureName,
+          address: (realTimeDispatch as any).departureAddress,
+          addressDetail: (realTimeDispatch as any).departureAddressDetail,
           order: 1,
           visitTime: null,
           chauffeurStatus: null,
@@ -1168,9 +1166,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         CurrentWayPointDto,
         {
           id: 0, // 임시 ID
-          name: realTimeDispatch.destinationName,
-          address: realTimeDispatch.destinationAddress,
-          addressDetail: realTimeDispatch.destinationAddressDetail,
+          name: (realTimeDispatch as any).destinationName,
+          address: (realTimeDispatch as any).destinationAddress,
+          addressDetail: (realTimeDispatch as any).destinationAddressDetail,
           order: 2,
           visitTime: null,
           chauffeurStatus: null,
@@ -1187,7 +1185,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
    */
   private async getCurrentWayPointForRealTimeDispatch(
     chauffeurId: number,
-    realTimeDispatch: unknown,
+    realTimeDispatch: any,
   ): Promise<CurrentWayPointDto | null> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
@@ -1205,9 +1203,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
             CurrentWayPointDto,
             {
               id: 0, // 임시 ID
-              name: realTimeDispatch.departureName,
-              address: realTimeDispatch.departureAddress,
-              addressDetail: realTimeDispatch.departureAddressDetail,
+              name: (realTimeDispatch as any).departureName,
+              address: (realTimeDispatch as any).departureAddress,
+              addressDetail: (realTimeDispatch as any).departureAddressDetail,
               order: 1,
               visitTime: null,
               chauffeurStatus: chauffeur.chauffeurStatus,
@@ -1222,9 +1220,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
             CurrentWayPointDto,
             {
               id: 0, // 임시 ID
-              name: realTimeDispatch.destinationName,
-              address: realTimeDispatch.destinationAddress,
-              addressDetail: realTimeDispatch.destinationAddressDetail,
+              name: (realTimeDispatch as any).destinationName,
+              address: (realTimeDispatch as any).destinationAddress,
+              addressDetail: (realTimeDispatch as any).destinationAddressDetail,
               order: 2,
               visitTime: null,
               chauffeurStatus: chauffeur.chauffeurStatus,

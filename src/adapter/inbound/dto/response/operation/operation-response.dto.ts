@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationType } from '@/domain/enum/operation-type.enum';
@@ -292,6 +292,18 @@ export class WayPointInfoDto {
   @Expose()
   visitTime: Date | null;
 
+  @ApiProperty({ description: '방문 날짜 (YYYY-MM-DD)', required: false })
+  @Expose()
+  get date(): string | null {
+    return this.visitTime ? this.visitTime.toISOString().split('T')[0] : null;
+  }
+
+  @ApiProperty({ description: '방문 시각 (HH:mm)', required: false })
+  @Expose()
+  get time(): string | null {
+    return this.visitTime ? this.visitTime.toTimeString().slice(0, 5) : null;
+  }
+
   @ApiProperty({ description: '순서' })
   @Expose()
   order: number;
@@ -365,6 +377,14 @@ export class OperationResponseDto {
   @ApiProperty({ description: '실시간 배차 ID', required: false })
   @Expose()
   realTimeDispatchId: number | null;
+
+  @ApiProperty({ description: '담당자 이름', required: false })
+  @Expose()
+  managerName: string | null;
+
+  @ApiProperty({ description: '담당자 전화번호', required: false })
+  @Expose()
+  managerNumber: string | null;
 
   @ApiProperty({ description: '추가 비용', required: false })
   @Expose()

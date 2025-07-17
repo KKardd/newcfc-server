@@ -47,6 +47,8 @@ export class AdminOperationDetailResponseDto {
   passengerCount: number | null;
   vehicleId: number | null;
   realTimeDispatchId: number | null;
+  managerName: string | null;
+  managerNumber: string | null;
   additionalCosts: any | null;
   receiptImageUrls: string[] | null;
   kakaoPath: any | null;
@@ -526,6 +528,8 @@ export class OperationService implements OperationServiceInPort {
     response.passengerCount = (operationDetail as any).passengerCount;
     response.vehicleId = operationDetail.vehicleId;
     response.realTimeDispatchId = operationDetail.realTimeDispatchId;
+    response.managerName = operationDetail.managerName;
+    response.managerNumber = operationDetail.managerNumber;
     response.additionalCosts = operationDetail.additionalCosts;
     response.receiptImageUrls = operationDetail.receiptImageUrls;
     response.kakaoPath = operationDetail.kakaoPath;
@@ -693,6 +697,8 @@ export class OperationService implements OperationServiceInPort {
       chauffeurId: createOperation.chauffeurId,
       vehicleId: createOperation.vehicleId,
       realTimeDispatchId: createOperation.schedule.realTimeDispatchId,
+      managerName: createOperation.manager?.managerName || null,
+      managerNumber: createOperation.manager?.managerNumber || null,
       status: DataStatus.REGISTER,
     });
 
@@ -721,21 +727,31 @@ export class OperationService implements OperationServiceInPort {
       // 일반 예약인 경우 기존 로직 유지
       if (createOperation.schedule.wayPoints && createOperation.schedule.wayPoints.length > 0) {
         for (const wayPointInfo of createOperation.schedule.wayPoints) {
+          // date와 time을 visitTime으로 변환
+          let visitTime: Date | undefined = undefined;
+          if (wayPointInfo.date && wayPointInfo.time) {
+            visitTime = new Date(`${wayPointInfo.date}T${wayPointInfo.time}:00`);
+          }
+
           await this.wayPointServiceInPort.create({
             operationId: operation.id,
             address: wayPointInfo.address,
             addressDetail: wayPointInfo.addressDetail,
             latitude: wayPointInfo.latitude,
             longitude: wayPointInfo.longitude,
+            visitTime: visitTime?.toISOString(),
             order: wayPointInfo.order,
           });
         }
       }
     }
 
-    // 5. 실시간 배차인 경우 담당자 정보 저장
-    if (createOperation.manager && createOperation.type === OperationType.REALTIME) {
-    }
+    // 5. 실시간 배차인 경우 담당자 정보는 이미 operation에 저장됨
+    console.log('Operation created successfully with manager info:', {
+      operationId: operation.id,
+      managerName: operation.managerName,
+      managerNumber: operation.managerNumber,
+    });
   }
 
   /**
@@ -824,28 +840,38 @@ export class OperationService implements OperationServiceInPort {
   }
 
   async update(id: number, updateOperation: UpdateOperationDto): Promise<void> {
-    // 1. Operation 업데이트 실행
+    await this.operationServiceOutPort.update(id, updateOperation);
+  }
+
+  async updateAdmin(id: number, updateOperation: any): Promise<void> {
+    // 관리자용 운행 수정 - 일정 로그 수정 포함
     await this.operationServiceOutPort.update(id, updateOperation);
 
-    // 2. 영수증이나 추가비용이 업데이트되었는지 확인
-    const hasReceiptUpdate = updateOperation.receiptImageUrls && updateOperation.receiptImageUrls.length > 0;
-    const hasAdditionalCostsUpdate = updateOperation.additionalCosts && Object.keys(updateOperation.additionalCosts).length > 0;
+    // wayPoints 수정이 포함된 경우 처리
+    if (updateOperation.wayPoints) {
+      // 기존 wayPoints 삭제
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
 
-    // 3. 영수증이나 추가비용이 업데이트된 경우, 기사 상태 확인 및 변경
-    if (hasReceiptUpdate || hasAdditionalCostsUpdate) {
-      const operation = await this.operationServiceOutPort.findById(id);
-      if (!operation) throw new Error('운행 정보를 찾을 수 없습니다.');
+      const existingWayPoints = await this.wayPointServiceInPort.search({ operationId: id }, wayPointPagination);
 
-      if (operation.chauffeurId) {
-        const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
-        if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
+      for (const wayPoint of existingWayPoints.data) {
+        await this.wayPointServiceInPort.delete(wayPoint.id);
+      }
 
-        // 기사가 정보 미기입 상태인 경우 운행 완료 상태로 변경
-        if (chauffeur.chauffeurStatus === ChauffeurStatus.PENDING_RECEIPT_INPUT) {
-          await this.chauffeurServiceOutPort.update(operation.chauffeurId, {
-            chauffeurStatus: ChauffeurStatus.OPERATION_COMPLETED,
-          });
-        }
+      // 새로운 wayPoints 생성
+      for (const wayPointInfo of updateOperation.wayPoints) {
+        await this.wayPointServiceInPort.create({
+          operationId: id,
+          name: wayPointInfo.name,
+          address: wayPointInfo.address,
+          addressDetail: wayPointInfo.addressDetail,
+          latitude: wayPointInfo.latitude,
+          longitude: wayPointInfo.longitude,
+          visitTime: wayPointInfo.visitTime,
+          order: wayPointInfo.order,
+        });
       }
     }
   }

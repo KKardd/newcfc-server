@@ -50,6 +50,13 @@ export class OperationController {
     return this.operationService.getAdminOperationDetail(id);
   }
 
+  @ApiOperation({ summary: '관리자용 운행 정보 수정' })
+  @ApiParam({ name: 'id', description: '운행 ID' })
+  @Put(':id/admin')
+  async updateAdmin(@Param('id') id: number, @Body() updateOperation: any) {
+    return this.operationService.updateAdmin(id, updateOperation);
+  }
+
   @ApiOperation({ summary: '운행 생성' })
   @Post()
   async create(@Body() createOperation: CreateOperationDto): Promise<void> {

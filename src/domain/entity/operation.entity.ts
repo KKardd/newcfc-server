@@ -33,6 +33,12 @@ export class Operation extends BaseEntity {
   @Column({ name: 'real_time_dispatch_id', type: 'integer', nullable: true })
   realTimeDispatchId: number | null;
 
+  @Column({ name: 'manager_name', type: 'varchar', length: 100, nullable: true })
+  managerName: string | null;
+
+  @Column({ name: 'manager_number', type: 'varchar', length: 20, nullable: true })
+  managerNumber: string | null;
+
   @Column({ name: 'additional_costs', type: 'jsonb', nullable: true })
   additionalCosts: Record<string, number> | null;
 

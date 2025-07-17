@@ -42,6 +42,18 @@ export class WayPointResponseDto {
   @Expose()
   visitTime: Date | null;
 
+  @ApiProperty({ description: '방문 날짜 (YYYY-MM-DD)', required: false })
+  @Expose()
+  get date(): string | null {
+    return this.visitTime ? this.visitTime.toISOString().split('T')[0] : null;
+  }
+
+  @ApiProperty({ description: '방문 시각 (HH:mm)', required: false })
+  @Expose()
+  get time(): string | null {
+    return this.visitTime ? this.visitTime.toTimeString().slice(0, 5) : null;
+  }
+
   @ApiProperty({ description: '경유지 순서' })
   @Expose()
   order: number;

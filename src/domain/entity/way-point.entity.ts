@@ -33,6 +33,9 @@ export class WayPoint extends BaseEntity {
   @Column({ name: 'visit_time', type: 'timestamp', nullable: true })
   visitTime: Date | null;
 
+  @Column({ name: 'scheduled_time', type: 'timestamp', nullable: true })
+  scheduledTime: Date | null;
+
   @Column({ type: 'integer', nullable: false })
   order: number;
 

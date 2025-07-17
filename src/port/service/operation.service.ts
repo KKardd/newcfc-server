@@ -76,10 +76,20 @@ export class AdminWayPointDto {
   addressDetail: string | null;
   order: number;
   visitTime: Date | null;
+  scheduledTime: Date | null;
   chauffeurStatus: ChauffeurStatus | null;
   progressStatus: 'COMPLETED' | 'IN_PROGRESS' | 'WAITING' | 'PENDING';
   progressLabel: string;
   progressLabelStatus: ChauffeurStatus | null;
+
+  // date, time getter 추가
+  get date(): string | null {
+    return this.scheduledTime ? this.scheduledTime.toISOString().split('T')[0] : null;
+  }
+
+  get time(): string | null {
+    return this.scheduledTime ? this.scheduledTime.toTimeString().slice(0, 5) : null;
+  }
 }
 
 @Injectable()
@@ -286,6 +296,7 @@ export class OperationService implements OperationServiceInPort {
                   latitude: wp.latitude,
                   longitude: wp.longitude,
                   visitTime: wp.visitTime,
+                  scheduledTime: wp.scheduledTime,
                   order: wp.order,
                   status: wp.status,
                   createdBy: wp.createdBy,
@@ -490,6 +501,7 @@ export class OperationService implements OperationServiceInPort {
               latitude: wp.latitude,
               longitude: wp.longitude,
               visitTime: wp.visitTime,
+              scheduledTime: wp.scheduledTime,
               order: wp.order,
               status: wp.status,
               createdBy: wp.createdBy,
@@ -574,6 +586,7 @@ export class OperationService implements OperationServiceInPort {
     adminWayPoint.addressDetail = wayPoint.addressDetail;
     adminWayPoint.order = wayPoint.order;
     adminWayPoint.visitTime = wayPoint.visitTime;
+    adminWayPoint.scheduledTime = wayPoint.scheduledTime;
     adminWayPoint.chauffeurStatus = wayPoint.chauffeurStatus;
 
     // 진행 상태 계산
@@ -727,10 +740,10 @@ export class OperationService implements OperationServiceInPort {
       // 일반 예약인 경우 기존 로직 유지
       if (createOperation.schedule.wayPoints && createOperation.schedule.wayPoints.length > 0) {
         for (const wayPointInfo of createOperation.schedule.wayPoints) {
-          // date와 time을 visitTime으로 변환
-          let visitTime: Date | undefined = undefined;
+          // date와 time을 scheduledTime으로 변환
+          let scheduledTime: string | undefined = undefined;
           if (wayPointInfo.date && wayPointInfo.time) {
-            visitTime = new Date(`${wayPointInfo.date}T${wayPointInfo.time}:00`);
+            scheduledTime = `${wayPointInfo.date}T${wayPointInfo.time}:00`;
           }
 
           await this.wayPointServiceInPort.create({
@@ -739,7 +752,7 @@ export class OperationService implements OperationServiceInPort {
             addressDetail: wayPointInfo.addressDetail,
             latitude: wayPointInfo.latitude,
             longitude: wayPointInfo.longitude,
-            visitTime: visitTime?.toISOString(),
+            scheduledTime: scheduledTime,
             order: wayPointInfo.order,
           });
         }
@@ -770,31 +783,52 @@ export class OperationService implements OperationServiceInPort {
       const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(realTimeDispatchId);
       if (!realTimeDispatch) throw new Error('실시간 배차 정보를 찾을 수 없습니다.');
 
-      // 1. 출발지 WayPoint 생성 (order=1)
-      await this.wayPointServiceInPort.create({
-        operationId: operationId,
-        name: realTimeDispatch.departureName,
-        address: realTimeDispatch.departureAddress,
-        addressDetail: realTimeDispatch.departureAddressDetail,
-        order: 1,
-      });
-
-      // 2. 도착지 WayPoint 생성 (order=2)
-      await this.wayPointServiceInPort.create({
-        operationId: operationId,
+      // isReverse가 true인 경우 출발지와 도착지를 바꿔서 생성
+      const firstWayPoint = isReverse ? {
         name: realTimeDispatch.destinationName,
         address: realTimeDispatch.destinationAddress,
         addressDetail: realTimeDispatch.destinationAddressDetail,
+      } : {
+        name: realTimeDispatch.departureName,
+        address: realTimeDispatch.departureAddress,
+        addressDetail: realTimeDispatch.departureAddressDetail,
+      };
+
+      const secondWayPoint = isReverse ? {
+        name: realTimeDispatch.departureName,
+        address: realTimeDispatch.departureAddress,
+        addressDetail: realTimeDispatch.departureAddressDetail,
+      } : {
+        name: realTimeDispatch.destinationName,
+        address: realTimeDispatch.destinationAddress,
+        addressDetail: realTimeDispatch.destinationAddressDetail,
+      };
+
+      // 1. 첫 번째 WayPoint 생성 (order=1)
+      await this.wayPointServiceInPort.create({
+        operationId: operationId,
+        name: firstWayPoint.name,
+        address: firstWayPoint.address,
+        addressDetail: firstWayPoint.addressDetail,
+        order: 1,
+      });
+
+      // 2. 두 번째 WayPoint 생성 (order=2)
+      await this.wayPointServiceInPort.create({
+        operationId: operationId,
+        name: secondWayPoint.name,
+        address: secondWayPoint.address,
+        addressDetail: secondWayPoint.addressDetail,
         order: 2,
       });
 
-      // 3. 왕복인 경우 출발지로 돌아오는 WayPoint 추가 (order=3)
+      // 3. isReverse가 true인 경우 원래 출발지로 돌아오는 WayPoint 추가 (order=3)
       if (isReverse) {
         await this.wayPointServiceInPort.create({
           operationId: operationId,
-          name: realTimeDispatch.departureName,
-          address: realTimeDispatch.departureAddress,
-          addressDetail: realTimeDispatch.departureAddressDetail,
+          name: firstWayPoint.name,
+          address: firstWayPoint.address,
+          addressDetail: firstWayPoint.addressDetail,
           order: 3,
         });
       }

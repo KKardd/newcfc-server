@@ -734,7 +734,8 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
         case ChauffeurStatus.IN_OPERATION:
           // 운행 중 → 다음 목적지 waypoint (아직 방문하지 않은 waypoint 중 첫 번째)
-          const nextWayPoint = sortedWayPoints.find((wp: any) => !wp.chauffeurStatus || !wp.visitTime);
+          // chauffeurStatus가 없으면 아직 방문하지 않은 waypoint로 판정
+          const nextWayPoint = sortedWayPoints.find((wp: any) => !wp.chauffeurStatus);
           if (nextWayPoint) {
             return plainToInstance(CurrentWayPointDto, nextWayPoint, classTransformDefaultOptions);
           }
@@ -743,12 +744,19 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
         case ChauffeurStatus.WAITING_OPERATION:
           // 운행 대기 → 현재 위치한 waypoint (가장 최근에 방문한 waypoint)
-          const visitedWayPoints = sortedWayPoints.filter((wp: any) => wp.chauffeurStatus && wp.visitTime);
+          // chauffeurStatus가 있으면 방문한 waypoint로 판정
+          const visitedWayPoints = sortedWayPoints.filter((wp: any) => wp.chauffeurStatus);
           if (visitedWayPoints.length > 0) {
-            // visitTime 기준으로 가장 최근 방문한 waypoint
-            const latestVisited = visitedWayPoints.sort(
-              (a: any, b: any) => new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime(),
-            )[0];
+            // visitTime 기준으로 가장 최근 방문한 waypoint (실제 방문 시간이 기록된 것 우선)
+            const latestVisited = visitedWayPoints.sort((a: any, b: any) => {
+              // visitTime이 있는 것을 우선으로, 그 다음 최신순
+              if (a.visitTime && b.visitTime) {
+                return new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime();
+              }
+              if (a.visitTime && !b.visitTime) return -1;
+              if (!a.visitTime && b.visitTime) return 1;
+              return b.order - a.order; // visitTime이 둘 다 없으면 order 역순
+            })[0];
             return plainToInstance(CurrentWayPointDto, latestVisited, classTransformDefaultOptions);
           }
           // 방문한 waypoint가 없다면 첫 번째 waypoint

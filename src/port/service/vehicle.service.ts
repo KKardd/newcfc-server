@@ -32,14 +32,14 @@ export class VehicleService implements VehicleServiceInPort {
     const [vehicles, totalCount] = await this.vehicleServiceOutPort.findAll(searchVehicle, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    // 차량 정보를 DTO로 변환 (Repository에서 이미 JOIN된 정보 사용)
+    // 차량 정보를 DTO로 변환 (Repository에서 leftJoinAndMapOne으로 매핑된 정보 사용)
     const vehicleResponseDtos = vehicles.map((vehicle: any) => {
       const vehicleDto = plainToInstance(VehicleResponseDto, vehicle, classTransformDefaultOptions);
 
-      // Repository에서 LEFT JOIN으로 가져온 chauffeur 정보 사용
+      // Repository에서 leftJoinAndMapOne으로 매핑된 chauffeur 정보 사용
       vehicleDto.assigned = !!vehicle.chauffeur;
 
-      // 배정된 기사 정보 설정 (JOIN 결과 사용)
+      // 배정된 기사 정보 설정 (leftJoinAndMapOne 결과 사용)
       if (vehicle.chauffeur) {
         vehicleDto.chauffeur = plainToInstance(
           ChauffeurInfoDto,
@@ -63,7 +63,7 @@ export class VehicleService implements VehicleServiceInPort {
         );
       }
 
-      // 차고지 정보 설정 (JOIN 결과 사용)
+      // 차고지 정보 설정 (leftJoinAndMapOne 결과 사용)
       if (vehicle.garage) {
         vehicleDto.garage = plainToInstance(
           GarageInfoDto,

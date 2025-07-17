@@ -37,27 +37,37 @@ export class WayPointService implements WayPointServiceInPort {
   }
 
   async create(createWayPoint: CreateWayPointDto): Promise<void> {
-    const wayPoint = new WayPoint();
-    wayPoint.operationId = createWayPoint.operationId;
-    wayPoint.name = createWayPoint.name || null;
-    wayPoint.address = createWayPoint.address;
-    wayPoint.addressDetail = createWayPoint.addressDetail || null;
-    wayPoint.latitude = createWayPoint.latitude || null;
-    wayPoint.longitude = createWayPoint.longitude || null;
-    wayPoint.visitTime = createWayPoint.visitTime ? new Date(createWayPoint.visitTime) : null;
-    wayPoint.order = createWayPoint.order;
+    const { visitTime, scheduledTime, ...restCreateData } = createWayPoint;
+    const wayPoint = plainToInstance(WayPoint, restCreateData);
+
+    // visitTime이 있는 경우 Date 타입으로 변환
+    if (visitTime) {
+      wayPoint.visitTime = new Date(visitTime);
+    }
+
+    // scheduledTime 처리
+    if (scheduledTime) {
+      wayPoint.scheduledTime = new Date(scheduledTime);
+    }
+
+    // status 설정
     wayPoint.status = DataStatus.USED;
 
     await this.wayPointServiceOutPort.save(wayPoint);
   }
 
   async update(id: number, updateWayPoint: UpdateWayPointDto): Promise<void> {
-    const { visitTime, ...restUpdateData } = updateWayPoint;
+    const { visitTime, scheduledTime, ...restUpdateData } = updateWayPoint;
     const updateData: Partial<WayPoint> = { ...restUpdateData };
 
     // visitTime이 있는 경우 Date 타입으로 변환
     if (visitTime) {
       updateData.visitTime = new Date(visitTime);
+    }
+
+    // scheduledTime 처리
+    if (scheduledTime) {
+      updateData.scheduledTime = new Date(scheduledTime);
     }
 
     await this.wayPointServiceOutPort.update(id, updateData);

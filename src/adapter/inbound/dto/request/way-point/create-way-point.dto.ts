@@ -37,6 +37,11 @@ export class CreateWayPointDto {
   @IsDateString()
   visitTime?: string;
 
+  @ApiProperty({ description: '방문 예정 시간 (YYYY-MM-DDTHH:mm:ss)', required: false, type: 'string', format: 'date-time' })
+  @IsOptional()
+  @IsDateString()
+  scheduledTime?: string;
+
   @ApiProperty({ description: '경유지 순서' })
   @IsNotEmpty()
   @IsNumber()

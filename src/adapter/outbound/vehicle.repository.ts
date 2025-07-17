@@ -20,83 +20,83 @@ export class VehicleRepository implements VehicleServiceOutPort {
   ) {}
 
   async findAll(search: SearchVehicleDto, paginationQuery: PaginationQuery, status?: string): Promise<[Vehicle[], number]> {
-    const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle')
-      .leftJoin('garage', 'garage', 'garage.id = vehicle.garage_id')
-      .leftJoin('chauffeur', 'chauffeur', 'chauffeur.vehicle_id = vehicle.id AND chauffeur.status != :chauffeurDeletedStatus', { chauffeurDeletedStatus: DataStatus.DELETED })
-      .addSelect([
-        'garage.id',
-        'garage.name', 
-        'garage.address',
-        'garage.detail_address',
-        'garage.status',
-        'garage.created_by',
-        'garage.created_at',
-        'garage.updated_by',
-        'garage.updated_at'
-      ])
-      .addSelect([
-        'chauffeur.id',
-        'chauffeur.name',
-        'chauffeur.phone',
-        'chauffeur.birth_date',
-        'chauffeur.profile_image_url',
-        'chauffeur.type',
-        'chauffeur.is_vehicle_assigned',
-        'chauffeur.chauffeur_status',
-        'chauffeur.role',
-        'chauffeur.status',
-        'chauffeur.created_by',
-        'chauffeur.created_at',
-        'chauffeur.updated_by',
-        'chauffeur.updated_at'
-      ]);
-
-    // 기본 검색 조건들
-    if (search.vehicleNumber) {
-      queryBuilder.andWhere('vehicle.vehicle_number LIKE :vehicleNumber', {
-        vehicleNumber: `%${search.vehicleNumber}%`,
-      });
-    }
-
-    if (search.modelName) {
-      queryBuilder.andWhere('vehicle.model_name LIKE :modelName', {
-        modelName: `%${search.modelName}%`,
-      });
-    }
-
-    if (search.garageId) {
-      queryBuilder.andWhere('vehicle.garage_id = :garageId', {
-        garageId: search.garageId,
-      });
-    }
-
-    if (search.vehicleStatus) {
-      queryBuilder.andWhere('vehicle.vehicle_status = :vehicleStatus', {
-        vehicleStatus: search.vehicleStatus,
-      });
-    }
-
-    // 배정 여부 필터링
-    if (search.assigned !== undefined) {
-      if (search.assigned) {
-        // 배정된 차량만 조회 (기사가 배정되어 있는 차량)
-        queryBuilder.andWhere('chauffeur.id IS NOT NULL');
-      } else {
-        // 미배정 차량만 조회 (기사가 배정되지 않은 차량)
-        queryBuilder.andWhere('chauffeur.id IS NULL');
+    // 기본 쿼리 빌더 생성
+    const createBaseQuery = () => {
+      const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle');
+      
+      // 기본 검색 조건들
+      if (search.vehicleNumber) {
+        queryBuilder.andWhere('vehicle.vehicleNumber LIKE :vehicleNumber', {
+          vehicleNumber: `%${search.vehicleNumber}%`,
+        });
       }
-    }
 
-    // 상태 필터링
-    if (status === DataStatus.DELETED) {
-      queryBuilder.andWhere('vehicle.status != :deleteStatus', { deleteStatus: DataStatus.DELETED });
-    } else if (status) {
-      queryBuilder.andWhere('vehicle.status = :statusParam', { statusParam: status });
-    }
+      if (search.modelName) {
+        queryBuilder.andWhere('vehicle.modelName LIKE :modelName', {
+          modelName: `%${search.modelName}%`,
+        });
+      }
 
-    queryBuilder.orderBy('vehicle.created_at', 'DESC').offset(paginationQuery.skip).limit(paginationQuery.countPerPage);
+      if (search.garageId) {
+        queryBuilder.andWhere('vehicle.garageId = :garageId', {
+          garageId: search.garageId,
+        });
+      }
 
-    return queryBuilder.getManyAndCount();
+      if (search.vehicleStatus) {
+        queryBuilder.andWhere('vehicle.vehicleStatus = :vehicleStatus', {
+          vehicleStatus: search.vehicleStatus,
+        });
+      }
+
+      // 상태 필터링
+      if (status === DataStatus.DELETED) {
+        queryBuilder.andWhere('vehicle.status != :deleteStatus', { deleteStatus: DataStatus.DELETED });
+      } else if (status) {
+        queryBuilder.andWhere('vehicle.status = :statusParam', { statusParam: status });
+      }
+
+      return queryBuilder;
+    };
+
+    // 배정 여부 필터링을 위한 서브쿼리 생성
+    const applyAssignedFilter = (queryBuilder: any) => {
+      if (search.assigned !== undefined) {
+        if (search.assigned) {
+          // 배정된 차량만 조회 (기사가 배정되어 있는 차량)
+          queryBuilder.andWhere(`EXISTS (
+            SELECT 1 FROM chauffeur c 
+            WHERE c.vehicle_id = vehicle.id 
+            AND c.status != :chauffeurDeletedStatus
+          )`, { chauffeurDeletedStatus: DataStatus.DELETED });
+        } else {
+          // 미배정 차량만 조회 (기사가 배정되지 않은 차량)
+          queryBuilder.andWhere(`NOT EXISTS (
+            SELECT 1 FROM chauffeur c 
+            WHERE c.vehicle_id = vehicle.id 
+            AND c.status != :chauffeurDeletedStatus
+          )`, { chauffeurDeletedStatus: DataStatus.DELETED });
+        }
+      }
+    };
+
+    // COUNT 쿼리 실행
+    const countQueryBuilder = createBaseQuery();
+    applyAssignedFilter(countQueryBuilder);
+    const totalCount = await countQueryBuilder.getCount();
+
+    // SELECT 쿼리 실행 (관계 매핑 포함)
+    const selectQueryBuilder = createBaseQuery()
+      .leftJoinAndMapOne('vehicle.garage', 'garage', 'garage', 'garage.id = vehicle.garage_id')
+      .leftJoinAndMapOne('vehicle.chauffeur', 'chauffeur', 'chauffeur', 'chauffeur.vehicle_id = vehicle.id AND chauffeur.status != :chauffeurDeletedStatus', { chauffeurDeletedStatus: DataStatus.DELETED })
+      .orderBy('vehicle.created_at', 'DESC')
+      .offset(paginationQuery.skip)
+      .limit(paginationQuery.countPerPage);
+
+    applyAssignedFilter(selectQueryBuilder);
+    const vehicles = await selectQueryBuilder.getMany();
+
+    return [vehicles, totalCount];
   }
 
   async findById(id: number): Promise<Vehicle | null> {

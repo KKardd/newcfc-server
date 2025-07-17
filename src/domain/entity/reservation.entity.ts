@@ -23,7 +23,7 @@ export class Reservation extends BaseEntity {
   @Column({ name: 'passenger_count', type: 'integer', default: 1 })
   passengerCount: number;
 
-  @Column({ name: 'safety_phone', type: 'varchar', length: 20, nullable: true })
+  @Column({ name: 'safety_phone', type: 'varchar', length: 200, nullable: true })
   safetyPhone: string | null;
 
   @Column({ type: 'text', nullable: true })

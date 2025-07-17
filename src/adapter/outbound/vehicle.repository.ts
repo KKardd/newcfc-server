@@ -62,6 +62,7 @@ export class VehicleRepository implements VehicleServiceOutPort {
     // 배정 여부 필터링을 위한 서브쿼리 생성
     const applyAssignedFilter = (queryBuilder: any) => {
       if (search.assigned !== undefined) {
+        console.log('DEBUG: assigned filter value:', search.assigned, 'type:', typeof search.assigned);
         if (search.assigned) {
           // 배정된 차량만 조회 (기사가 배정되어 있는 차량)
           queryBuilder.andWhere(`EXISTS (

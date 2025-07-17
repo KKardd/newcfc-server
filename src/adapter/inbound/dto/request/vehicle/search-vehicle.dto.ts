@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
@@ -29,6 +30,11 @@ export class SearchVehicleDto {
   @ApiProperty({ description: '배정 여부 (기사가 배정되었는지 여부: true=배정됨, false=미배정)', required: false })
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   assigned?: boolean;
 
   @ApiProperty({ description: '데이터 상태', enum: DataStatus, required: false })

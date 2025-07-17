@@ -12,11 +12,17 @@ import { Reservation } from '@/domain/entity/reservation.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
+import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
+import { SafetyPhoneServiceOutPort } from '@/port/outbound/safety-phone-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class ReservationService implements ReservationServiceInPort {
-  constructor(private readonly reservationServiceOutPort: ReservationServiceOutPort) {}
+  constructor(
+    private readonly reservationServiceOutPort: ReservationServiceOutPort,
+    private readonly operationServiceOutPort: OperationServiceOutPort,
+    private readonly safetyPhoneServiceOutPort: SafetyPhoneServiceOutPort,
+  ) {}
 
   async search(
     searchReservation: SearchReservationDto,
@@ -42,10 +48,8 @@ export class ReservationService implements ReservationServiceInPort {
   async create(createReservation: CreateReservationDto): Promise<void> {
     const reservation = plainToInstance(Reservation, createReservation);
 
-    // 안심 전화번호가 없는 경우 고객 전화번호와 동일하게 설정
-    if (!reservation.safetyPhone) {
-      reservation.safetyPhone = reservation.passengerPhone;
-    }
+    // 안심 전화번호 생성
+    reservation.safetyPhone = await this.generateSafetyPhone(reservation.passengerPhone, reservation.operationId);
 
     await this.reservationServiceOutPort.save(reservation);
   }
@@ -53,9 +57,12 @@ export class ReservationService implements ReservationServiceInPort {
   async update(id: number, updateReservation: UpdateReservationDto): Promise<void> {
     const reservationData = { ...updateReservation } as Partial<Reservation>;
 
-    // 안심 전화번호가 없고 고객 전화번호가 있는 경우, 안심 전화번호를 고객 전화번호와 동일하게 설정
-    if (!reservationData.safetyPhone && reservationData.passengerPhone) {
-      reservationData.safetyPhone = reservationData.passengerPhone;
+    // 고객 전화번호가 변경된 경우 안심 전화번호 재생성
+    if (reservationData.passengerPhone) {
+      const existingReservation = await this.reservationServiceOutPort.findById(id);
+      if (existingReservation) {
+        reservationData.safetyPhone = await this.generateSafetyPhone(reservationData.passengerPhone, existingReservation.operationId);
+      }
     }
 
     await this.reservationServiceOutPort.update(id, reservationData);
@@ -63,5 +70,32 @@ export class ReservationService implements ReservationServiceInPort {
 
   async delete(id: number): Promise<void> {
     await this.reservationServiceOutPort.updateStatus(id, DataStatus.DELETED);
+  }
+
+  private async generateSafetyPhone(passengerPhone: string, operationId: number): Promise<string> {
+    try {
+      // Operation의 endTime을 가져와서 6시간 후까지 유지되도록 계산
+      const operation = await this.operationServiceOutPort.findById(operationId);
+      if (!operation || !operation.endTime) {
+        // endTime이 없는 경우 기본 12시간으로 설정
+        return await this.safetyPhoneServiceOutPort.createVirtualNumberWithAutoExpiry(passengerPhone, 12);
+      }
+
+      // endTime에서 6시간 후까지의 시간을 계산
+      const endTime = new Date(operation.endTime);
+      const expiryTime = new Date(endTime.getTime() + 6 * 60 * 60 * 1000); // 6시간 후
+      const now = new Date();
+      
+      // 현재 시간부터 만료 시간까지의 시간을 계산 (시간 단위)
+      const expireHours = Math.ceil((expiryTime.getTime() - now.getTime()) / (1000 * 60 * 60));
+      
+      // 최소 1시간은 보장
+      const finalExpireHours = Math.max(expireHours, 1);
+
+      return await this.safetyPhoneServiceOutPort.createVirtualNumberWithAutoExpiry(passengerPhone, finalExpireHours);
+    } catch (error) {
+      // 안심전화번호 생성 실패 시 원본 전화번호 반환
+      return passengerPhone;
+    }
   }
 }

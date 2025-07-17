@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ReservationController } from '@/adapter/inbound/controller/reservation.controller';
@@ -10,9 +10,11 @@ import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { ReservationService } from '@/port/service/reservation.service';
+import { TelecomModule } from '@/module/infrastructure/telecom.module';
+import { OperationModule } from '@/module/operation.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Reservation, Operation, Vehicle, Chauffeur])],
+  imports: [TypeOrmModule.forFeature([Reservation, Operation, Vehicle, Chauffeur]), TelecomModule, forwardRef(() => OperationModule)],
   controllers: [ReservationController],
   providers: [
     {

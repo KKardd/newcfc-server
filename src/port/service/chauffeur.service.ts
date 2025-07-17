@@ -1134,15 +1134,55 @@ export class ChauffeurService implements ChauffeurServiceInPort {
    */
   private async updateCurrentOperationStatus(chauffeurId: number, status: DataStatus): Promise<void> {
     try {
-      const currentOperation = await this.getCurrentOperation(chauffeurId);
-      if (currentOperation) {
-        await this.operationServiceOutPort.update(currentOperation.id, {
+      const targetOperation = await this.getOperationForStatusUpdate(chauffeurId);
+      if (targetOperation) {
+        await this.operationServiceOutPort.update(targetOperation.id, {
           status: status,
         });
       }
     } catch (error) {
       console.error('Failed to update operation status:', error);
     }
+  }
+
+  /**
+   * 운행 상태 업데이트를 위한 operation 조회
+   * getCurrentOperation과 달리 endTime이 있어도 최근 운행을 찾을 수 있음
+   */
+  private async getOperationForStatusUpdate(chauffeurId: number) {
+    const operationPagination = new PaginationQuery();
+    operationPagination.page = 1;
+    operationPagination.countPerPage = 10;
+    
+    const [operations, totalCount] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
+    
+    if (totalCount > 0) {
+      // 삭제되지 않고 완료되지 않은 운행 중에서 가장 최근 운행 찾기
+      const targetOperations = operations.filter((op) => {
+        // 삭제되거나 이미 완료된 운행 제외
+        if (op.status === DataStatus.DELETED || op.status === DataStatus.COMPLETED) {
+          return false;
+        }
+        return true;
+      });
+
+      if (targetOperations.length > 0) {
+        // 최신 생성 순으로 정렬하여 가장 최근 운행 반환
+        targetOperations.sort((a, b) => {
+          // startTime이 있는 것 우선, 그 다음 최신 순
+          if (a.startTime && b.startTime) {
+            return b.startTime.getTime() - a.startTime.getTime();
+          }
+          if (a.startTime && !b.startTime) return -1;
+          if (!a.startTime && b.startTime) return 1;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+
+        return targetOperations[0];
+      }
+    }
+
+    return null;
   }
 
   /**

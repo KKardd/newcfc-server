@@ -42,6 +42,10 @@ export class ReservationRepository implements ReservationServiceOutPort {
     return this.reservationRepository.findOne({ where: { id } });
   }
 
+  async findByOperationId(operationId: number): Promise<Reservation | null> {
+    return this.reservationRepository.findOne({ where: { operationId } });
+  }
+
   async save(reservation: Reservation): Promise<Reservation> {
     return this.reservationRepository.save(reservation);
   }

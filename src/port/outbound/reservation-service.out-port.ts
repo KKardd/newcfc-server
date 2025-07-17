@@ -13,6 +13,8 @@ export abstract class ReservationServiceOutPort {
 
   abstract findById(id: number): Promise<Reservation | null>;
 
+  abstract findByOperationId(operationId: number): Promise<Reservation | null>;
+
   abstract save(reservation: Reservation): Promise<Reservation>;
 
   abstract update(id: number, reservation: Partial<Reservation>): Promise<UpdateResult>;

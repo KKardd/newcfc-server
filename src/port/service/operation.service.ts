@@ -551,22 +551,77 @@ export class OperationService implements OperationServiceInPort {
     response.updatedBy = operationDetail.updatedBy;
     response.updatedAt = operationDetail.updatedAt;
 
-    // 관련 엔티티 정보 설정
-    response.chauffeur = (operationDetail as any).chauffeur;
-    response.vehicle = (operationDetail as any).vehicle;
-    response.garage = (operationDetail as any).garage;
-    response.realTimeDispatch = (operationDetail as any).realTimeDispatch;
-    response.reservation = (operationDetail as any).reservation;
+    // 관련 엔티티 정보 별도 조회 및 설정
+    // 1. 기사 정보 조회
+    if (operationDetail.chauffeurId) {
+      try {
+        response.chauffeur = await this.chauffeurServiceOutPort.findById(operationDetail.chauffeurId);
+      } catch (error) {
+        response.chauffeur = null;
+      }
+    } else {
+      response.chauffeur = null;
+    }
+
+    // 2. 차량 정보 조회
+    if (operationDetail.vehicleId) {
+      try {
+        response.vehicle = await this.vehicleServiceOutPort.findById(operationDetail.vehicleId);
+      } catch (error) {
+        response.vehicle = null;
+      }
+    } else {
+      response.vehicle = null;
+    }
+
+    // 3. 차고지 정보 조회 (차량이 있는 경우)
+    if (response.vehicle?.garageId) {
+      try {
+        response.garage = await this.garageServiceOutPort.findById(response.vehicle.garageId);
+      } catch (error) {
+        response.garage = null;
+      }
+    } else {
+      response.garage = null;
+    }
+
+    // 4. 실시간 배차 정보 조회
+    if (operationDetail.realTimeDispatchId) {
+      try {
+        response.realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(operationDetail.realTimeDispatchId);
+      } catch (error) {
+        response.realTimeDispatch = null;
+      }
+    } else {
+      response.realTimeDispatch = null;
+    }
+
+    // 5. 예약 정보 조회
+    try {
+      response.reservation = await this.reservationServiceOutPort.findByOperationId(operationDetail.id);
+    } catch (error) {
+      response.reservation = null;
+    }
 
     // 기사의 현재 상태 조회 (진행상태 계산을 위해)
     let chauffeurStatus: ChauffeurStatus | null = null;
-    if ((operationDetail as any).chauffeur) {
-      chauffeurStatus = (operationDetail as any).chauffeur.chauffeurStatus;
+    if (response.chauffeur) {
+      chauffeurStatus = (response.chauffeur as any).chauffeurStatus;
     }
 
-    // WayPoint 정보를 진행 상태와 함께 계산
-    const sortedWayPoints = ((operationDetail as any).wayPoints || []).sort((a: any, b: any) => a.order - b.order);
-    response.wayPoints = sortedWayPoints.map((wp: any) => this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints));
+    // 6. WayPoint 정보 조회 및 진행 상태 계산
+    try {
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId: operationDetail.id }, wayPointPagination);
+
+      const sortedWayPoints = wayPointsResponse.data.sort((a: any, b: any) => a.order - b.order);
+      response.wayPoints = sortedWayPoints.map((wp: any) => this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints));
+    } catch (error) {
+      response.wayPoints = [];
+    }
 
     return response;
   }

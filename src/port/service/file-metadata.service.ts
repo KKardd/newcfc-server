@@ -19,7 +19,11 @@ export class FileMetadataService implements FileMetadataServiceOutPort {
     file: Express.Multer.File,
   ): Promise<{ url: string; mimeType: string; fileSize: number }> {
     const bucketName = this.configService.get<string>('AWS_S3_BUCKETS_NAME');
-    const fileKey = `${uploadType}/${uuidv4()}-${file.originalname}`;
+    const region = this.configService.get<string>('AWS_REGION') || 'ap-northeast-2';
+    
+    // 파일명에서 특수문자 제거 및 안전한 파일명 생성
+    const sanitizedFileName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const fileKey = `${uploadType}/${uuidv4()}-${sanitizedFileName}`;
 
     await this.s3Client.send(
       new PutObjectCommand({
@@ -31,8 +35,9 @@ export class FileMetadataService implements FileMetadataServiceOutPort {
       }),
     );
 
+    // 올바른 region을 포함한 URL 생성
     return {
-      url: `https://${bucketName}.s3.amazonaws.com/${fileKey}`,
+      url: `https://${bucketName}.s3.${region}.amazonaws.com/${encodeURIComponent(fileKey)}`,
       mimeType: file.mimetype,
       fileSize: file.size,
     };
@@ -40,7 +45,8 @@ export class FileMetadataService implements FileMetadataServiceOutPort {
 
   async getFileUrl(filePath: string): Promise<string> {
     const bucketName = this.configService.get<string>('AWS_S3_BUCKETS_NAME');
-    return `https://${bucketName}.s3.amazonaws.com/${filePath}`;
+    const region = this.configService.get<string>('AWS_REGION') || 'ap-northeast-2';
+    return `https://${bucketName}.s3.${region}.amazonaws.com/${encodeURIComponent(filePath)}`;
   }
 
   async deleteFile(filePath: string): Promise<void> {

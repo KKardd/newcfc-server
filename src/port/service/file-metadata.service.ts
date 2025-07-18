@@ -26,6 +26,7 @@ export class FileMetadataService implements FileMetadataServiceOutPort {
         Bucket: bucketName,
         Key: fileKey,
         Body: file.buffer,
+        ACL: 'public-read',
         ContentType: file.mimetype,
       }),
     );

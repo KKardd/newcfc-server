@@ -1,8 +1,41 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDate, IsEnum, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 import { OperationType } from '@/domain/enum/operation-type.enum';
+
+class WayPointUpdateDto {
+  @ApiProperty({ description: '경유지 이름' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: '경유지 주소' })
+  @IsString()
+  address: string;
+
+  @ApiProperty({ description: '경유지 상세 주소', required: false })
+  @IsOptional()
+  @IsString()
+  addressDetail?: string;
+
+  @ApiProperty({ description: '위도' })
+  @IsNumber()
+  latitude: number;
+
+  @ApiProperty({ description: '경도' })
+  @IsNumber()
+  longitude: number;
+
+  @ApiProperty({ description: '방문 시간', required: false })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  visitTime?: Date;
+
+  @ApiProperty({ description: '순서 (order 재정렬 자동 적용)', example: 1 })
+  @IsNumber()
+  order: number;
+}
 
 export class UpdateOperationDto {
   @ApiProperty({ description: '운행 타입', enum: OperationType, required: false })
@@ -61,4 +94,26 @@ export class UpdateOperationDto {
   @IsOptional()
   @IsObject()
   kakaoPath?: any;
+
+  @ApiProperty({ 
+    description: '경유지 목록 (order 재정렬 자동 적용)', 
+    type: [WayPointUpdateDto], 
+    required: false,
+    example: [
+      {
+        name: "서울역",
+        address: "서울특별시 중구 세종대로 18",
+        addressDetail: "1층",
+        latitude: 37.5565,
+        longitude: 126.9723,
+        visitTime: "2025-01-18T10:30:00Z",
+        order: 2
+      }
+    ]
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WayPointUpdateDto)
+  wayPoints?: WayPointUpdateDto[];
 }

@@ -50,7 +50,15 @@ export class OperationController {
     return this.operationService.getAdminOperationDetail(id);
   }
 
-  @ApiOperation({ summary: '관리자용 운행 정보 수정' })
+  @ApiOperation({ 
+    summary: '관리자용 운행 정보 수정',
+    description: `관리자용 운행 정보를 수정합니다.
+    
+**주요 기능:**
+- 영수증/추가비용 입력 시 기사 상태 자동 전환 (PENDING_RECEIPT_INPUT → OPERATION_COMPLETED)
+- wayPoints 업데이트 시 order 자동 재정렬 및 기존 wayPoints 삭제/재생성
+- 일정 로그 수정 포함`
+  })
   @ApiParam({ name: 'id', description: '운행 ID' })
   @Put(':id/admin')
   async updateAdmin(@Param('id') id: number, @Body() updateOperation: any) {
@@ -63,7 +71,15 @@ export class OperationController {
     await this.operationService.create(createOperation);
   }
 
-  @ApiOperation({ summary: '운행 정보 수정' })
+  @ApiOperation({ 
+    summary: '운행 정보 수정',
+    description: `운행 정보를 수정합니다.
+    
+**주요 기능:**
+- 영수증/추가비용 입력 시 기사 상태 자동 전환 (PENDING_RECEIPT_INPUT → OPERATION_COMPLETED)
+- wayPoints 업데이트 시 order 자동 재정렬 (기존 wayPoints는 자동으로 뒤로 밀려남)
+- 예: order 2 위치에 새 wayPoint 추가 시, 기존 order 2,3 → order 3,4로 자동 변경`
+  })
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateOperation: UpdateOperationDto): Promise<void> {
     await this.operationService.update(id, updateOperation);

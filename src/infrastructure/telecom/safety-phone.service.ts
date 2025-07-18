@@ -27,7 +27,11 @@ export class SafetyPhoneService implements SafetyPhoneServiceOutPort {
       }),
     );
 
-    return response.data;
+    if (response.data.rt != 0) {
+      throw new Error(response.data.rs);
+    }
+
+    return response.data.vn;
   }
 
   private generateAuth(data: string): string {

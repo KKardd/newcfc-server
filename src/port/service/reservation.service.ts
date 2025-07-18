@@ -61,7 +61,10 @@ export class ReservationService implements ReservationServiceInPort {
     if (reservationData.passengerPhone) {
       const existingReservation = await this.reservationServiceOutPort.findById(id);
       if (existingReservation) {
-        reservationData.safetyPhone = await this.generateSafetyPhone(reservationData.passengerPhone, existingReservation.operationId);
+        reservationData.safetyPhone = await this.generateSafetyPhone(
+          reservationData.passengerPhone,
+          existingReservation.operationId,
+        );
       }
     }
 
@@ -77,18 +80,18 @@ export class ReservationService implements ReservationServiceInPort {
       // Operation의 endTime을 가져와서 6시간 후까지 유지되도록 계산
       const operation = await this.operationServiceOutPort.findById(operationId);
       if (!operation || !operation.endTime) {
-        // endTime이 없는 경우 기본 12시간으로 설정
-        return await this.safetyPhoneServiceOutPort.createVirtualNumberWithAutoExpiry(passengerPhone, 12);
+        // endTime이 없는 경우 기본 24시간으로 설정
+        return await this.safetyPhoneServiceOutPort.createVirtualNumberWithAutoExpiry(passengerPhone, 24);
       }
 
       // endTime에서 6시간 후까지의 시간을 계산
       const endTime = new Date(operation.endTime);
       const expiryTime = new Date(endTime.getTime() + 6 * 60 * 60 * 1000); // 6시간 후
       const now = new Date();
-      
+
       // 현재 시간부터 만료 시간까지의 시간을 계산 (시간 단위)
       const expireHours = Math.ceil((expiryTime.getTime() - now.getTime()) / (1000 * 60 * 60));
-      
+
       // 최소 1시간은 보장
       const finalExpireHours = Math.max(expireHours, 1);
 

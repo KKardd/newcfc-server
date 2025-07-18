@@ -1,17 +1,29 @@
 import { Controller, Post, UploadedFiles, UseGuards, UseInterceptors, Body, BadRequestException } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiProperty, ApiBody } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsNotEmpty } from 'class-validator';
 
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { FileUploadType } from '@/domain/enum/file-upload-type.enum';
 import { FileMetadataService } from '@/port/service/file-metadata.service';
 
 class FileUploadDto {
+  @ApiProperty({
+    description: '파일 업로드 타입',
+    enum: FileUploadType,
+    example: FileUploadType.RECEIPT,
+  })
+  @IsEnum(FileUploadType)
+  @IsNotEmpty()
   uploadType: FileUploadType;
-  serialNumber: number;
 }
 
 class FileUploadResponseDto {
+  @ApiProperty({
+    description: '업로드된 파일들의 URL 목록',
+    type: [String],
+    example: ['https://example.com/file1.jpg', 'https://example.com/file2.pdf'],
+  })
   urls: string[];
 }
 
@@ -23,6 +35,26 @@ export class FileController {
 
   @ApiOperation({ summary: '파일 업로드 (최대 10개)' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description: '업로드할 파일들 (최대 10개)',
+        },
+        uploadType: {
+          type: 'string',
+          enum: Object.values(FileUploadType),
+          description: '파일 업로드 타입',
+        },
+      },
+    },
+  })
   @ApiSuccessResponse(201, FileUploadResponseDto)
   @Post('upload')
   @UseInterceptors(FilesInterceptor('files', 10))
@@ -40,7 +72,7 @@ export class FileController {
 
     const urls: string[] = [];
     for (const file of files) {
-      const result = await this.fileMetadataService.upload(uploadDto.uploadType, uploadDto.serialNumber, file);
+      const result = await this.fileMetadataService.upload(uploadDto.uploadType, file);
       urls.push(result.url);
     }
 

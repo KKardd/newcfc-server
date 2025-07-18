@@ -16,11 +16,10 @@ export class FileMetadataService implements FileMetadataServiceOutPort {
 
   async upload(
     uploadType: FileUploadType,
-    serialNumber: number,
     file: Express.Multer.File,
   ): Promise<{ url: string; mimeType: string; fileSize: number }> {
     const bucketName = this.configService.get<string>('AWS_S3_BUCKETS_NAME');
-    const fileKey = `${uploadType}/${serialNumber}/${uuidv4()}-${file.originalname}`;
+    const fileKey = `${uploadType}/${uuidv4()}-${file.originalname}`;
 
     await this.s3Client.send(
       new PutObjectCommand({

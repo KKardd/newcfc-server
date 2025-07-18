@@ -53,6 +53,11 @@ export class WayPointService implements WayPointServiceInPort {
     // status 설정
     wayPoint.status = DataStatus.USED;
 
+    // order 재정렬 로직 적용
+    if (wayPoint.order && wayPoint.operationId) {
+      await this.handleOrderReordering(wayPoint.operationId, wayPoint.order);
+    }
+
     await this.wayPointServiceOutPort.save(wayPoint);
   }
 
@@ -70,10 +75,76 @@ export class WayPointService implements WayPointServiceInPort {
       updateData.scheduledTime = new Date(scheduledTime);
     }
 
+    // order 업데이트 시 재정렬 로직 적용
+    if (updateData.order) {
+      const existingWayPoint = await this.wayPointServiceOutPort.findById(id);
+      if (existingWayPoint && existingWayPoint.operationId) {
+        // 기존 order와 새로운 order가 다른 경우에만 재정렬 실행
+        if (existingWayPoint.order !== updateData.order) {
+          await this.handleOrderReordering(existingWayPoint.operationId, updateData.order, id);
+        }
+      }
+    }
+
     await this.wayPointServiceOutPort.update(id, updateData);
   }
 
   async delete(id: number): Promise<void> {
     await this.wayPointServiceOutPort.updateStatus(id, DataStatus.DELETED);
+  }
+
+  /**
+   * WayPoint order 재정렬 처리
+   */
+  private async handleOrderReordering(operationId: number, targetOrder: number, excludeId?: number): Promise<void> {
+    try {
+      // 해당 operationId의 모든 wayPoints 조회
+      const paginationQuery = new PaginationQuery();
+      paginationQuery.page = 1;
+      paginationQuery.countPerPage = 100;
+
+      const searchDto = { operationId };
+      const [wayPoints] = await this.wayPointServiceOutPort.findAll(searchDto, paginationQuery, DataStatus.DELETED);
+
+      // excludeId가 있는 경우 해당 wayPoint 제외 (update 시 자기 자신 제외)
+      const filteredWayPoints = excludeId 
+        ? wayPoints.filter(wp => wp.id !== excludeId)
+        : wayPoints;
+
+      // targetOrder에 기존 wayPoint가 있는지 확인
+      const existingWayPoint = filteredWayPoints.find(wp => wp.order === targetOrder);
+      
+      if (existingWayPoint) {
+        // targetOrder 이상인 wayPoints를 한 칸씩 뒤로 이동
+        await this.shiftWayPointsOrder(operationId, targetOrder, 1, excludeId);
+      }
+    } catch (error) {
+      console.error('WayPoint order 재정렬 중 오류 발생:', error);
+      throw new Error('WayPoint order 재정렬에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 특정 order 이상의 wayPoints를 지정된 만큼 뒤로 이동
+   */
+  private async shiftWayPointsOrder(operationId: number, fromOrder: number, shiftAmount: number, excludeId?: number): Promise<void> {
+    const paginationQuery = new PaginationQuery();
+    paginationQuery.page = 1;
+    paginationQuery.countPerPage = 100;
+
+    const searchDto = { operationId };
+    const [wayPoints] = await this.wayPointServiceOutPort.findAll(searchDto, paginationQuery, DataStatus.DELETED);
+    
+    // fromOrder 이상인 wayPoints를 order 역순으로 정렬 (충돌 방지)
+    // excludeId가 있는 경우 해당 wayPoint 제외
+    const wayPointsToShift = wayPoints
+      .filter(wp => wp.order >= fromOrder && (!excludeId || wp.id !== excludeId))
+      .sort((a, b) => b.order - a.order);
+
+    for (const wayPoint of wayPointsToShift) {
+      await this.wayPointServiceOutPort.update(wayPoint.id, {
+        order: wayPoint.order + shiftAmount,
+      });
+    }
   }
 }

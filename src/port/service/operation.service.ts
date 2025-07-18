@@ -948,30 +948,7 @@ export class OperationService implements OperationServiceInPort {
 
     // wayPoints 수정이 포함된 경우 처리
     if (updateOperation.wayPoints) {
-      // 기존 wayPoints 삭제
-      const wayPointPagination = new PaginationQuery();
-      wayPointPagination.page = 1;
-      wayPointPagination.countPerPage = 100;
-
-      const existingWayPoints = await this.wayPointServiceInPort.search({ operationId: id }, wayPointPagination);
-
-      for (const wayPoint of existingWayPoints.data) {
-        await this.wayPointServiceInPort.delete(wayPoint.id);
-      }
-
-      // 새로운 wayPoints 생성
-      for (const wayPointInfo of updateOperation.wayPoints) {
-        await this.wayPointServiceInPort.create({
-          operationId: id,
-          name: wayPointInfo.name,
-          address: wayPointInfo.address,
-          addressDetail: wayPointInfo.addressDetail,
-          latitude: wayPointInfo.latitude,
-          longitude: wayPointInfo.longitude,
-          visitTime: wayPointInfo.visitTime,
-          order: wayPointInfo.order,
-        });
-      }
+      await this.updateWayPointsWithOrderReordering(id, updateOperation.wayPoints);
     }
   }
 
@@ -1014,6 +991,79 @@ export class OperationService implements OperationServiceInPort {
       },
       classTransformDefaultOptions,
     );
+  }
+
+  /**
+   * wayPoints 업데이트 시 order 재정렬 처리
+   */
+  private async updateWayPointsWithOrderReordering(operationId: number, newWayPoints: any[]): Promise<void> {
+    try {
+      // 기존 wayPoints 조회
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
+      const existingWayPointsMap = new Map(existingWayPoints.data.map(wp => [wp.order, wp]));
+      
+      // 새로 추가할 wayPoints의 order 값들 추출
+      const newOrders = newWayPoints.map(wp => wp.order).sort((a, b) => a - b);
+      
+      for (const newWayPoint of newWayPoints) {
+        const targetOrder = newWayPoint.order;
+        
+        // 해당 order에 기존 wayPoint가 있는지 확인
+        if (existingWayPointsMap.has(targetOrder)) {
+          // 기존 wayPoints 중 targetOrder 이상인 것들을 한 칸씩 뒤로 이동
+          await this.shiftWayPointsOrder(operationId, targetOrder, 1);
+          
+          // 기존 wayPoint들 맵 업데이트 (order가 변경되었으므로)
+          const updatedExistingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
+          existingWayPointsMap.clear();
+          updatedExistingWayPoints.data.forEach(wp => existingWayPointsMap.set(wp.order, wp));
+        }
+        
+        // 새로운 wayPoint 생성
+        await this.wayPointServiceInPort.create({
+          operationId,
+          name: newWayPoint.name,
+          address: newWayPoint.address,
+          addressDetail: newWayPoint.addressDetail,
+          latitude: newWayPoint.latitude,
+          longitude: newWayPoint.longitude,
+          visitTime: newWayPoint.visitTime,
+          order: targetOrder,
+        });
+        
+        // 생성된 wayPoint를 맵에 추가
+        existingWayPointsMap.set(targetOrder, { order: targetOrder } as any);
+      }
+    } catch (error) {
+      console.error('wayPoints order 재정렬 중 오류 발생:', error);
+      throw new Error('wayPoints 업데이트에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 특정 order 이상의 wayPoints를 지정된 만큼 뒤로 이동
+   */
+  private async shiftWayPointsOrder(operationId: number, fromOrder: number, shiftAmount: number): Promise<void> {
+    const wayPointPagination = new PaginationQuery();
+    wayPointPagination.page = 1;
+    wayPointPagination.countPerPage = 100;
+
+    const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
+    
+    // fromOrder 이상인 wayPoints를 order 역순으로 정렬 (충돌 방지)
+    const wayPointsToShift = existingWayPoints.data
+      .filter(wp => wp.order >= fromOrder)
+      .sort((a, b) => b.order - a.order);
+
+    for (const wayPoint of wayPointsToShift) {
+      await this.wayPointServiceInPort.update(wayPoint.id, {
+        order: wayPoint.order + shiftAmount,
+      });
+    }
   }
 
   /**

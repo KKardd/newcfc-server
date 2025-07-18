@@ -21,11 +21,11 @@ class FileUploadResponseDto {
 export class FileController {
   constructor(private readonly fileMetadataService: FileMetadataService) {}
 
-  @ApiOperation({ summary: '파일 업로드 (최대 5개)' })
+  @ApiOperation({ summary: '파일 업로드 (최대 10개)' })
   @ApiConsumes('multipart/form-data')
   @ApiSuccessResponse(201, FileUploadResponseDto)
   @Post('upload')
-  @UseInterceptors(FilesInterceptor('files', 5))
+  @UseInterceptors(FilesInterceptor('files', 10))
   async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() uploadDto: FileUploadDto,
@@ -34,8 +34,8 @@ export class FileController {
       throw new BadRequestException('업로드할 파일이 없습니다.');
     }
 
-    if (files.length > 5) {
-      throw new BadRequestException('최대 5개의 파일만 업로드할 수 있습니다.');
+    if (files.length > 10) {
+      throw new BadRequestException('최대 10개의 파일만 업로드할 수 있습니다.');
     }
 
     const urls: string[] = [];

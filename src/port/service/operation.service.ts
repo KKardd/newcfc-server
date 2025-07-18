@@ -934,11 +934,17 @@ export class OperationService implements OperationServiceInPort {
 
   async update(id: number, updateOperation: UpdateOperationDto): Promise<void> {
     await this.operationServiceOutPort.update(id, updateOperation);
+
+    // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
+    await this.checkAndTransitionChauffeurStatus(id, updateOperation);
   }
 
   async updateAdmin(id: number, updateOperation: any): Promise<void> {
     // 관리자용 운행 수정 - 일정 로그 수정 포함
     await this.operationServiceOutPort.update(id, updateOperation);
+
+    // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
+    await this.checkAndTransitionChauffeurStatus(id, updateOperation);
 
     // wayPoints 수정이 포함된 경우 처리
     if (updateOperation.wayPoints) {
@@ -1008,5 +1014,39 @@ export class OperationService implements OperationServiceInPort {
       },
       classTransformDefaultOptions,
     );
+  }
+
+  /**
+   * 영수증 또는 추가비용 입력 시 기사 상태 자동 전환 체크
+   */
+  private async checkAndTransitionChauffeurStatus(operationId: number, updateOperation: UpdateOperationDto): Promise<void> {
+    // 영수증 이미지 또는 추가비용이 입력되었는지 확인
+    const hasReceiptOrCosts = updateOperation.receiptImageUrls || updateOperation.additionalCosts;
+
+    if (!hasReceiptOrCosts) {
+      return; // 영수증이나 추가비용 업데이트가 없으면 리턴
+    }
+
+    try {
+      // 해당 운행의 기사 ID 조회
+      const operation = await this.operationServiceOutPort.findById(operationId);
+      if (!operation?.chauffeurId) {
+        return; // 기사가 배정되지 않은 운행이면 리턴
+      }
+
+      // 기사의 현재 상태 조회
+      const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
+      if (!chauffeur || chauffeur.chauffeurStatus !== ChauffeurStatus.PENDING_RECEIPT_INPUT) {
+        return; // 기사가 PENDING_RECEIPT_INPUT 상태가 아니면 리턴
+      }
+
+      // 기사 상태를 OPERATION_COMPLETED로 자동 전환
+      await this.chauffeurServiceOutPort.update(operation.chauffeurId, {
+        chauffeurStatus: ChauffeurStatus.OPERATION_COMPLETED,
+      });
+    } catch (error) {
+      console.error('기사 상태 자동 전환 중 오류 발생:', error);
+      // 에러가 발생해도 operation 업데이트는 성공했으므로 예외를 던지지 않음
+    }
   }
 }

@@ -15,11 +15,17 @@ import { WorkHistoryRepository } from '@/adapter/outbound/work-history.repositor
 import { WorkHistory } from '@/domain/entity/work-history.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { WorkHistoryServiceInPort } from '@/port/inbound/work-history-service.in-port';
+import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
+import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class WorkHistoryService implements WorkHistoryServiceInPort {
-  constructor(private readonly workHistoryRepository: WorkHistoryRepository) {}
+  constructor(
+    private readonly workHistoryRepository: WorkHistoryRepository,
+    private readonly vehicleServiceOutPort: VehicleServiceOutPort,
+    private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
+  ) {}
 
   async search(
     searchWorkHistory: SearchWorkHistoryDto,
@@ -33,43 +39,61 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    // 조인된 데이터를 포함하여 DTO로 변환
-    const responseDtos = workHistories.map((workHistory: any) => {
-      const dto = plainToInstance(WorkHistoryResponseDto, workHistory, classTransformDefaultOptions);
+    // 각 근무 내역에 대해 차량과 기사 정보를 별도로 조회
+    const responseDtos = await Promise.all(
+      workHistories.map(async (workHistory) => {
+        const dto = plainToInstance(WorkHistoryResponseDto, workHistory, classTransformDefaultOptions);
 
-      // 기사 정보 매핑
-      if (workHistory.chauffeur) {
-        dto.chauffeur = plainToInstance(
-          WorkHistoryChauffeurDto,
-          {
-            id: workHistory.chauffeur.id,
-            name: workHistory.chauffeur.name,
-            phone: workHistory.chauffeur.phone,
-            type: workHistory.chauffeur.type,
-          },
-          classTransformDefaultOptions,
-        );
-        dto.chauffeurName = workHistory.chauffeur.name;
-        dto.chauffeurPhone = workHistory.chauffeur.phone;
-      }
+        // 기사 정보 조회
+        if (workHistory.chauffeurId) {
+          try {
+            const chauffeur = await this.chauffeurServiceOutPort.findById(workHistory.chauffeurId);
+            if (chauffeur) {
+              dto.chauffeur = plainToInstance(
+                WorkHistoryChauffeurDto,
+                {
+                  id: chauffeur.id,
+                  name: chauffeur.name,
+                  phone: chauffeur.phone,
+                  type: chauffeur.type,
+                },
+                classTransformDefaultOptions,
+              );
+              dto.chauffeurName = chauffeur.name;
+              dto.chauffeurPhone = chauffeur.phone;
+            }
+          } catch (error) {
+            // 기사 정보를 찾을 수 없는 경우
+            dto.chauffeur = null;
+          }
+        }
 
-      // 차량 정보 매핑
-      if (workHistory.vehicle) {
-        dto.vehicle = plainToInstance(
-          WorkHistoryVehicleDto,
-          {
-            id: workHistory.vehicle.id,
-            vehicleNumber: workHistory.vehicle.vehicleNumber,
-            modelName: workHistory.vehicle.modelName,
-            vehicleStatus: workHistory.vehicle.vehicleStatus,
-          },
-          classTransformDefaultOptions,
-        );
-        dto.vehicleNumber = workHistory.vehicle.vehicleNumber;
-      }
+        // 차량 정보 조회
+        if (workHistory.vehicleId) {
+          try {
+            const vehicle = await this.vehicleServiceOutPort.findById(workHistory.vehicleId);
+            if (vehicle) {
+              dto.vehicle = plainToInstance(
+                WorkHistoryVehicleDto,
+                {
+                  id: vehicle.id,
+                  vehicleNumber: vehicle.vehicleNumber,
+                  modelName: vehicle.modelName,
+                  vehicleStatus: vehicle.vehicleStatus,
+                },
+                classTransformDefaultOptions,
+              );
+              dto.vehicleNumber = vehicle.vehicleNumber;
+            }
+          } catch (error) {
+            // 차량 정보를 찾을 수 없는 경우
+            dto.vehicle = null;
+          }
+        }
 
-      return dto;
-    });
+        return dto;
+      }),
+    );
 
     return new PaginationResponse(responseDtos, pagination);
   }

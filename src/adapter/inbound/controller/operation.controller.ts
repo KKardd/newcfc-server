@@ -91,6 +91,18 @@ export class OperationController {
     await this.operationService.delete(id);
   }
 
+  @ApiOperation({ 
+    summary: '운행 취소',
+    description: '운행을 취소하고 배정된 기사에게 취소 알림을 전송합니다.'
+  })
+  @Put(':id/cancel')
+  async cancel(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body() body: { reason?: string }
+  ): Promise<void> {
+    await this.operationService.cancel(id, body.reason);
+  }
+
   @ApiOperation({ summary: '실시간 예약 배차하기' })
   @ApiSuccessResponse(200, AssignChauffeurResponseDto)
   @Post('assign-chauffeur')

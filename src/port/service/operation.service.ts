@@ -955,7 +955,53 @@ export class OperationService implements OperationServiceInPort {
   }
 
   async delete(id: number): Promise<void> {
+    // 1. 운행 정보 조회 (취소 알림 전송을 위해)
+    const operation = await this.operationServiceOutPort.findById(id);
+    if (!operation) {
+      throw new Error('운행 정보를 찾을 수 없습니다.');
+    }
+
+    // 2. 기사가 배정되어 있다면 취소 알림 전송
+    if (operation.chauffeurId) {
+      try {
+        await this.notificationServiceOutPort.sendOperationCancellationNotification(
+          operation.chauffeurId,
+          id,
+          '운행이 취소되었습니다.'
+        );
+      } catch (error) {
+        console.error('FCM 취소 알림 전송 실패:', error);
+        // 알림 전송 실패해도 취소는 진행
+      }
+    }
+
+    // 3. 운행 상태를 DELETED로 변경
     await this.operationServiceOutPort.updateStatus(id, DataStatus.DELETED);
+  }
+
+  async cancel(id: number, reason?: string): Promise<void> {
+    // 1. 운행 정보 조회 (취소 알림 전송을 위해)
+    const operation = await this.operationServiceOutPort.findById(id);
+    if (!operation) {
+      throw new Error('운행 정보를 찾을 수 없습니다.');
+    }
+
+    // 2. 기사가 배정되어 있다면 취소 알림 전송
+    if (operation.chauffeurId) {
+      try {
+        await this.notificationServiceOutPort.sendOperationCancellationNotification(
+          operation.chauffeurId,
+          id,
+          reason || '운행이 취소되었습니다.'
+        );
+      } catch (error) {
+        console.error('FCM 취소 알림 전송 실패:', error);
+        // 알림 전송 실패해도 취소는 진행
+      }
+    }
+
+    // 3. 운행 상태를 CANCELLED로 변경
+    await this.operationServiceOutPort.updateStatus(id, DataStatus.CANCELLED);
   }
 
   async assignChauffeur(assignDto: AssignChauffeurDto): Promise<AssignChauffeurResponseDto> {

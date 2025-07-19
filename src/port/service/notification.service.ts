@@ -81,6 +81,51 @@ export class NotificationService implements NotificationServiceOutPort {
   }
 
   /**
+   * 운행 취소 알림 전송
+   */
+  async sendOperationCancellationNotification(chauffeurId: number, operationId: number, reason?: string): Promise<boolean> {
+    try {
+      // 기사 정보 조회 (FCM 토큰 포함)
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+      if (!chauffeur || !chauffeur.fcmToken) {
+        console.log(`기사 ID ${chauffeurId}의 FCM 토큰이 없습니다.`);
+        return false;
+      }
+
+      // 운행 정보 조회
+      const operation = await this.operationServiceOutPort.findById(operationId);
+      if (!operation) {
+        console.log(`운행 ID ${operationId}를 찾을 수 없습니다.`);
+        return false;
+      }
+
+      const payload: FCMNotificationPayload = {
+        title: '운행 취소 알림',
+        body: reason || `배정된 운행이 취소되었습니다.`,
+        data: {
+          type: 'OPERATION_CANCELLED',
+          operationId: operationId.toString(),
+          chauffeurId: chauffeurId.toString(),
+          operationType: operation.type,
+          startTime: operation.startTime?.toISOString() || '',
+          cancellationReason: reason || '',
+        },
+      };
+
+      const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
+      
+      if (success) {
+        console.log(`기사 ${chauffeur.name}(ID: ${chauffeurId})에게 운행 취소 알림을 성공적으로 전송했습니다.`);
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('운행 취소 알림 전송 중 오류 발생:', error);
+      return false;
+    }
+  }
+
+  /**
    * 운행 상태 변경 알림 전송
    */
   async sendOperationStatusNotification(chauffeurId: number, operationId: number, status: string): Promise<boolean> {

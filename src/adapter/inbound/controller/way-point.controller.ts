@@ -17,7 +17,7 @@ import { UserRolesGuard } from '@/security/guard/user-role.guard';
 @ApiBearerAuth()
 @Controller('way-points')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.SUPER_ADMIN)
+@Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
 export class WayPointController {
   constructor(private readonly wayPointService: WayPointServiceInPort) {}
 

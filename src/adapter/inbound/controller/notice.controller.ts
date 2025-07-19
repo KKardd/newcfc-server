@@ -18,7 +18,7 @@ import { UserRolesGuard } from '@/security/guard/user-role.guard';
 @ApiBearerAuth()
 @Controller('notices')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.SUPER_ADMIN)
+@Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
 export class NoticeController {
   constructor(private readonly noticeService: NoticeServiceInPort) {}
 
@@ -50,21 +50,21 @@ export class NoticeController {
   }
 
   @ApiOperation({ summary: '공지사항 생성' })
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Post()
   async create(@Body() createNotice: CreateNoticeDto): Promise<void> {
     await this.noticeService.create(createNotice);
   }
 
   @ApiOperation({ summary: '공지사항 정보 수정' })
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateNotice: UpdateNoticeDto): Promise<void> {
     await this.noticeService.update(id, updateNotice);
   }
 
   @ApiOperation({ summary: '공지사항 삭제' })
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Put(':id/delete')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.noticeService.delete(id);

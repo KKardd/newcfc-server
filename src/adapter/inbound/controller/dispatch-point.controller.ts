@@ -18,7 +18,7 @@ import { UserRolesGuard } from '@/security/guard/user-role.guard';
 @ApiBearerAuth()
 @Controller('dispatch-points')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.SUPER_ADMIN)
+@Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
 export class DispatchPointController {
   constructor(private readonly dispatchPointService: DispatchPointServiceInPort) {}
 

@@ -40,7 +40,7 @@ export class AdminController {
   @ApiSuccessResponse(200, AdminResponseDto, { paginated: true })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Get()
   async search(
     @Query() searchAdmin: SearchAdminDto,
@@ -53,7 +53,7 @@ export class AdminController {
   @ApiSuccessResponse(200, AdminResponseDto)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Get(':id')
   async detail(@Param('id', ParseIntPipe) id: number): Promise<AdminResponseDto> {
     return await this.adminService.detail(id);
@@ -68,7 +68,7 @@ export class AdminController {
   @ApiOperation({ summary: '관리자 정보 수정' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateAdmin: UpdateAdminDto): Promise<void> {
     await this.adminService.update(id, updateAdmin);
@@ -77,7 +77,7 @@ export class AdminController {
   @ApiOperation({ summary: '관리자 삭제' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Put(':id/delete')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.adminService.delete(id);
@@ -87,7 +87,7 @@ export class AdminController {
   @ApiSuccessResponse(200, AvailableChauffeursResponseDto)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Post('available-chauffeurs')
   async getAvailableChauffeurs(@Body() searchDto: SearchAvailableChauffeursDto): Promise<AvailableChauffeursResponseDto> {
     return await this.adminService.getAvailableChauffeurs(searchDto);
@@ -116,7 +116,7 @@ export class AdminController {
   @ApiSuccessResponse(200, ChauffeurStatusChangeResponseDto)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)
-  @Roles(UserRoleType.SUPER_ADMIN)
+  @Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Put('chauffeurs/:id/force-terminate-operation')
   async forceTerminateOperationAndResetStatus(@Param('id', ParseIntPipe) chauffeurId: number): Promise<void> {
     // 1. 현재 진행 중인 운행 조회

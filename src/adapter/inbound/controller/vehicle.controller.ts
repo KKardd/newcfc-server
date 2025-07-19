@@ -18,7 +18,7 @@ import { UserRolesGuard } from '@/security/guard/user-role.guard';
 @ApiBearerAuth()
 @Controller('vehicles')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.SUPER_ADMIN)
+@Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
 export class VehicleController {
   constructor(private readonly vehicleService: VehicleServiceInPort) {}
 

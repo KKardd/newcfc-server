@@ -18,7 +18,7 @@ import { UserRolesGuard } from '@/security/guard/user-role.guard';
 @ApiBearerAuth()
 @Controller('garages')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.SUPER_ADMIN)
+@Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
 export class GarageController {
   constructor(private readonly garageService: GarageServiceInPort) {}
 

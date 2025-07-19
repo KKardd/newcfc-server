@@ -9,9 +9,10 @@ import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { AdminService } from '@/port/service/admin.service';
 import { ChauffeurModule } from './chauffeur.module';
 import { VehicleModule } from './vehicle.module';
+import { OperationModule } from './operation.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Admin]), ChauffeurModule, VehicleModule],
+  imports: [TypeOrmModule.forFeature([Admin]), ChauffeurModule, VehicleModule, OperationModule],
   controllers: [AdminController],
   providers: [
     {

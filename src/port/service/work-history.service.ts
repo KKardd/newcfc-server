@@ -6,7 +6,11 @@ import { Pagination, PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { CreateWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history/create-work-history.dto';
 import { SearchWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history/search-work-history.dto';
 import { UpdateWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history/update-work-history.dto';
-import { WorkHistoryResponseDto } from '@/adapter/inbound/dto/response/work-history/work-history-response.dto';
+import {
+  WorkHistoryResponseDto,
+  WorkHistoryChauffeurDto,
+  WorkHistoryVehicleDto,
+} from '@/adapter/inbound/dto/response/work-history/work-history-response.dto';
 import { WorkHistoryRepository } from '@/adapter/outbound/work-history.repository';
 import { WorkHistory } from '@/domain/entity/work-history.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
@@ -29,9 +33,45 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(WorkHistoryResponseDto, workHistories, classTransformDefaultOptions);
+    // 조인된 데이터를 포함하여 DTO로 변환
+    const responseDtos = workHistories.map((workHistory: any) => {
+      const dto = plainToInstance(WorkHistoryResponseDto, workHistory, classTransformDefaultOptions);
 
-    return new PaginationResponse(response, pagination);
+      // 기사 정보 매핑
+      if (workHistory.chauffeur) {
+        dto.chauffeur = plainToInstance(
+          WorkHistoryChauffeurDto,
+          {
+            id: workHistory.chauffeur.id,
+            name: workHistory.chauffeur.name,
+            phone: workHistory.chauffeur.phone,
+            type: workHistory.chauffeur.type,
+          },
+          classTransformDefaultOptions,
+        );
+        dto.chauffeurName = workHistory.chauffeur.name;
+        dto.chauffeurPhone = workHistory.chauffeur.phone;
+      }
+
+      // 차량 정보 매핑
+      if (workHistory.vehicle) {
+        dto.vehicle = plainToInstance(
+          WorkHistoryVehicleDto,
+          {
+            id: workHistory.vehicle.id,
+            vehicleNumber: workHistory.vehicle.vehicleNumber,
+            modelName: workHistory.vehicle.modelName,
+            vehicleStatus: workHistory.vehicle.vehicleStatus,
+          },
+          classTransformDefaultOptions,
+        );
+        dto.vehicleNumber = workHistory.vehicle.vehicleNumber;
+      }
+
+      return dto;
+    });
+
+    return new PaginationResponse(responseDtos, pagination);
   }
 
   async detail(id: number): Promise<WorkHistoryResponseDto> {

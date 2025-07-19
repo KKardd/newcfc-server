@@ -19,22 +19,52 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
     paginationQuery: PaginationQuery,
     status?: string,
   ): Promise<[WorkHistory[], number]> {
-    const where: any = {};
-    if (search.chauffeurId) where.chauffeurId = search.chauffeurId;
-    if (search.vehicleId) where.vehicleId = search.vehicleId;
-    if (status === DataStatus.DELETED) {
-      where.status = Not(DataStatus.DELETED);
-    } else if (status) {
-      where.status = status;
+    const queryBuilder = this.workHistoryRepository
+      .createQueryBuilder('work_history')
+      .leftJoinAndMapOne(
+        'work_history.chauffeur',
+        'chauffeur',
+        'chauffeur',
+        'chauffeur.id = work_history.chauffeur_id AND chauffeur.status != :chauffeurDeletedStatus',
+        { chauffeurDeletedStatus: DataStatus.DELETED },
+      )
+      .leftJoinAndMapOne(
+        'work_history.vehicle',
+        'vehicle',
+        'vehicle',
+        'vehicle.id = work_history.vehicle_id AND vehicle.status != :vehicleDeletedStatus',
+        { vehicleDeletedStatus: DataStatus.DELETED },
+      );
+
+    // 조건 적용
+    if (search.chauffeurId) {
+      queryBuilder.andWhere('work_history.chauffeur_id = :chauffeurId', { chauffeurId: search.chauffeurId });
     }
-    if (search.startDate) where.startTime = MoreThanOrEqual(search.startDate);
-    if (search.endDate) where.endTime = LessThanOrEqual(search.endDate);
-    return this.workHistoryRepository.findAndCount({
-      skip: paginationQuery.skip,
-      take: paginationQuery.countPerPage,
-      order: { startTime: 'DESC' },
-      where,
-    });
+
+    if (search.vehicleId) {
+      queryBuilder.andWhere('work_history.vehicle_id = :vehicleId', { vehicleId: search.vehicleId });
+    }
+
+    if (status === DataStatus.DELETED) {
+      queryBuilder.andWhere('work_history.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
+    } else if (status) {
+      queryBuilder.andWhere('work_history.status = :status', { status });
+    }
+
+    if (search.startDate) {
+      queryBuilder.andWhere('work_history.start_time >= :startDate', { startDate: search.startDate });
+    }
+
+    if (search.endDate) {
+      queryBuilder.andWhere('work_history.end_time <= :endDate', { endDate: search.endDate });
+    }
+
+    // 정렬 및 페이징 적용
+    queryBuilder.orderBy('work_history.start_time', 'DESC').skip(paginationQuery.skip).take(paginationQuery.countPerPage);
+
+    const [workHistories, totalCount] = await queryBuilder.getManyAndCount();
+
+    return [workHistories, totalCount];
   }
 
   async findById(id: number): Promise<WorkHistory | null> {

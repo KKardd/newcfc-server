@@ -135,9 +135,9 @@ export class ChauffeurController {
   }
 
   // FCM 토큰 관리 API
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'FCM 토큰 등록/업데이트',
-    description: '푸시 알림을 받기 위한 FCM 토큰을 등록하거나 업데이트합니다.'
+    description: '푸시 알림을 받기 위한 FCM 토큰을 등록하거나 업데이트합니다.',
   })
   @Roles(UserRoleType.CHAUFFEUR)
   @Put('me/fcm-token')

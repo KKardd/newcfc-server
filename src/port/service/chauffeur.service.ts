@@ -450,16 +450,18 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
     const currentTime = new Date();
 
-    // 미래의 운행들만 필터링 (아직 시작하지 않은 운행)
+    // 미래 또는 진행 중인 운행들만 필터링 (endTime 기준)
     const futureOperations = operations.filter((op) => {
       // 삭제되거나 완료된 운행 제외
       if (op.status === DataStatus.DELETED || op.status === DataStatus.COMPLETED) {
         return false;
       }
 
-      // startTime이 있는 경우: 현재 시간 이후만 포함 (미래 운행)
+      // startTime이 있는 경우: 진행 중이거나 미래 운행만 포함
       if (op.startTime) {
-        return op.startTime > currentTime;
+        // 아직 시작하지 않은 미래 운행이거나, 
+        // 진행 중인 운행(endTime이 현재 시간 이후)인 경우 포함
+        return op.startTime > currentTime || (!op.endTime || op.endTime > currentTime);
       }
 
       // startTime이 없는 경우: 아직 시작하지 않은 예약으로 간주

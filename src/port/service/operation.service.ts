@@ -1163,10 +1163,23 @@ export class OperationService implements OperationServiceInPort {
         return; // 기사가 PENDING_RECEIPT_INPUT 상태가 아니면 리턴
       }
 
+      console.log(`=== Auto transition chauffeur status ===`);
+      console.log(`Operation ID: ${operationId}, Chauffeur ID: ${operation.chauffeurId}`);
+      console.log(`Current chauffeur status: ${chauffeur.chauffeurStatus}`);
+      
       // 기사 상태를 OPERATION_COMPLETED로 자동 전환
       await this.chauffeurServiceOutPort.update(operation.chauffeurId, {
         chauffeurStatus: ChauffeurStatus.OPERATION_COMPLETED,
       });
+      
+      console.log(`Chauffeur status updated to OPERATION_COMPLETED`);
+      
+      // 운행 상태도 COMPLETED로 변경
+      await this.operationServiceOutPort.update(operationId, {
+        status: DataStatus.COMPLETED,
+      });
+      
+      console.log(`Operation status updated to COMPLETED`);
     } catch (error) {
       console.error('기사 상태 자동 전환 중 오류 발생:', error);
       // 에러가 발생해도 operation 업데이트는 성공했으므로 예외를 던지지 않음

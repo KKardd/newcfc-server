@@ -630,7 +630,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       // PENDING_RECEIPT_INPUT에서 OPERATION_COMPLETED로 전환되는 경우 이미 endTime이 설정되어 있을 수 있음
       let endTime: Date;
       let shouldUpdateEndTime = false;
-      
+
       if (currentOperation.endTime) {
         // 이미 endTime이 있는 경우 (PENDING_RECEIPT_INPUT -> OPERATION_COMPLETED)
         endTime = new Date(currentOperation.endTime);
@@ -651,12 +651,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       // 운행 시간 계산 (시작 시간부터 종료 시간까지)
       const startTime = new Date(currentOperation.startTime);
       const operationTimeMs = endTime.getTime() - startTime.getTime();
-      
+
       // 음수 방지 및 정확한 분 단위 계산
       const operationTimeMinutes = Math.max(0, Math.round(operationTimeMs / (1000 * 60)));
       response.operationTimeMinutes = operationTimeMinutes;
 
-      console.log(`운행 완료 시간 계산: 시작(${startTime.toISOString()}) -> 종료(${endTime.toISOString()}) = ${operationTimeMinutes}분`);
+      console.log(
+        `운행 완료 시간 계산: 시작(${startTime.toISOString()}) -> 종료(${endTime.toISOString()}) = ${operationTimeMinutes}분`,
+      );
     }
   }
 
@@ -672,12 +674,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       // 운행 시간 계산 (시작 시간부터 종료 시간까지)
       const startTime = new Date(currentOperation.startTime);
       const operationTimeMs = endTime.getTime() - startTime.getTime();
-      
+
       // 음수 방지 및 정확한 분 단위 계산
       const operationTimeMinutes = Math.max(0, Math.round(operationTimeMs / (1000 * 60)));
       response.operationTimeMinutes = operationTimeMinutes;
 
-      console.log(`운행 시간 계산: 시작(${startTime.toISOString()}) -> 종료(${endTime.toISOString()}) = ${operationTimeMinutes}분`);
+      console.log(
+        `운행 시간 계산: 시작(${startTime.toISOString()}) -> 종료(${endTime.toISOString()}) = ${operationTimeMinutes}분`,
+      );
     }
 
     // 이 상태에서는 클라이언트가 영수증 및 추가비용 정보를 입력할 수 있음
@@ -686,7 +690,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
   private async getCurrentOperation(chauffeurId: number) {
     console.log(`getCurrentOperation 호출: chauffeurId=${chauffeurId}`);
-    
+
     const operationPagination = new PaginationQuery();
     operationPagination.page = 1;
     operationPagination.countPerPage = 10; // 충분한 수의 운행을 조회
@@ -709,13 +713,15 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
       console.log('=== 모든 운행 조회 ===');
       operations.forEach((op, index) => {
-        console.log(`운행 ${index}: id=${op.id}, status=${op.status}, startTime=${op.startTime}, endTime=${op.endTime}, chauffeurId=${op.chauffeurId}`);
+        console.log(
+          `운행 ${index}: id=${op.id}, status=${op.status}, startTime=${op.startTime}, endTime=${op.endTime}, chauffeurId=${op.chauffeurId}`,
+        );
       });
 
       // 현재 진행 중인 운행: 삭제되지 않고, 완료되지 않은 운행
       const currentOperations = operations.filter((op) => {
         console.log(`=== 운행 ${op.id} 필터링 검사 ===`);
-        
+
         // 삭제되거나 완료된 운행 제외
         if (op.status === DataStatus.DELETED || op.status === DataStatus.COMPLETED) {
           console.log(`운행 ${op.id}: status(${op.status})로 인해 제외`);
@@ -725,7 +731,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         // PENDING_RECEIPT_INPUT 상태인 경우 특별 처리
         if (chauffeur && chauffeur.chauffeurStatus === ChauffeurStatus.PENDING_RECEIPT_INPUT) {
           console.log(`운행 ${op.id}: PENDING_RECEIPT_INPUT 상태 특별 처리`);
-          
+
           // PENDING_RECEIPT_INPUT 상태에서는 endTime이 있는 운행만 현재 운행으로 간주
           if (op.endTime) {
             console.log(`운행 ${op.id}: PENDING_RECEIPT_INPUT 상태에서 endTime 존재하므로 현재 운행으로 포함`);
@@ -1201,11 +1207,22 @@ export class ChauffeurService implements ChauffeurServiceInPort {
    */
   private async updateCurrentOperationStatus(chauffeurId: number, status: DataStatus): Promise<void> {
     try {
+      console.log(`=== updateCurrentOperationStatus ===`);
+      console.log(`ChauffeurId: ${chauffeurId}, Target Status: ${status}`);
+
       const targetOperation = await this.getOperationForStatusUpdate(chauffeurId);
+      console.log(`Target Operation Found:`, !!targetOperation);
+      console.log(`Target Operation ID:`, targetOperation?.id);
+      console.log(`Target Operation Current Status:`, targetOperation?.status);
+
       if (targetOperation) {
+        console.log(`Updating operation ${targetOperation.id} to status ${status}`);
         await this.operationServiceOutPort.update(targetOperation.id, {
           status: status,
         });
+        console.log(`Operation status update completed`);
+      } else {
+        console.error(`No target operation found for chauffeur ${chauffeurId}`);
       }
     } catch (error) {
       console.error('Failed to update operation status:', error);
@@ -1217,21 +1234,41 @@ export class ChauffeurService implements ChauffeurServiceInPort {
    * getCurrentOperation과 달리 endTime이 있어도 최근 운행을 찾을 수 있음
    */
   private async getOperationForStatusUpdate(chauffeurId: number) {
+    console.log(`=== getOperationForStatusUpdate ===`);
+    console.log(`Looking for operations for chauffeur: ${chauffeurId}`);
+
     const operationPagination = new PaginationQuery();
     operationPagination.page = 1;
     operationPagination.countPerPage = 10;
-    
+
     const [operations, totalCount] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
-    
+    console.log(`Total operations found: ${totalCount}`);
+
     if (totalCount > 0) {
+      console.log(
+        `All operations:`,
+        operations.map((op) => ({ id: op.id, status: op.status, startTime: op.startTime, endTime: op.endTime })),
+      );
+
       // 삭제되지 않고 완료되지 않은 운행 중에서 가장 최근 운행 찾기
       const targetOperations = operations.filter((op) => {
+        console.log(
+          `Checking operation ${op.id}: status=${op.status}, deleted=${op.status === DataStatus.DELETED}, completed=${op.status === DataStatus.COMPLETED}`,
+        );
+
         // 삭제되거나 이미 완료된 운행 제외
         if (op.status === DataStatus.DELETED || op.status === DataStatus.COMPLETED) {
+          console.log(`Excluding operation ${op.id} due to status: ${op.status}`);
           return false;
         }
         return true;
       });
+
+      console.log(`Filtered operations count: ${targetOperations.length}`);
+      console.log(
+        `Filtered operations:`,
+        targetOperations.map((op) => ({ id: op.id, status: op.status })),
+      );
 
       if (targetOperations.length > 0) {
         // 최신 생성 순으로 정렬하여 가장 최근 운행 반환
@@ -1245,10 +1282,12 @@ export class ChauffeurService implements ChauffeurServiceInPort {
           return b.createdAt.getTime() - a.createdAt.getTime();
         });
 
+        console.log(`Selected operation for status update: ${targetOperations[0].id}`);
         return targetOperations[0];
       }
     }
 
+    console.log(`No suitable operation found for status update`);
     return null;
   }
 

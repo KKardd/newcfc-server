@@ -20,7 +20,7 @@ import { UserRolesGuard } from '@/security/guard/user-role.guard';
 @ApiBearerAuth()
 @Controller('operations')
 @UseGuards(JwtAuthGuard, UserRolesGuard)
-@Roles(UserRoleType.SUPER_ADMIN)
+@Roles(UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
 export class OperationController {
   constructor(private readonly operationService: OperationServiceInPort) {}
 
@@ -50,14 +50,14 @@ export class OperationController {
     return this.operationService.getAdminOperationDetail(id);
   }
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: '관리자용 운행 정보 수정',
     description: `관리자용 운행 정보를 수정합니다.
-    
+
 **주요 기능:**
 - 영수증/추가비용 입력 시 기사 상태 자동 전환 (PENDING_RECEIPT_INPUT → OPERATION_COMPLETED)
 - wayPoints 업데이트 시 order 자동 재정렬 및 기존 wayPoints 삭제/재생성
-- 일정 로그 수정 포함`
+- 일정 로그 수정 포함`,
   })
   @ApiParam({ name: 'id', description: '운행 ID' })
   @Put(':id/admin')
@@ -71,14 +71,14 @@ export class OperationController {
     await this.operationService.create(createOperation);
   }
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: '운행 정보 수정',
     description: `운행 정보를 수정합니다.
-    
+
 **주요 기능:**
 - 영수증/추가비용 입력 시 기사 상태 자동 전환 (PENDING_RECEIPT_INPUT → OPERATION_COMPLETED)
 - wayPoints 업데이트 시 order 자동 재정렬 (기존 wayPoints는 자동으로 뒤로 밀려남)
-- 예: order 2 위치에 새 wayPoint 추가 시, 기존 order 2,3 → order 3,4로 자동 변경`
+- 예: order 2 위치에 새 wayPoint 추가 시, 기존 order 2,3 → order 3,4로 자동 변경`,
   })
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateOperation: UpdateOperationDto): Promise<void> {
@@ -91,15 +91,12 @@ export class OperationController {
     await this.operationService.delete(id);
   }
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: '운행 취소',
-    description: '운행을 취소하고 배정된 기사에게 취소 알림을 전송합니다.'
+    description: '운행을 취소하고 배정된 기사에게 취소 알림을 전송합니다.',
   })
   @Put(':id/cancel')
-  async cancel(
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() body: { reason?: string }
-  ): Promise<void> {
+  async cancel(@Param('id', ParseIntPipe) id: number, @Body() body: { reason?: string }): Promise<void> {
     await this.operationService.cancel(id, body.reason);
   }
 

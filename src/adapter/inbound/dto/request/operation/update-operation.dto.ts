@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 import { OperationType } from '@/domain/enum/operation-type.enum';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 
 class WayPointUpdateDto {
   @ApiProperty({ description: '경유지 이름' })
@@ -94,6 +95,11 @@ export class UpdateOperationDto {
   @IsOptional()
   @IsObject()
   kakaoPath?: any;
+
+  @ApiProperty({ description: '운행 상태', enum: DataStatus, required: false })
+  @IsOptional()
+  @IsEnum(DataStatus)
+  status?: DataStatus;
 
   @ApiProperty({ 
     description: '경유지 목록 (order 재정렬 자동 적용)', 

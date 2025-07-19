@@ -22,11 +22,13 @@ FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
 ## 3. 서비스 계정 키 설정 방법
 
 ### 방법 1: 파일 경로 사용
+
 ```bash
 FIREBASE_SERVICE_ACCOUNT_PATH=/Users/yourname/path/to/firebase-service-account.json
 ```
 
 ### 방법 2: JSON 문자열 사용 (추천 - 보안)
+
 ```bash
 FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n","client_email":"...","client_id":"...","auth_uri":"...","token_uri":"...","auth_provider_x509_cert_url":"...","client_x509_cert_url":"..."}'
 ```
@@ -34,6 +36,7 @@ FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"your-proj
 ## 4. 구현된 기능
 
 ### 4.1 FCM 알림 전송
+
 - **예약 생성 시 기사에게 자동 알림**
 - **단일/다중 기기 알림 전송**
 - **토픽 기반 알림 전송**
@@ -42,6 +45,7 @@ FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"your-proj
 ### 4.2 API 엔드포인트
 
 #### FCM 토큰 등록/업데이트
+
 ```http
 PUT /chauffeurs/me/fcm-token
 Authorization: Bearer {chauffeur_token}
@@ -53,11 +57,15 @@ Content-Type: application/json
 ```
 
 ### 4.3 자동 알림 발송 시점
+
 1. **운행 배정 시**: 새로운 운행이 기사에게 배정될 때
-2. **운행 상태 변경 시**: 운행 상태가 업데이트될 때 (선택사항)
-3. **긴급 알림**: 모든 기사에게 긴급 메시지 전송
+2. **운행 취소 시**: 배정된 운행이 취소될 때 (NEW!)
+3. **운행 상태 변경 시**: 운행 상태가 업데이트될 때 (선택사항)
+4. **긴급 알림**: 모든 기사에게 긴급 메시지 전송
 
 ## 5. 알림 메시지 구조
+
+### 5.1 운행 배정 알림
 
 ```json
 {
@@ -75,14 +83,35 @@ Content-Type: application/json
 }
 ```
 
+### 5.2 운행 취소 알림
+
+```json
+{
+  "notification": {
+    "title": "운행 취소 알림",
+    "body": "배정된 운행이 취소되었습니다."
+  },
+  "data": {
+    "type": "OPERATION_CANCELLED",
+    "operationId": "123",
+    "chauffeurId": "456",
+    "operationType": "REGULAR",
+    "startTime": "2025-01-18T10:30:00.000Z",
+    "cancellationReason": "고객 요청으로 인한 취소"
+  }
+}
+```
+
 ## 6. 클라이언트 앱 설정 (Android/iOS)
 
 ### Android
+
 1. `google-services.json` 파일을 앱에 추가
 2. FCM SDK 설정
 3. 토큰 받기 및 서버로 전송
 
-### iOS  
+### iOS
+
 1. `GoogleService-Info.plist` 파일을 앱에 추가
 2. APNs 인증서 설정
 3. FCM SDK 설정
@@ -90,16 +119,29 @@ Content-Type: application/json
 ## 7. 테스트 방법
 
 1. **기사 앱에서 FCM 토큰 등록**:
+
    ```http
    PUT /chauffeurs/me/fcm-token
    ```
 
 2. **운행 배정 테스트**:
+
    ```http
    POST /operations/assign-chauffeur
    ```
 
-3. **직접 알림 전송 테스트** (개발용):
+3. **운행 취소 테스트** (NEW!):
+
+   ```http
+   PUT /operations/{id}/cancel
+   Content-Type: application/json
+
+   {
+     "reason": "고객 요청으로 인한 취소"
+   }
+   ```
+
+4. **직접 알림 전송 테스트** (개발용):
    - Firebase Console에서 직접 테스트 메시지 전송
    - 또는 NotificationService 메서드 직접 호출
 
@@ -113,18 +155,23 @@ Content-Type: application/json
 ## 9. 문제 해결
 
 ### 토큰 유효성 오류
+
 ```
 Firebase 토큰 유효성 검증 실패
 ```
+
 → 앱에서 새 토큰 발급 후 서버에 업데이트
 
 ### 인증 오류
+
 ```
 Firebase 초기화 실패
 ```
+
 → 서비스 계정 키와 프로젝트 ID 확인
 
 ### 알림 미수신
+
 1. FCM 토큰이 올바르게 등록되었는지 확인
 2. 앱이 백그라운드/포그라운드 상태 확인
 3. 기기의 알림 권한 설정 확인

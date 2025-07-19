@@ -25,5 +25,7 @@ export abstract class OperationServiceInPort {
 
   abstract delete(id: number): Promise<void>;
 
+  abstract cancel(id: number, reason?: string): Promise<void>;
+
   abstract assignChauffeur(assignDto: AssignChauffeurDto): Promise<AssignChauffeurResponseDto>;
 }

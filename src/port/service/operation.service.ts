@@ -935,6 +935,13 @@ export class OperationService implements OperationServiceInPort {
   }
 
   async update(id: number, updateOperation: UpdateOperationDto): Promise<void> {
+    console.log('=== Operation Update Debug ===');
+    console.log('ID:', id);
+    console.log('Update Data:', JSON.stringify(updateOperation, null, 2));
+    console.log('Distance:', updateOperation.distance);
+    console.log('Additional Costs:', updateOperation.additionalCosts);
+    console.log('Receipt Image URLs:', updateOperation.receiptImageUrls);
+
     await this.operationServiceOutPort.update(id, updateOperation);
 
     // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
@@ -967,7 +974,7 @@ export class OperationService implements OperationServiceInPort {
         await this.notificationServiceOutPort.sendOperationCancellationNotification(
           operation.chauffeurId,
           id,
-          '운행이 취소되었습니다.'
+          '운행이 취소되었습니다.',
         );
       } catch (error) {
         console.error('FCM 취소 알림 전송 실패:', error);
@@ -992,7 +999,7 @@ export class OperationService implements OperationServiceInPort {
         await this.notificationServiceOutPort.sendOperationCancellationNotification(
           operation.chauffeurId,
           id,
-          reason || '운행이 취소되었습니다.'
+          reason || '운행이 취소되었습니다.',
         );
       } catch (error) {
         console.error('FCM 취소 알림 전송 실패:', error);
@@ -1030,7 +1037,7 @@ export class OperationService implements OperationServiceInPort {
       await this.notificationServiceOutPort.sendReservationNotification(
         assignDto.chauffeurId,
         assignDto.operationId,
-        notificationMessage
+        notificationMessage,
       );
     } catch (error) {
       console.error('FCM 알림 전송 실패:', error);
@@ -1065,25 +1072,25 @@ export class OperationService implements OperationServiceInPort {
       wayPointPagination.countPerPage = 100;
 
       const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
-      const existingWayPointsMap = new Map(existingWayPoints.data.map(wp => [wp.order, wp]));
-      
+      const existingWayPointsMap = new Map(existingWayPoints.data.map((wp) => [wp.order, wp]));
+
       // 새로 추가할 wayPoints의 order 값들 추출
-      const newOrders = newWayPoints.map(wp => wp.order).sort((a, b) => a - b);
-      
+      const newOrders = newWayPoints.map((wp) => wp.order).sort((a, b) => a - b);
+
       for (const newWayPoint of newWayPoints) {
         const targetOrder = newWayPoint.order;
-        
+
         // 해당 order에 기존 wayPoint가 있는지 확인
         if (existingWayPointsMap.has(targetOrder)) {
           // 기존 wayPoints 중 targetOrder 이상인 것들을 한 칸씩 뒤로 이동
           await this.shiftWayPointsOrder(operationId, targetOrder, 1);
-          
+
           // 기존 wayPoint들 맵 업데이트 (order가 변경되었으므로)
           const updatedExistingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
           existingWayPointsMap.clear();
-          updatedExistingWayPoints.data.forEach(wp => existingWayPointsMap.set(wp.order, wp));
+          updatedExistingWayPoints.data.forEach((wp) => existingWayPointsMap.set(wp.order, wp));
         }
-        
+
         // 새로운 wayPoint 생성
         await this.wayPointServiceInPort.create({
           operationId,
@@ -1095,7 +1102,7 @@ export class OperationService implements OperationServiceInPort {
           visitTime: newWayPoint.visitTime,
           order: targetOrder,
         });
-        
+
         // 생성된 wayPoint를 맵에 추가
         existingWayPointsMap.set(targetOrder, { order: targetOrder } as any);
       }
@@ -1114,11 +1121,9 @@ export class OperationService implements OperationServiceInPort {
     wayPointPagination.countPerPage = 100;
 
     const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
-    
+
     // fromOrder 이상인 wayPoints를 order 역순으로 정렬 (충돌 방지)
-    const wayPointsToShift = existingWayPoints.data
-      .filter(wp => wp.order >= fromOrder)
-      .sort((a, b) => b.order - a.order);
+    const wayPointsToShift = existingWayPoints.data.filter((wp) => wp.order >= fromOrder).sort((a, b) => b.order - a.order);
 
     for (const wayPoint of wayPointsToShift) {
       await this.wayPointServiceInPort.update(wayPoint.id, {

@@ -13,9 +13,9 @@ export class UserRolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRole = this.reflector.get<UserRoleType>('role', context.getHandler());
+    const requiredRoles = this.reflector.get<UserRoleType[]>('roles', context.getHandler());
 
-    if (!requiredRole) {
+    if (!requiredRoles || requiredRoles.length === 0) {
       return true; // 역할 요구사항이 없으면 통과
     }
 
@@ -29,12 +29,14 @@ export class UserRolesGuard implements CanActivate {
     const userRoles = user.payload.roles;
 
     // Admin 역할은 모든 권한을 가짐
-    if (userRoles.includes(UserRoleType.SUPER_ADMIN) || userRoles.includes(UserRoleType.SUB_ADMIN)) {
+    if (userRoles.includes(UserRoleType.SUPER_ADMIN)) {
       return true;
     }
 
-    // 요구된 역할과 사용자 역할이 일치하는지 확인
-    if (userRoles.includes(requiredRole)) {
+    // 요구된 역할 중 하나라도 사용자가 가지고 있는지 확인
+    const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role));
+
+    if (hasRequiredRole) {
       return true;
     }
 

@@ -55,7 +55,16 @@ export class OperationRepository implements OperationServiceOutPort {
   }
 
   async update(id: number, operation: Partial<Operation>) {
-    return this.operationRepository.update(id, operation);
+    console.log('=== Repository Update Debug ===');
+    console.log('ID:', id);
+    console.log('Operation Data:', JSON.stringify(operation, null, 2));
+
+    const result = await this.operationRepository.update(id, operation);
+
+    console.log('Update Result:', result);
+    console.log('Affected rows:', result.affected);
+
+    return result;
   }
 
   async updateStatus(id: number, status: DataStatus) {

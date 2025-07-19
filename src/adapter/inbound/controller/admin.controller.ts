@@ -7,14 +7,20 @@ import { CreateAdminDto } from '@/adapter/inbound/dto/request/admin/create-admin
 import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin.dto';
 import { SearchAvailableChauffeursDto } from '@/adapter/inbound/dto/request/admin/search-available-chauffeurs.dto';
 import { UpdateAdminDto } from '@/adapter/inbound/dto/request/admin/update-admin.dto';
+import { ChangeChauffeurStatusDto } from '@/adapter/inbound/dto/request/chauffeur/change-status.dto';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
 import { AdminProfileResponseDto } from '@/adapter/inbound/dto/response/admin/admin-profile-response.dto';
 import { AvailableChauffeursResponseDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
+import { ChauffeurStatusChangeResponseDto } from '@/adapter/inbound/dto/response/chauffeur/status-change-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { CustomException } from '@/exception/custom.exception';
 import { ErrorCode } from '@/exception/error-code.enum';
 import { AdminServiceInPort } from '@/port/inbound/admin-service.in-port';
+import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
+import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
 import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
 import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
@@ -24,7 +30,11 @@ import { UserAccessTokenPayload } from '@/security/jwt/token.payload';
 @ApiTags('Admin')
 @Controller('admins')
 export class AdminController {
-  constructor(private readonly adminService: AdminServiceInPort) {}
+  constructor(
+    private readonly adminService: AdminServiceInPort,
+    private readonly chauffeurService: ChauffeurServiceInPort,
+    private readonly operationService: OperationServiceInPort,
+  ) {}
 
   @ApiOperation({ summary: '관리자 목록 조회' })
   @ApiSuccessResponse(200, AdminResponseDto, { paginated: true })
@@ -96,5 +106,33 @@ export class AdminController {
     }
 
     return await this.adminService.getMyProfile(user.userId);
+  }
+
+  @ApiOperation({
+    summary: '기사 상태를 예약 대기중으로 변경하고 운행 강제 종료',
+    description:
+      '진행 중인 운행을 강제로 종료하고 기사 상태를 예약 대기중(WAITING_FOR_RESERVATION)으로 변경합니다. 관리자 전용 API입니다.',
+  })
+  @ApiSuccessResponse(200, ChauffeurStatusChangeResponseDto)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, UserRolesGuard)
+  @Roles(UserRoleType.SUPER_ADMIN)
+  @Put('chauffeurs/:id/force-terminate-operation')
+  async forceTerminateOperationAndResetStatus(@Param('id', ParseIntPipe) chauffeurId: number): Promise<void> {
+    // 1. 현재 진행 중인 운행 조회
+    const currentOperation = await this.chauffeurService.getMyCurrentOperation(chauffeurId);
+
+    if (currentOperation) {
+      // 2. 운행 강제 종료 (상태를 COMPLETED로 변경)
+      const now = new Date();
+      await this.operationService.update(currentOperation.id, {
+        endTime: now,
+        status: DataStatus.COMPLETED,
+      });
+    }
+
+    await this.chauffeurService.update(chauffeurId, { chauffeurStatus: ChauffeurStatus.WAITING_FOR_RESERVATION });
+
+    return;
   }
 }

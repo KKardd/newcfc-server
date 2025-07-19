@@ -627,13 +627,36 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   private async handleOperationCompleted(chauffeurId: number, response: ChauffeurStatusChangeResponseDto): Promise<void> {
     const currentOperation = await this.getCurrentOperation(chauffeurId);
     if (currentOperation && currentOperation.startTime) {
-      const endTime = new Date();
-      await this.operationServiceOutPort.update(currentOperation.id, {
-        endTime,
-      });
+      // PENDING_RECEIPT_INPUT에서 OPERATION_COMPLETED로 전환되는 경우 이미 endTime이 설정되어 있을 수 있음
+      let endTime: Date;
+      let shouldUpdateEndTime = false;
+      
+      if (currentOperation.endTime) {
+        // 이미 endTime이 있는 경우 (PENDING_RECEIPT_INPUT -> OPERATION_COMPLETED)
+        endTime = new Date(currentOperation.endTime);
+        console.log('기존 endTime 사용:', endTime.toISOString());
+      } else {
+        // endTime이 없는 경우 새로 설정
+        endTime = new Date();
+        shouldUpdateEndTime = true;
+        console.log('새로운 endTime 설정:', endTime.toISOString());
+      }
 
-      const operationTimeMs = endTime.getTime() - currentOperation.startTime.getTime();
-      response.operationTimeMinutes = Math.floor(operationTimeMs / (1000 * 60));
+      if (shouldUpdateEndTime) {
+        await this.operationServiceOutPort.update(currentOperation.id, {
+          endTime,
+        });
+      }
+
+      // 운행 시간 계산 (시작 시간부터 종료 시간까지)
+      const startTime = new Date(currentOperation.startTime);
+      const operationTimeMs = endTime.getTime() - startTime.getTime();
+      
+      // 음수 방지 및 정확한 분 단위 계산
+      const operationTimeMinutes = Math.max(0, Math.round(operationTimeMs / (1000 * 60)));
+      response.operationTimeMinutes = operationTimeMinutes;
+
+      console.log(`운행 완료 시간 계산: 시작(${startTime.toISOString()}) -> 종료(${endTime.toISOString()}) = ${operationTimeMinutes}분`);
     }
   }
 
@@ -646,8 +669,15 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         endTime,
       });
 
-      const operationTimeMs = endTime.getTime() - currentOperation.startTime.getTime();
-      response.operationTimeMinutes = Math.floor(operationTimeMs / (1000 * 60));
+      // 운행 시간 계산 (시작 시간부터 종료 시간까지)
+      const startTime = new Date(currentOperation.startTime);
+      const operationTimeMs = endTime.getTime() - startTime.getTime();
+      
+      // 음수 방지 및 정확한 분 단위 계산
+      const operationTimeMinutes = Math.max(0, Math.round(operationTimeMs / (1000 * 60)));
+      response.operationTimeMinutes = operationTimeMinutes;
+
+      console.log(`운행 시간 계산: 시작(${startTime.toISOString()}) -> 종료(${endTime.toISOString()}) = ${operationTimeMinutes}분`);
     }
 
     // 이 상태에서는 클라이언트가 영수증 및 추가비용 정보를 입력할 수 있음
@@ -679,9 +709,17 @@ export class ChauffeurService implements ChauffeurServiceInPort {
           return false;
         }
 
-        // endTime이 있고 현재 시간보다 이전이면 제외
-        if (op.endTime && op.endTime <= currentTime) {
-          return false;
+        // PENDING_RECEIPT_INPUT 상태인 경우 endTime이 있어도 현재 운행으로 간주
+        if (chauffeur && chauffeur.chauffeurStatus === ChauffeurStatus.PENDING_RECEIPT_INPUT) {
+          // PENDING_RECEIPT_INPUT 상태에서는 endTime이 최근 1시간 이내인 운행만 현재 운행으로 간주
+          if (op.endTime && op.endTime < new Date(currentTime.getTime() - 60 * 60 * 1000)) {
+            return false;
+          }
+        } else {
+          // 다른 상태에서는 기존 로직 적용: endTime이 있고 현재 시간보다 이전이면 제외
+          if (op.endTime && op.endTime <= currentTime) {
+            return false;
+          }
         }
 
         // startTime이 있고 현재 시간보다 너무 이전이면 제외 (24시간 이전)
@@ -1284,6 +1322,21 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     } catch (error) {
       console.error('Failed to get current waypoint for real-time dispatch:', error);
       return null;
+    }
+  }
+
+  /**
+   * FCM 토큰 업데이트
+   */
+  async updateFCMToken(chauffeurId: number, fcmToken: string): Promise<void> {
+    try {
+      await this.chauffeurServiceOutPort.update(chauffeurId, {
+        fcmToken,
+      });
+      console.log(`기사 ID ${chauffeurId}의 FCM 토큰이 업데이트되었습니다.`);
+    } catch (error) {
+      console.error('FCM 토큰 업데이트 실패:', error);
+      throw new Error('FCM 토큰 업데이트에 실패했습니다.');
     }
   }
 }

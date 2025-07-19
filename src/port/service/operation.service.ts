@@ -31,6 +31,7 @@ import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispat
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
+import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 // 관리자용 운행 상세 응답 DTO
@@ -103,6 +104,7 @@ export class OperationService implements OperationServiceInPort {
     private readonly reservationServiceOutPort: ReservationServiceOutPort,
     private readonly wayPointServiceInPort: WayPointServiceInPort,
     private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
+    private readonly notificationServiceOutPort: NotificationServiceOutPort,
   ) {}
 
   async search(
@@ -976,7 +978,20 @@ export class OperationService implements OperationServiceInPort {
       chauffeurId: assignDto.chauffeurId,
     });
 
-    // 5. 응답 생성
+    // 5. 기사에게 FCM 알림 전송
+    try {
+      const notificationMessage = `새로운 운행이 배정되었습니다. 출발시간: ${operation.startTime ? new Date(operation.startTime).toLocaleString('ko-KR') : '미정'}`;
+      await this.notificationServiceOutPort.sendReservationNotification(
+        assignDto.chauffeurId,
+        assignDto.operationId,
+        notificationMessage
+      );
+    } catch (error) {
+      console.error('FCM 알림 전송 실패:', error);
+      // 알림 전송 실패해도 배정은 성공으로 처리
+    }
+
+    // 6. 응답 생성
     return plainToInstance(
       AssignChauffeurResponseDto,
       {

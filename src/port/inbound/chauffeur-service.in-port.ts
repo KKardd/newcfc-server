@@ -14,6 +14,8 @@ import { LocationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/lo
 import { NearestReservationResponseDto } from '@/adapter/inbound/dto/response/chauffeur/nearest-reservation-response.dto';
 
 export abstract class ChauffeurServiceInPort {
+  abstract updateFCMToken(userId: number, fcmToken: string): Promise<void>;
+
   abstract search(
     searchChauffeur: SearchChauffeurDto,
     paginationQuery: PaginationQuery,

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
@@ -23,6 +24,13 @@ import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
 import { UserToken } from '@/security/jwt/user-token.decorator';
 import { UserAccessTokenPayload } from '@/security/jwt/token.payload';
+
+class UpdateFCMTokenDto {
+  @ApiProperty({ description: 'FCM 토큰', example: 'c1234567890abcdef...' })
+  @IsString()
+  @IsNotEmpty()
+  fcmToken: string;
+}
 
 @ApiTags('Chauffeur')
 @ApiBearerAuth()
@@ -124,5 +132,16 @@ export class ChauffeurController {
   @Get(':chauffeurId/location')
   async getMyLocation(@Param('chauffeurId', ParseIntPipe) chauffeurId: number): Promise<LocationResponseDto> {
     return await this.chauffeurService.getMyLocation(chauffeurId);
+  }
+
+  // FCM 토큰 관리 API
+  @ApiOperation({ 
+    summary: 'FCM 토큰 등록/업데이트',
+    description: '푸시 알림을 받기 위한 FCM 토큰을 등록하거나 업데이트합니다.'
+  })
+  @Roles(UserRoleType.CHAUFFEUR)
+  @Put('me/fcm-token')
+  async updateMyFCMToken(@UserToken() user: UserAccessTokenPayload, @Body() updateFCMTokenDto: UpdateFCMTokenDto): Promise<void> {
+    await this.chauffeurService.updateFCMToken(user.userId, updateFCMTokenDto.fcmToken);
   }
 }

@@ -48,6 +48,9 @@ export class Chauffeur extends BaseEntity {
   @Column({ type: 'enum', enum: UserRoleType, default: UserRoleType.CHAUFFEUR })
   role: UserRoleType;
 
+  @Column({ name: 'fcm_token', type: 'varchar', length: 500, nullable: true })
+  fcmToken: string | null;
+
   @Column({ type: 'enum', enum: DataStatus, default: DataStatus.REGISTER })
   status: DataStatus;
 }

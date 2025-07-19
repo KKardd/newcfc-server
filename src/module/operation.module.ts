@@ -20,6 +20,7 @@ import { ReservationModule } from './reservation.module';
 import { WayPointModule } from './way-point.module';
 import { VehicleModule } from '@/module/vehicle.module';
 import { GarageModule } from '@/module/garage.module';
+import { NotificationModule } from './infrastructure/notification.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { GarageModule } from '@/module/garage.module';
     forwardRef(() => WayPointModule),
     forwardRef(() => RealTimeDispatchModule),
     forwardRef(() => GarageModule),
+    forwardRef(() => NotificationModule),
   ],
   controllers: [OperationController],
   providers: [

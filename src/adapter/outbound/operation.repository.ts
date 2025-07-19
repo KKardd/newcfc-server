@@ -58,11 +58,23 @@ export class OperationRepository implements OperationServiceOutPort {
     console.log('=== Repository Update Debug ===');
     console.log('ID:', id);
     console.log('Operation Data:', JSON.stringify(operation, null, 2));
+    
+    // 업데이트 전 현재 데이터 확인
+    const beforeUpdate = await this.operationRepository.findOne({ where: { id } });
+    console.log('Before Update - Distance:', beforeUpdate?.distance);
+    console.log('Before Update - AdditionalCosts:', beforeUpdate?.additionalCosts);
+    console.log('Before Update - ReceiptImageUrls:', beforeUpdate?.receiptImageUrls);
 
     const result = await this.operationRepository.update(id, operation);
 
     console.log('Update Result:', result);
     console.log('Affected rows:', result.affected);
+    
+    // 업데이트 후 데이터 확인
+    const afterUpdate = await this.operationRepository.findOne({ where: { id } });
+    console.log('After Update - Distance:', afterUpdate?.distance);
+    console.log('After Update - AdditionalCosts:', afterUpdate?.additionalCosts);
+    console.log('After Update - ReceiptImageUrls:', afterUpdate?.receiptImageUrls);
 
     return result;
   }

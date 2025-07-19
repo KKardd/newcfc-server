@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 import { OperationType } from '@/domain/enum/operation-type.enum';
@@ -63,6 +63,7 @@ export class UpdateOperationDto {
 
   @ApiProperty({ description: '운행 거리(km)', required: false })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   distance?: number;
 
@@ -83,11 +84,35 @@ export class UpdateOperationDto {
 
   @ApiProperty({ description: '추가 비용', type: Object, required: false })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
   @IsObject()
   additionalCosts?: Record<string, number>;
 
   @ApiProperty({ description: '영수증 이미지 URL 목록', type: [String], required: false })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [value];
+      }
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return value;
+  })
+  @IsArray()
   @IsString({ each: true })
   receiptImageUrls?: string[];
 

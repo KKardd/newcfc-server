@@ -82,6 +82,13 @@ export class OperationController {
   })
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateOperation: UpdateOperationDto): Promise<void> {
+    console.log('=== Controller Update Debug ===');
+    console.log('Received ID:', id);
+    console.log('Received Body:', JSON.stringify(updateOperation, null, 2));
+    console.log('Distance type:', typeof updateOperation.distance, 'value:', updateOperation.distance);
+    console.log('AdditionalCosts type:', typeof updateOperation.additionalCosts, 'value:', updateOperation.additionalCosts);
+    console.log('ReceiptImageUrls type:', typeof updateOperation.receiptImageUrls, 'value:', updateOperation.receiptImageUrls);
+    
     await this.operationService.update(id, updateOperation);
   }
 

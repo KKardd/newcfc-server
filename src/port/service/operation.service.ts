@@ -942,7 +942,14 @@ export class OperationService implements OperationServiceInPort {
     console.log('Additional Costs:', updateOperation.additionalCosts);
     console.log('Receipt Image URLs:', updateOperation.receiptImageUrls);
 
-    await this.operationServiceOutPort.update(id, updateOperation);
+    // undefined 값 제거 (TypeORM이 undefined 값을 무시할 수 있음)
+    const filteredUpdate = Object.fromEntries(
+      Object.entries(updateOperation).filter(([_, value]) => value !== undefined)
+    );
+    
+    console.log('Filtered Update Data:', JSON.stringify(filteredUpdate, null, 2));
+
+    await this.operationServiceOutPort.update(id, filteredUpdate);
 
     // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
     await this.checkAndTransitionChauffeurStatus(id, updateOperation);

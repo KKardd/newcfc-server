@@ -4,6 +4,8 @@ import { Repository, Not, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeo
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history/search-work-history.dto';
 import { WorkHistory } from '@/domain/entity/work-history.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
+import { Chauffeur } from '@/domain/entity/chauffeur.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { WorkHistoryServiceOutPort } from '@/port/outbound/work-history-service.out-port';
 
@@ -12,6 +14,10 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
   constructor(
     @InjectRepository(WorkHistory)
     private readonly workHistoryRepository: Repository<WorkHistory>,
+    @InjectRepository(Vehicle)
+    private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(Chauffeur)
+    private readonly chauffeurRepository: Repository<Chauffeur>,
   ) {}
 
   async findAll(
@@ -23,14 +29,14 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
       .createQueryBuilder('work_history')
       .leftJoinAndMapOne(
         'work_history.chauffeur',
-        'chauffeur',
+        Chauffeur,
         'chauffeur',
         'chauffeur.id = work_history.chauffeur_id AND chauffeur.status != :chauffeurDeletedStatus',
         { chauffeurDeletedStatus: DataStatus.DELETED },
       )
       .leftJoinAndMapOne(
         'work_history.vehicle',
-        'vehicle',
+        Vehicle,
         'vehicle',
         'vehicle.id = work_history.vehicle_id AND vehicle.status != :vehicleDeletedStatus',
         { vehicleDeletedStatus: DataStatus.DELETED },

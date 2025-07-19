@@ -685,49 +685,76 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   }
 
   private async getCurrentOperation(chauffeurId: number) {
+    console.log(`getCurrentOperation 호출: chauffeurId=${chauffeurId}`);
+    
     const operationPagination = new PaginationQuery();
     operationPagination.page = 1;
     operationPagination.countPerPage = 10; // 충분한 수의 운행을 조회
 
     const [operations, totalCount] = await this.operationServiceOutPort.findAll({ chauffeurId }, operationPagination);
+    console.log(`조회된 운행 수: ${totalCount}`);
 
     if (totalCount > 0) {
       const currentTime = new Date();
 
       // 기사의 현재 상태 확인
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+      console.log(`기사 상태: ${chauffeur?.chauffeurStatus}`);
 
       // 예약 대기 중인 경우는 현재 운행으로 반환하지 않음
       if (chauffeur && chauffeur.chauffeurStatus === ChauffeurStatus.WAITING_FOR_RESERVATION) {
+        console.log('예약 대기 중 상태로 인해 null 반환');
         return null;
       }
 
+      console.log('=== 모든 운행 조회 ===');
+      operations.forEach((op, index) => {
+        console.log(`운행 ${index}: id=${op.id}, status=${op.status}, startTime=${op.startTime}, endTime=${op.endTime}, chauffeurId=${op.chauffeurId}`);
+      });
+
       // 현재 진행 중인 운행: 삭제되지 않고, 완료되지 않은 운행
       const currentOperations = operations.filter((op) => {
+        console.log(`=== 운행 ${op.id} 필터링 검사 ===`);
+        
         // 삭제되거나 완료된 운행 제외
         if (op.status === DataStatus.DELETED || op.status === DataStatus.COMPLETED) {
+          console.log(`운행 ${op.id}: status(${op.status})로 인해 제외`);
           return false;
         }
 
-        // PENDING_RECEIPT_INPUT 상태인 경우 endTime이 있어도 현재 운행으로 간주
+        // PENDING_RECEIPT_INPUT 상태인 경우 특별 처리
         if (chauffeur && chauffeur.chauffeurStatus === ChauffeurStatus.PENDING_RECEIPT_INPUT) {
-          // PENDING_RECEIPT_INPUT 상태에서는 endTime이 최근 1시간 이내인 운행만 현재 운행으로 간주
-          if (op.endTime && op.endTime < new Date(currentTime.getTime() - 60 * 60 * 1000)) {
+          console.log(`운행 ${op.id}: PENDING_RECEIPT_INPUT 상태 특별 처리`);
+          
+          // PENDING_RECEIPT_INPUT 상태에서는 endTime이 있는 운행만 현재 운행으로 간주
+          if (op.endTime) {
+            console.log(`운행 ${op.id}: PENDING_RECEIPT_INPUT 상태에서 endTime 존재하므로 현재 운행으로 포함`);
+            return true;
+          } else {
+            console.log(`운행 ${op.id}: PENDING_RECEIPT_INPUT 상태이지만 endTime이 없으므로 제외`);
             return false;
           }
         } else {
           // 다른 상태에서는 기존 로직 적용: endTime이 있고 현재 시간보다 이전이면 제외
           if (op.endTime && op.endTime <= currentTime) {
+            console.log(`운행 ${op.id}: endTime(${op.endTime})이 현재시각(${currentTime}) 이전이므로 제외`);
             return false;
           }
         }
 
         // startTime이 있고 현재 시간보다 너무 이전이면 제외 (24시간 이전)
         if (op.startTime && op.startTime < new Date(currentTime.getTime() - 24 * 60 * 60 * 1000)) {
+          console.log(`운행 ${op.id}: startTime(${op.startTime})이 24시간 이전이므로 제외`);
           return false;
         }
 
+        console.log(`운행 ${op.id}: 모든 조건 통과, 현재 운행으로 포함`);
         return true;
+      });
+
+      console.log(`=== 필터링 결과: ${currentOperations.length}개 운행 ===`);
+      currentOperations.forEach((op, index) => {
+        console.log(`필터링된 운행 ${index}: id=${op.id}, status=${op.status}, startTime=${op.startTime}, endTime=${op.endTime}`);
       });
 
       if (currentOperations.length > 0) {
@@ -741,10 +768,12 @@ export class ChauffeurService implements ChauffeurServiceInPort {
           return b.createdAt.getTime() - a.createdAt.getTime();
         });
 
+        console.log(`최종 선택된 현재 운행: id=${currentOperations[0].id}`);
         return currentOperations[0];
       }
     }
 
+    console.log('현재 운행 없음: null 반환');
     return null;
   }
 

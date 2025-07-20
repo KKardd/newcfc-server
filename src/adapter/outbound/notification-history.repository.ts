@@ -36,7 +36,7 @@ export class NotificationHistoryRepository implements NotificationHistoryService
     }
 
     if (search.endDate) {
-      if (where.createdAt) {
+      if (where.createdAt && search.startDate) {
         // startDate와 endDate가 모두 있는 경우
         where.createdAt = [MoreThanOrEqual(new Date(search.startDate)), LessThanOrEqual(new Date(search.endDate))];
       } else {

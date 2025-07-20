@@ -23,7 +23,7 @@ export class NotificationController {
     summary: '내 알림 목록 조회',
     description: '로그인한 사용자의 모든 알림 목록을 조회합니다. 조회 시 읽지 않은 알림들이 자동으로 읽음 처리됩니다.'
   })
-  @ApiSuccessResponse(200, [NotificationResponseDto])
+  @ApiSuccessResponse(200, NotificationResponseDto, { isArray: true })
   @Roles(UserRoleType.CHAUFFEUR, UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Get('me')
   async getMyNotifications(

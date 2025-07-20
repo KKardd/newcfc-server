@@ -37,7 +37,7 @@ export class NotificationService implements NotificationServiceOutPort {
       notification.type = type;
       notification.data = data || {};
       notification.isRead = false;
-      notification.fcmMessageId = fcmMessageId;
+      notification.fcmMessageId = fcmMessageId || null;
 
       await this.notificationHistoryServiceOutPort.create(notification);
     } catch (error) {
@@ -77,7 +77,7 @@ export class NotificationService implements NotificationServiceOutPort {
       };
 
       const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
-      
+
       // 알림 기록 생성 (FCM 전송 성공 여부와 상관없이)
       await this.createNotificationRecord(
         chauffeurId,
@@ -87,11 +87,11 @@ export class NotificationService implements NotificationServiceOutPort {
         NotificationType.NEW_OPERATION,
         payload.data,
       );
-      
+
       if (success) {
         console.log(`기사 ${chauffeur.name}(ID: ${chauffeurId})에게 운행 알림을 성공적으로 전송했습니다.`);
       }
-      
+
       return success;
     } catch (error) {
       console.error('예약 알림 전송 중 오류 발생:', error);
@@ -155,7 +155,7 @@ export class NotificationService implements NotificationServiceOutPort {
       };
 
       const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
-      
+
       // 알림 기록 생성 (FCM 전송 성공 여부와 상관없이)
       await this.createNotificationRecord(
         chauffeurId,
@@ -165,11 +165,11 @@ export class NotificationService implements NotificationServiceOutPort {
         NotificationType.OPERATION_CANCELLED,
         payload.data,
       );
-      
+
       if (success) {
         console.log(`기사 ${chauffeur.name}(ID: ${chauffeurId})에게 운행 취소 알림을 성공적으로 전송했습니다.`);
       }
-      
+
       return success;
     } catch (error) {
       console.error('운행 취소 알림 전송 중 오류 발생:', error);
@@ -199,7 +199,7 @@ export class NotificationService implements NotificationServiceOutPort {
       };
 
       const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
-      
+
       // 알림 기록 생성 (FCM 전송 성공 여부와 상관없이)
       await this.createNotificationRecord(
         chauffeurId,
@@ -209,7 +209,7 @@ export class NotificationService implements NotificationServiceOutPort {
         NotificationType.OPERATION_STATUS_UPDATE,
         payload.data,
       );
-      
+
       return success;
     } catch (error) {
       console.error('운행 상태 알림 전송 중 오류 발생:', error);
@@ -224,7 +224,7 @@ export class NotificationService implements NotificationServiceOutPort {
     try {
       // 활성 상태의 모든 기사 조회 (FCM 토큰이 있는 기사만)
       // 실제 구현 시에는 chauffeurServiceOutPort에 적절한 메서드가 필요합니다
-      
+
       const payload: FCMNotificationPayload = {
         title,
         body,

@@ -41,8 +41,8 @@ export class Notification extends BaseTimeEntity {
   isRead: boolean;
 
   @Column({ name: 'read_at', type: 'datetime', nullable: true })
-  readAt: Date;
+  readAt: Date | null;
 
   @Column({ name: 'fcm_message_id', type: 'varchar', length: 255, nullable: true })
-  fcmMessageId: string;
+  fcmMessageId: string | null;
 }

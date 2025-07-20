@@ -5,9 +5,10 @@ import { NotificationService } from '@/port/service/notification.service';
 import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
 import { ChauffeurModule } from '@/module/chauffeur.module';
 import { OperationModule } from '@/module/operation.module';
+import { NotificationHistoryModule } from '@/module/notification-history.module';
 
 @Module({
-  imports: [forwardRef(() => ChauffeurModule), forwardRef(() => OperationModule)],
+  imports: [forwardRef(() => ChauffeurModule), forwardRef(() => OperationModule), NotificationHistoryModule],
   providers: [
     FCMService,
     {

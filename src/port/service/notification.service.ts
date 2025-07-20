@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 import { FCMService, FCMNotificationPayload } from '@/infrastructure/notification/fcm.service';
+import { Notification, NotificationType } from '@/domain/entity/notification.entity';
 import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
+import { NotificationHistoryServiceOutPort } from '@/port/outbound/notification-history-service.out-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 
@@ -9,9 +11,39 @@ import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-p
 export class NotificationService implements NotificationServiceOutPort {
   constructor(
     private readonly fcmService: FCMService,
+    private readonly notificationHistoryServiceOutPort: NotificationHistoryServiceOutPort,
     private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
     private readonly operationServiceOutPort: OperationServiceOutPort,
   ) {}
+
+  /**
+   * 알림 기록 생성
+   */
+  private async createNotificationRecord(
+    userId: number,
+    userType: string,
+    title: string,
+    body: string,
+    type: NotificationType,
+    data?: Record<string, any>,
+    fcmMessageId?: string,
+  ): Promise<void> {
+    try {
+      const notification = new Notification();
+      notification.userId = userId;
+      notification.userType = userType;
+      notification.title = title;
+      notification.body = body;
+      notification.type = type;
+      notification.data = data || {};
+      notification.isRead = false;
+      notification.fcmMessageId = fcmMessageId;
+
+      await this.notificationHistoryServiceOutPort.create(notification);
+    } catch (error) {
+      console.error('알림 기록 생성 중 오류 발생:', error);
+    }
+  }
 
   /**
    * 예약(운행) 생성 시 기사에게 알림 전송
@@ -45,6 +77,16 @@ export class NotificationService implements NotificationServiceOutPort {
       };
 
       const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
+      
+      // 알림 기록 생성 (FCM 전송 성공 여부와 상관없이)
+      await this.createNotificationRecord(
+        chauffeurId,
+        'CHAUFFEUR',
+        payload.title,
+        payload.body,
+        NotificationType.NEW_OPERATION,
+        payload.data,
+      );
       
       if (success) {
         console.log(`기사 ${chauffeur.name}(ID: ${chauffeurId})에게 운행 알림을 성공적으로 전송했습니다.`);
@@ -114,6 +156,16 @@ export class NotificationService implements NotificationServiceOutPort {
 
       const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
       
+      // 알림 기록 생성 (FCM 전송 성공 여부와 상관없이)
+      await this.createNotificationRecord(
+        chauffeurId,
+        'CHAUFFEUR',
+        payload.title,
+        payload.body,
+        NotificationType.OPERATION_CANCELLED,
+        payload.data,
+      );
+      
       if (success) {
         console.log(`기사 ${chauffeur.name}(ID: ${chauffeurId})에게 운행 취소 알림을 성공적으로 전송했습니다.`);
       }
@@ -146,7 +198,19 @@ export class NotificationService implements NotificationServiceOutPort {
         },
       };
 
-      return await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
+      const success = await this.fcmService.sendToDevice(chauffeur.fcmToken, payload);
+      
+      // 알림 기록 생성 (FCM 전송 성공 여부와 상관없이)
+      await this.createNotificationRecord(
+        chauffeurId,
+        'CHAUFFEUR',
+        payload.title,
+        payload.body,
+        NotificationType.OPERATION_STATUS_UPDATE,
+        payload.data,
+      );
+      
+      return success;
     } catch (error) {
       console.error('운행 상태 알림 전송 중 오류 발생:', error);
       return false;

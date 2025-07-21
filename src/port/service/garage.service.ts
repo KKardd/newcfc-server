@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { plainToInstance } from 'class-transformer';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -12,7 +13,7 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { GarageServiceInPort } from '@/port/inbound/garage-service.in-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class GarageService implements GarageServiceInPort {
@@ -28,7 +29,7 @@ export class GarageService implements GarageServiceInPort {
     // 각 차고지에 대해 배정된 차량 수를 계산
     const garageResponseDtos = await Promise.all(
       garages.map(async (garage) => {
-        const garageDto = plainToInstance(GarageResponseDto, garage, classTransformDefaultOptions);
+        const garageDto = plainToInstance(GarageResponseDto, garage);
 
         // 해당 차고지에 속한 차량 수 조회 (삭제되지 않은 차량만)
         try {
@@ -49,7 +50,7 @@ export class GarageService implements GarageServiceInPort {
     const garage = await this.garageServiceOutPort.findById(id);
     if (!garage) throw new Error('차고지를 찾을 수 없습니다.');
 
-    const garageDto = plainToInstance(GarageResponseDto, garage, classTransformDefaultOptions);
+    const garageDto = plainToInstance(GarageResponseDto, garage);
 
     // 해당 차고지에 속한 차량 수 조회 (삭제되지 않은 차량만)
     try {

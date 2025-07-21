@@ -40,7 +40,7 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
     // 각 실시간 배차지에 대해 쇼퍼 카운트 계산 (삭제된 쇼퍼 제외)
     const responseData = await Promise.all(
       realTimeDispatches.map(async (dispatch) => {
-        const dispatchDto = plainToInstance(RealTimeDispatchResponseDto, dispatch, classTransformDefaultOptions);
+        const dispatchDto = plainToInstance(RealTimeDispatchResponseDto, dispatch);
 
         // 해당 실시간 배차지에 배정된 쇼퍼 카운트 조회 (삭제되지 않은 쇼퍼만)
         const chauffeurPagination = new PaginationQuery();
@@ -63,7 +63,7 @@ export class RealTimeDispatchService implements RealTimeDispatchServiceInPort {
 
   async detail(id: number): Promise<RealTimeDispatchResponseDto> {
     const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(id);
-    return plainToInstance(RealTimeDispatchResponseDto, realTimeDispatch, classTransformDefaultOptions);
+    return plainToInstance(RealTimeDispatchResponseDto, realTimeDispatch);
   }
 
   async create(createRealTimeDispatch: CreateRealTimeDispatchDto): Promise<void> {

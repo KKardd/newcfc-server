@@ -12,7 +12,7 @@ import { WayPoint } from '@/domain/entity/way-point.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { WayPointServiceOutPort } from '@/port/outbound/way-point-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class WayPointService implements WayPointServiceInPort {
@@ -26,14 +26,14 @@ export class WayPointService implements WayPointServiceInPort {
 
     const pagination = new Pagination({ totalCount: total, paginationQuery });
 
-    const response = plainToInstance(WayPointResponseDto, wayPoints, classTransformDefaultOptions);
+    const response = plainToInstance(WayPointResponseDto, wayPoints);
 
     return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<WayPointResponseDto> {
     const wayPoint = await this.wayPointServiceOutPort.findById(id);
-    return plainToInstance(WayPointResponseDto, wayPoint, classTransformDefaultOptions);
+    return plainToInstance(WayPointResponseDto, wayPoint);
   }
 
   async create(createWayPoint: CreateWayPointDto): Promise<void> {
@@ -107,13 +107,11 @@ export class WayPointService implements WayPointServiceInPort {
       const [wayPoints] = await this.wayPointServiceOutPort.findAll(searchDto, paginationQuery, DataStatus.DELETED);
 
       // excludeId가 있는 경우 해당 wayPoint 제외 (update 시 자기 자신 제외)
-      const filteredWayPoints = excludeId 
-        ? wayPoints.filter(wp => wp.id !== excludeId)
-        : wayPoints;
+      const filteredWayPoints = excludeId ? wayPoints.filter((wp) => wp.id !== excludeId) : wayPoints;
 
       // targetOrder에 기존 wayPoint가 있는지 확인
-      const existingWayPoint = filteredWayPoints.find(wp => wp.order === targetOrder);
-      
+      const existingWayPoint = filteredWayPoints.find((wp) => wp.order === targetOrder);
+
       if (existingWayPoint) {
         // targetOrder 이상인 wayPoints를 한 칸씩 뒤로 이동
         await this.shiftWayPointsOrder(operationId, targetOrder, 1, excludeId);
@@ -127,18 +125,23 @@ export class WayPointService implements WayPointServiceInPort {
   /**
    * 특정 order 이상의 wayPoints를 지정된 만큼 뒤로 이동
    */
-  private async shiftWayPointsOrder(operationId: number, fromOrder: number, shiftAmount: number, excludeId?: number): Promise<void> {
+  private async shiftWayPointsOrder(
+    operationId: number,
+    fromOrder: number,
+    shiftAmount: number,
+    excludeId?: number,
+  ): Promise<void> {
     const paginationQuery = new PaginationQuery();
     paginationQuery.page = 1;
     paginationQuery.countPerPage = 100;
 
     const searchDto = { operationId };
     const [wayPoints] = await this.wayPointServiceOutPort.findAll(searchDto, paginationQuery, DataStatus.DELETED);
-    
+
     // fromOrder 이상인 wayPoints를 order 역순으로 정렬 (충돌 방지)
     // excludeId가 있는 경우 해당 wayPoint 제외
     const wayPointsToShift = wayPoints
-      .filter(wp => wp.order >= fromOrder && (!excludeId || wp.id !== excludeId))
+      .filter((wp) => wp.order >= fromOrder && (!excludeId || wp.id !== excludeId))
       .sort((a, b) => b.order - a.order);
 
     for (const wayPoint of wayPointsToShift) {

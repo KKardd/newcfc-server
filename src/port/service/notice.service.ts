@@ -11,9 +11,9 @@ import { NoticeResponseDto } from '@/adapter/inbound/dto/response/notice/notice-
 import { Notice } from '@/domain/entity/notice.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { NoticeServiceInPort } from '@/port/inbound/notice-service.in-port';
-import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import { NoticeServiceOutPort } from '@/port/outbound/notice-service.out-port';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class NoticeService implements NoticeServiceInPort {
@@ -29,7 +29,7 @@ export class NoticeService implements NoticeServiceInPort {
     // 각 Notice에 대해 관리자 이름 조회
     const response = await Promise.all(
       notices.map(async (notice) => {
-        const noticeDto = plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+        const noticeDto = plainToInstance(NoticeResponseDto, notice);
 
         // 관리자 이름 조회 (adminId 또는 createdBy 사용)
         try {
@@ -53,7 +53,7 @@ export class NoticeService implements NoticeServiceInPort {
     // 각 Notice에 대해 관리자 이름 조회
     const response = await Promise.all(
       notices.map(async (notice) => {
-        const noticeDto = plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+        const noticeDto = plainToInstance(NoticeResponseDto, notice);
 
         // 관리자 이름 조회 (adminId 또는 createdBy 사용)
         try {
@@ -75,7 +75,7 @@ export class NoticeService implements NoticeServiceInPort {
     const notice = await this.noticeServiceOutPort.findByNoticeId(id);
     if (!notice) throw new Error('공지사항을 찾을 수 없습니다.');
 
-    const noticeDto = plainToInstance(NoticeResponseDto, notice, classTransformDefaultOptions);
+    const noticeDto = plainToInstance(NoticeResponseDto, notice);
 
     // 관리자 이름 조회 (adminId 또는 createdBy 사용)
     try {

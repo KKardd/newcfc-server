@@ -9,12 +9,12 @@ import { CreateAdminDto } from '@/adapter/inbound/dto/request/admin/create-admin
 import { SearchAdminDto } from '@/adapter/inbound/dto/request/admin/search-admin.dto';
 import { SearchAvailableChauffeursDto } from '@/adapter/inbound/dto/request/admin/search-available-chauffeurs.dto';
 import { UpdateAdminDto } from '@/adapter/inbound/dto/request/admin/update-admin.dto';
-import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
 import { AdminProfileResponseDto } from '@/adapter/inbound/dto/response/admin/admin-profile-response.dto';
+import { AdminResponseDto } from '@/adapter/inbound/dto/response/admin/admin-response.dto';
 import { AvailableChauffeursResponseDto } from '@/adapter/inbound/dto/response/admin/available-chauffeurs-response.dto';
 import { Admin } from '@/domain/entity/admin.entity';
-import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
+import { DataStatus } from '@/domain/enum/data-status.enum';
 import { AdminServiceInPort } from '@/port/inbound/admin-service.in-port';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
@@ -35,7 +35,7 @@ export class AdminService implements AdminServiceInPort {
     const [admins, totalCount] = await this.adminServiceOutPort.findAll(searchAdmin, paginationQuery, DataStatus.DELETED);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(AdminResponseDto, admins, classTransformDefaultOptions).map((admin) => {
+    const response = plainToInstance(AdminResponseDto, admins).map((admin) => {
       admin.adminName = admin.name;
       return admin;
     });
@@ -45,7 +45,7 @@ export class AdminService implements AdminServiceInPort {
 
   async detail(id: number): Promise<AdminResponseDto> {
     const admin = await this.adminServiceOutPort.findById(id);
-    const response = plainToInstance(AdminResponseDto, admin, classTransformDefaultOptions);
+    const response = plainToInstance(AdminResponseDto, admin);
     response.adminName = response.name;
     return response;
   }
@@ -78,14 +78,10 @@ export class AdminService implements AdminServiceInPort {
       this.vehicleServiceOutPort.findUnassignedVehicles(),
     ]);
 
-    return plainToInstance(
-      AvailableChauffeursResponseDto,
-      {
-        availableChauffeurs,
-        unassignedVehicles,
-      },
-      classTransformDefaultOptions,
-    );
+    return plainToInstance(AvailableChauffeursResponseDto, {
+      availableChauffeurs,
+      unassignedVehicles,
+    });
   }
 
   /**
@@ -118,6 +114,6 @@ export class AdminService implements AdminServiceInPort {
 
   async getMyProfile(adminId: number): Promise<AdminProfileResponseDto> {
     const admin = await this.adminServiceOutPort.findById(adminId);
-    return plainToInstance(AdminProfileResponseDto, admin, classTransformDefaultOptions);
+    return plainToInstance(AdminProfileResponseDto, admin);
   }
 }

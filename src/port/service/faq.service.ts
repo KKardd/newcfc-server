@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { plainToInstance } from 'class-transformer';
 
 import { PaginationResponse } from '@/adapter/inbound/dto/common/pagination.dto';
@@ -9,9 +10,9 @@ import { FaqResponseDto } from '@/adapter/inbound/dto/response/faq/faq-response.
 import { Faq } from '@/domain/entity/faq.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { FaqServiceInPort } from '@/port/inbound/faq-service.in-port';
-import { FaqServiceOutPort } from '@/port/outbound/faq-service.out-port';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import { FaqServiceOutPort } from '@/port/outbound/faq-service.out-port';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class FaqService implements FaqServiceInPort {
@@ -28,7 +29,7 @@ export class FaqService implements FaqServiceInPort {
     // 각 FAQ에 대해 관리자 이름 조회
     const response = await Promise.all(
       faqs.map(async (faq) => {
-        const faqDto = plainToInstance(FaqResponseDto, faq, classTransformDefaultOptions);
+        const faqDto = plainToInstance(FaqResponseDto, faq);
 
         // 관리자 이름 조회
         try {
@@ -49,7 +50,7 @@ export class FaqService implements FaqServiceInPort {
     const faq = await this.faqServiceOutPort.findById(id);
     if (!faq) throw new Error('FAQ를 찾을 수 없습니다.');
 
-    const faqDto = plainToInstance(FaqResponseDto, faq, classTransformDefaultOptions);
+    const faqDto = plainToInstance(FaqResponseDto, faq);
 
     // 관리자 이름 조회
     try {

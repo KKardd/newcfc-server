@@ -12,7 +12,7 @@ import { DispatchPoint } from '@/domain/entity/dispatch-point.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { DispatchPointServiceInPort } from '@/port/inbound/dispatch-point-service.in-port';
 import { DispatchPointServiceOutPort } from '@/port/outbound/dispatch-point-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class DispatchPointService implements DispatchPointServiceInPort {
@@ -29,14 +29,14 @@ export class DispatchPointService implements DispatchPointServiceInPort {
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(DispatchPointResponseDto, dispatchPoints, classTransformDefaultOptions);
+    const response = plainToInstance(DispatchPointResponseDto, dispatchPoints);
 
     return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<DispatchPointResponseDto> {
     const dispatchPoint = await this.dispatchPointServiceOutPort.findById(id);
-    return plainToInstance(DispatchPointResponseDto, dispatchPoint, classTransformDefaultOptions);
+    return plainToInstance(DispatchPointResponseDto, dispatchPoint);
   }
 
   async create(createDispatchPoint: CreateDispatchPointDto): Promise<void> {

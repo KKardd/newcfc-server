@@ -42,7 +42,7 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
     // 각 근무 내역에 대해 차량과 기사 정보를 별도로 조회
     const responseDtos = await Promise.all(
       workHistories.map(async (workHistory) => {
-        const dto = plainToInstance(WorkHistoryResponseDto, workHistory, classTransformDefaultOptions);
+        const dto = plainToInstance(WorkHistoryResponseDto, workHistory);
 
         // 기사 정보 조회
         if (workHistory.chauffeurId) {
@@ -57,7 +57,6 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
                   phone: chauffeur.phone,
                   type: chauffeur.type,
                 },
-                classTransformDefaultOptions,
               );
               dto.chauffeurName = chauffeur.name;
               dto.chauffeurPhone = chauffeur.phone;
@@ -81,7 +80,6 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
                   modelName: vehicle.modelName,
                   vehicleStatus: vehicle.vehicleStatus,
                 },
-                classTransformDefaultOptions,
               );
               dto.vehicleNumber = vehicle.vehicleNumber;
             }
@@ -100,7 +98,7 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
 
   async detail(id: number): Promise<WorkHistoryResponseDto> {
     const workHistory = await this.workHistoryRepository.findById(id);
-    return plainToInstance(WorkHistoryResponseDto, workHistory, classTransformDefaultOptions);
+    return plainToInstance(WorkHistoryResponseDto, workHistory);
   }
 
   async create(createWorkHistory: CreateWorkHistoryDto): Promise<void> {
@@ -190,5 +188,7 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
       totalMinutes,
       status: DataStatus.COMPLETED,
     });
-  }
+
+}
+
 }

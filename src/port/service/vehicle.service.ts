@@ -14,7 +14,7 @@ import { VehicleServiceInPort } from '@/port/inbound/vehicle-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {  } from '@/validate/serialization';
 
 @Injectable()
 export class VehicleService implements VehicleServiceInPort {
@@ -34,7 +34,7 @@ export class VehicleService implements VehicleServiceInPort {
 
     // 차량 정보를 DTO로 변환 (Repository에서 leftJoinAndMapOne으로 매핑된 정보 사용)
     const vehicleResponseDtos = vehicles.map((vehicle: any) => {
-      const vehicleDto = plainToInstance(VehicleResponseDto, vehicle, classTransformDefaultOptions);
+      const vehicleDto = plainToInstance(VehicleResponseDto, vehicle);
 
       // Repository에서 leftJoinAndMapOne으로 매핑된 chauffeur 정보 사용
       vehicleDto.assigned = !!vehicle.chauffeur;
@@ -59,7 +59,6 @@ export class VehicleService implements VehicleServiceInPort {
             updatedBy: vehicle.chauffeur.updatedBy,
             updatedAt: vehicle.chauffeur.updatedAt,
           },
-          classTransformDefaultOptions,
         );
       }
 
@@ -78,7 +77,6 @@ export class VehicleService implements VehicleServiceInPort {
             updatedBy: vehicle.garage.updatedBy,
             updatedAt: vehicle.garage.updatedAt,
           },
-          classTransformDefaultOptions,
         );
       }
 
@@ -92,7 +90,7 @@ export class VehicleService implements VehicleServiceInPort {
     const vehicle = await this.vehicleServiceOutPort.findById(id);
     if (!vehicle) throw new Error('차량을 찾을 수 없습니다.');
 
-    const vehicleDto = plainToInstance(VehicleResponseDto, vehicle, classTransformDefaultOptions);
+    const vehicleDto = plainToInstance(VehicleResponseDto, vehicle);
 
     // 해당 차량에 배정된 기사가 있는지 확인
     const chauffeurs = await this.chauffeurServiceOutPort.findByVehicleId(vehicle.id);
@@ -120,7 +118,6 @@ export class VehicleService implements VehicleServiceInPort {
           updatedBy: chauffeur.updatedBy,
           updatedAt: chauffeur.updatedAt,
         },
-        classTransformDefaultOptions,
       );
     }
 
@@ -142,7 +139,6 @@ export class VehicleService implements VehicleServiceInPort {
               updatedBy: garage.updatedBy,
               updatedAt: garage.updatedAt,
             },
-            classTransformDefaultOptions,
           );
         }
       } catch (error) {

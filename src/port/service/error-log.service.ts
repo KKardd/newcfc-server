@@ -9,7 +9,7 @@ import { ErrorLogResponseDto } from '@/adapter/inbound/dto/response/errorlog/err
 import { ErrorLog } from '@/domain/entity/error-log.entity';
 import { ErrorLogServiceInPort } from '@/port/inbound/error-log-service.in-port';
 import { ErrorLogServiceOutPort } from '@/port/outbound/error-log-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class ErrorLogService implements ErrorLogServiceInPort {
@@ -26,7 +26,7 @@ export class ErrorLogService implements ErrorLogServiceInPort {
     const [errorLogs, totalCount] = await this.errorLogServiceOutPort.findAll(searchErrorLog, paginationQuery);
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const errorlogs = plainToInstance(ErrorLogResponseDto, errorLogs, classTransformDefaultOptions);
+    const errorlogs = plainToInstance(ErrorLogResponseDto, errorLogs);
 
     return new PaginationResponse(errorlogs, pagination);
   }

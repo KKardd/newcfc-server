@@ -10,6 +10,9 @@ import { RealTimeDispatch } from '@/domain/entity/real-time-dispatch.entity';
 import { Reservation } from '@/domain/entity/reservation.entity';
 import { Vehicle } from '@/domain/entity/vehicle.entity';
 import { WayPoint } from '@/domain/entity/way-point.entity';
+import { GarageModule } from '@/module/garage.module';
+import { NotificationModule } from '@/module/infrastructure/notification.module';
+import { VehicleModule } from '@/module/vehicle.module';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { OperationService } from '@/port/service/operation.service';
@@ -18,9 +21,6 @@ import { ChauffeurModule } from './chauffeur.module';
 import { RealTimeDispatchModule } from './real-time-dispatch.module';
 import { ReservationModule } from './reservation.module';
 import { WayPointModule } from './way-point.module';
-import { VehicleModule } from '@/module/vehicle.module';
-import { GarageModule } from '@/module/garage.module';
-import { NotificationModule } from './infrastructure/notification.module';
 
 @Module({
   imports: [

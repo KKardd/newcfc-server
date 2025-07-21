@@ -47,7 +47,7 @@ import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispat
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { WayPointServiceOutPort } from '@/port/outbound/way-point-service.out-port';
 import { WorkHistoryService } from '@/port/service/work-history.service';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class ChauffeurService implements ChauffeurServiceInPort {
@@ -77,50 +77,42 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     // 각 기사에 대해 관련 데이터를 조회하고 매핑
     const chauffeurDtos = await Promise.all(
       chauffeurs.map(async (chauffeur) => {
-        const chauffeurDto = plainToInstance(ChauffeurResponseDto, chauffeur, classTransformDefaultOptions);
+        const chauffeurDto = plainToInstance(ChauffeurResponseDto, chauffeur);
 
         // 차량 정보 조회
         if (chauffeur.vehicleId) {
           try {
             const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
             if (vehicle) {
-              chauffeurDto.vehicle = plainToInstance(
-                VehicleInfoDto,
-                {
-                  id: vehicle.id,
-                  vehicleNumber: vehicle.vehicleNumber,
-                  modelName: vehicle.modelName,
-                  garageId: vehicle.garageId,
-                  vehicleStatus: vehicle.vehicleStatus,
-                  status: vehicle.status,
-                  createdBy: vehicle.createdBy,
-                  createdAt: vehicle.createdAt,
-                  updatedBy: vehicle.updatedBy,
-                  updatedAt: vehicle.updatedAt,
-                },
-                classTransformDefaultOptions,
-              );
+              chauffeurDto.vehicle = plainToInstance(VehicleInfoDto, {
+                id: vehicle.id,
+                vehicleNumber: vehicle.vehicleNumber,
+                modelName: vehicle.modelName,
+                garageId: vehicle.garageId,
+                vehicleStatus: vehicle.vehicleStatus,
+                status: vehicle.status,
+                createdBy: vehicle.createdBy,
+                createdAt: vehicle.createdAt,
+                updatedBy: vehicle.updatedBy,
+                updatedAt: vehicle.updatedAt,
+              });
 
               // 차고지 정보 조회 (차량이 있는 경우)
               if (vehicle.garageId) {
                 try {
                   const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
                   if (garage) {
-                    chauffeurDto.garage = plainToInstance(
-                      GarageInfoDto,
-                      {
-                        id: garage.id,
-                        name: garage.name,
-                        address: garage.address,
-                        addressDetail: garage.detailAddress,
-                        status: garage.status,
-                        createdBy: garage.createdBy,
-                        createdAt: garage.createdAt,
-                        updatedBy: garage.updatedBy,
-                        updatedAt: garage.updatedAt,
-                      },
-                      classTransformDefaultOptions,
-                    );
+                    chauffeurDto.garage = plainToInstance(GarageInfoDto, {
+                      id: garage.id,
+                      name: garage.name,
+                      address: garage.address,
+                      addressDetail: garage.detailAddress,
+                      status: garage.status,
+                      createdBy: garage.createdBy,
+                      createdAt: garage.createdAt,
+                      updatedBy: garage.updatedBy,
+                      updatedAt: garage.updatedAt,
+                    });
                   }
                 } catch {
                   chauffeurDto.garage = null;
@@ -148,50 +140,42 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       throw new Error('삭제된 기사 정보는 조회할 수 없습니다.');
     }
 
-    const chauffeurDto = plainToInstance(ChauffeurResponseDto, chauffeur, classTransformDefaultOptions);
+    const chauffeurDto = plainToInstance(ChauffeurResponseDto, chauffeur);
 
     // 차량 정보 조회
     if (chauffeur.vehicleId) {
       try {
         const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
         if (vehicle) {
-          chauffeurDto.vehicle = plainToInstance(
-            VehicleInfoDto,
-            {
-              id: vehicle.id,
-              vehicleNumber: vehicle.vehicleNumber,
-              modelName: vehicle.modelName,
-              garageId: vehicle.garageId,
-              vehicleStatus: vehicle.vehicleStatus,
-              status: vehicle.status,
-              createdBy: vehicle.createdBy,
-              createdAt: vehicle.createdAt,
-              updatedBy: vehicle.updatedBy,
-              updatedAt: vehicle.updatedAt,
-            },
-            classTransformDefaultOptions,
-          );
+          chauffeurDto.vehicle = plainToInstance(VehicleInfoDto, {
+            id: vehicle.id,
+            vehicleNumber: vehicle.vehicleNumber,
+            modelName: vehicle.modelName,
+            garageId: vehicle.garageId,
+            vehicleStatus: vehicle.vehicleStatus,
+            status: vehicle.status,
+            createdBy: vehicle.createdBy,
+            createdAt: vehicle.createdAt,
+            updatedBy: vehicle.updatedBy,
+            updatedAt: vehicle.updatedAt,
+          });
 
           // 차고지 정보 조회 (차량이 있는 경우)
           if (vehicle.garageId) {
             try {
               const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
               if (garage) {
-                chauffeurDto.garage = plainToInstance(
-                  GarageInfoDto,
-                  {
-                    id: garage.id,
-                    name: garage.name,
-                    address: garage.address,
-                    addressDetail: garage.detailAddress,
-                    status: garage.status,
-                    createdBy: garage.createdBy,
-                    createdAt: garage.createdAt,
-                    updatedBy: garage.updatedBy,
-                    updatedAt: garage.updatedAt,
-                  },
-                  classTransformDefaultOptions,
-                );
+                chauffeurDto.garage = plainToInstance(GarageInfoDto, {
+                  id: garage.id,
+                  name: garage.name,
+                  address: garage.address,
+                  addressDetail: garage.detailAddress,
+                  status: garage.status,
+                  createdBy: garage.createdBy,
+                  createdAt: garage.createdAt,
+                  updatedBy: garage.updatedBy,
+                  updatedAt: garage.updatedAt,
+                });
               }
             } catch {
               chauffeurDto.garage = null;
@@ -345,7 +329,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   // 기사 전용 메서드들
   async getMyProfile(chauffeurId: number): Promise<ChauffeurProfileResponseDto> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
-    return plainToInstance(ChauffeurProfileResponseDto, chauffeur, classTransformDefaultOptions);
+    return plainToInstance(ChauffeurProfileResponseDto, chauffeur);
   }
 
   async getMyAssignedVehicle(chauffeurId: number): Promise<AssignedVehicleResponseDto | null> {
@@ -364,7 +348,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       return null;
     }
 
-    return plainToInstance(AssignedVehicleResponseDto, vehicle, classTransformDefaultOptions);
+    return plainToInstance(AssignedVehicleResponseDto, vehicle);
   }
 
   async getMyCurrentOperation(chauffeurId: number): Promise<CurrentOperationResponseDto | null> {
@@ -374,13 +358,13 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       return null;
     }
 
-    const response = plainToInstance(CurrentOperationResponseDto, currentOperation, classTransformDefaultOptions);
+    const response = plainToInstance(CurrentOperationResponseDto, currentOperation);
 
     // 예약 정보 조회 (일반 예약인 경우)
     if (currentOperation.type === OperationType.REGULAR) {
       try {
         const reservation = await this.reservationServiceInPort.detail(currentOperation.id);
-        response.reservation = plainToInstance(CurrentReservationDto, reservation, classTransformDefaultOptions);
+        response.reservation = plainToInstance(CurrentReservationDto, reservation);
       } catch {
         // 예약 정보가 없는 경우
         response.reservation = null;
@@ -423,7 +407,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         const wayPoints = await this.wayPointServiceInPort.search({ operationId: currentOperation.id }, wayPointPagination);
         const sortedWayPoints = wayPoints.data.sort((a, b) => a.order - b.order);
 
-        response.wayPoints = sortedWayPoints.map((wp) => plainToInstance(CurrentWayPointDto, wp, classTransformDefaultOptions));
+        response.wayPoints = sortedWayPoints.map((wp) => plainToInstance(CurrentWayPointDto, wp));
 
         // 현재 진행 중인 waypoint 식별
         response.currentWayPoint = await this.getCurrentWayPoint(chauffeurId, sortedWayPoints);
@@ -459,9 +443,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
       // startTime이 있는 경우: 진행 중이거나 미래 운행만 포함
       if (op.startTime) {
-        // 아직 시작하지 않은 미래 운행이거나, 
+        // 아직 시작하지 않은 미래 운행이거나,
         // 진행 중인 운행(endTime이 현재 시간 이후)인 경우 포함
-        return op.startTime > currentTime || (!op.endTime || op.endTime > currentTime);
+        return op.startTime > currentTime || !op.endTime || op.endTime > currentTime;
       }
 
       // startTime이 없는 경우: 아직 시작하지 않은 예약으로 간주
@@ -491,19 +475,15 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     const response = new NearestReservationResponseDto();
 
     // Operation 정보
-    response.operation = plainToInstance(
-      NextOperationDto,
-      {
-        id: nearestOperation.id,
-        type: nearestOperation.type,
-        startTime: nearestOperation.startTime,
-        endTime: nearestOperation.endTime,
-        minutesUntilStart: nearestOperation.startTime
-          ? Math.floor((nearestOperation.startTime.getTime() - currentTime.getTime()) / (1000 * 60))
-          : null,
-      },
-      classTransformDefaultOptions,
-    );
+    response.operation = plainToInstance(NextOperationDto, {
+      id: nearestOperation.id,
+      type: nearestOperation.type,
+      startTime: nearestOperation.startTime,
+      endTime: nearestOperation.endTime,
+      minutesUntilStart: nearestOperation.startTime
+        ? Math.floor((nearestOperation.startTime.getTime() - currentTime.getTime()) / (1000 * 60))
+        : null,
+    });
 
     // 예약 정보 조회 (모든 운행 타입에 대해 조회 시도)
     try {
@@ -517,7 +497,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       );
 
       if (reservations.data.length > 0) {
-        response.reservation = plainToInstance(NextReservationDto, reservations.data[0], classTransformDefaultOptions);
+        response.reservation = plainToInstance(NextReservationDto, reservations.data[0]);
       } else {
         response.reservation = null;
       }
@@ -532,9 +512,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       wayPointPagination.countPerPage = 100;
 
       const wayPoints = await this.wayPointServiceInPort.search({ operationId: nearestOperation.id }, wayPointPagination);
-      response.wayPoints = wayPoints.data
-        .sort((a, b) => a.order - b.order)
-        .map((wp) => plainToInstance(NextWayPointDto, wp, classTransformDefaultOptions));
+      response.wayPoints = wayPoints.data.sort((a, b) => a.order - b.order).map((wp) => plainToInstance(NextWayPointDto, wp));
     } catch {
       response.wayPoints = [];
     }
@@ -606,9 +584,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       response.hasWayPoints = wayPoints.data.length > 0;
 
       if (wayPoints.data.length > 0) {
-        response.wayPoints = wayPoints.data
-          .sort((a, b) => a.order - b.order)
-          .map((wp) => plainToInstance(WayPointInfo, wp, classTransformDefaultOptions));
+        response.wayPoints = wayPoints.data.sort((a, b) => a.order - b.order).map((wp) => plainToInstance(WayPointInfo, wp));
       }
     }
   }
@@ -805,22 +781,22 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         case ChauffeurStatus.MOVING_TO_DEPARTURE:
         case ChauffeurStatus.WAITING_FOR_PASSENGER:
           // 출발지로 이동 중이거나 고객 탑승 대기 중 → 첫 번째 waypoint
-          return plainToInstance(CurrentWayPointDto, sortedWayPoints[0], classTransformDefaultOptions);
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[0]);
 
         case ChauffeurStatus.IN_OPERATION:
           // 운행 중 → 다음 목적지 waypoint (아직 방문하지 않은 waypoint 중 첫 번째)
-          // chauffeurStatus가 없으면 아직 방문하지 않은 waypoint로 판정
-          const nextWayPoint = sortedWayPoints.find((wp: any) => !wp.chauffeurStatus);
+          // chauffeurStatus가 없거나 visitTime이 없으면 아직 방문하지 않은 waypoint로 판정
+          const nextWayPoint = sortedWayPoints.find((wp: any) => !wp.chauffeurStatus || !wp.visitTime);
           if (nextWayPoint) {
-            return plainToInstance(CurrentWayPointDto, nextWayPoint, classTransformDefaultOptions);
+            return plainToInstance(CurrentWayPointDto, nextWayPoint);
           }
           // 모든 waypoint를 방문했다면 마지막 waypoint
-          return plainToInstance(CurrentWayPointDto, sortedWayPoints[sortedWayPoints.length - 1], classTransformDefaultOptions);
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[sortedWayPoints.length - 1]);
 
         case ChauffeurStatus.WAITING_OPERATION:
           // 운행 대기 → 현재 위치한 waypoint (가장 최근에 방문한 waypoint)
-          // chauffeurStatus가 있으면 방문한 waypoint로 판정
-          const visitedWayPoints = sortedWayPoints.filter((wp: any) => wp.chauffeurStatus);
+          // chauffeurStatus가 있고 visitTime이 있는 waypoint들만 필터링
+          const visitedWayPoints = sortedWayPoints.filter((wp: any) => wp.chauffeurStatus && wp.visitTime);
           if (visitedWayPoints.length > 0) {
             // visitTime 기준으로 가장 최근 방문한 waypoint (실제 방문 시간이 기록된 것 우선)
             const latestVisited = visitedWayPoints.sort((a: any, b: any) => {
@@ -832,14 +808,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
               if (!a.visitTime && b.visitTime) return 1;
               return b.order - a.order; // visitTime이 둘 다 없으면 order 역순
             })[0];
-            return plainToInstance(CurrentWayPointDto, latestVisited, classTransformDefaultOptions);
+            return plainToInstance(CurrentWayPointDto, latestVisited);
           }
           // 방문한 waypoint가 없다면 첫 번째 waypoint
-          return plainToInstance(CurrentWayPointDto, sortedWayPoints[0], classTransformDefaultOptions);
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[0]);
 
         case ChauffeurStatus.OPERATION_COMPLETED:
           // 운행 완료 → 마지막 waypoint
-          return plainToInstance(CurrentWayPointDto, sortedWayPoints[sortedWayPoints.length - 1], classTransformDefaultOptions);
+          return plainToInstance(CurrentWayPointDto, sortedWayPoints[sortedWayPoints.length - 1]);
 
         default:
           // 기타 상태 → null
@@ -1064,14 +1040,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   async getMyLocation(chauffeurId: number): Promise<LocationResponseDto> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
     if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
-    return plainToInstance(
-      LocationResponseDto,
-      {
-        latitude: chauffeur.latitude,
-        longitude: chauffeur.longitude,
-      },
-      classTransformDefaultOptions,
-    );
+    return plainToInstance(LocationResponseDto, {
+      latitude: chauffeur.latitude,
+      longitude: chauffeur.longitude,
+    });
   }
 
   /**
@@ -1296,41 +1268,33 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   /**
    * 실시간 배차 정보를 쇼퍼앱용 간단한 waypoint 형태로 변환
    */
-  private createSimpleWayPointsForChauffeur(realTimeDispatch: any): CurrentWayPointDto[] {
+  private createSimpleWayPointsForChauffeur(realTimeDispatch: unknown): CurrentWayPointDto[] {
     const wayPoints: CurrentWayPointDto[] = [];
 
     // 1. 출발지 (항상 표시)
     wayPoints.push(
-      plainToInstance(
-        CurrentWayPointDto,
-        {
-          id: 0, // 임시 ID
-          name: (realTimeDispatch as any).departureName,
-          address: (realTimeDispatch as any).departureAddress,
-          addressDetail: (realTimeDispatch as any).departureAddressDetail,
-          order: 1,
-          visitTime: null,
-          chauffeurStatus: null,
-        },
-        classTransformDefaultOptions,
-      ),
+      plainToInstance(CurrentWayPointDto, {
+        id: 0, // 임시 ID
+        name: (realTimeDispatch as any).departureName,
+        address: (realTimeDispatch as any).departureAddress,
+        addressDetail: (realTimeDispatch as any).departureAddressDetail,
+        order: 1,
+        visitTime: null,
+        chauffeurStatus: null,
+      }),
     );
 
     // 2. 도착지 (항상 표시)
     wayPoints.push(
-      plainToInstance(
-        CurrentWayPointDto,
-        {
-          id: 0, // 임시 ID
-          name: (realTimeDispatch as any).destinationName,
-          address: (realTimeDispatch as any).destinationAddress,
-          addressDetail: (realTimeDispatch as any).destinationAddressDetail,
-          order: 2,
-          visitTime: null,
-          chauffeurStatus: null,
-        },
-        classTransformDefaultOptions,
-      ),
+      plainToInstance(CurrentWayPointDto, {
+        id: 0, // 임시 ID
+        name: (realTimeDispatch as any).destinationName,
+        address: (realTimeDispatch as any).destinationAddress,
+        addressDetail: (realTimeDispatch as any).destinationAddressDetail,
+        order: 2,
+        visitTime: null,
+        chauffeurStatus: null,
+      }),
     );
 
     return wayPoints;
@@ -1341,7 +1305,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
    */
   private async getCurrentWayPointForRealTimeDispatch(
     chauffeurId: number,
-    realTimeDispatch: any,
+    realTimeDispatch: unknown,
   ): Promise<CurrentWayPointDto | null> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
@@ -1355,36 +1319,28 @@ export class ChauffeurService implements ChauffeurServiceInPort {
         case ChauffeurStatus.WAITING_FOR_PASSENGER:
         case ChauffeurStatus.IN_OPERATION:
           // 출발지 정보 반환
-          return plainToInstance(
-            CurrentWayPointDto,
-            {
-              id: 0, // 임시 ID
-              name: (realTimeDispatch as any).departureName,
-              address: (realTimeDispatch as any).departureAddress,
-              addressDetail: (realTimeDispatch as any).departureAddressDetail,
-              order: 1,
-              visitTime: null,
-              chauffeurStatus: chauffeur.chauffeurStatus,
-            },
-            classTransformDefaultOptions,
-          );
+          return plainToInstance(CurrentWayPointDto, {
+            id: 0, // 임시 ID
+            name: (realTimeDispatch as any).departureName,
+            address: (realTimeDispatch as any).departureAddress,
+            addressDetail: (realTimeDispatch as any).departureAddressDetail,
+            order: 1,
+            visitTime: null,
+            chauffeurStatus: chauffeur.chauffeurStatus,
+          });
 
         case ChauffeurStatus.WAITING_OPERATION:
         case ChauffeurStatus.OPERATION_COMPLETED:
           // 도착지 정보 반환
-          return plainToInstance(
-            CurrentWayPointDto,
-            {
-              id: 0, // 임시 ID
-              name: (realTimeDispatch as any).destinationName,
-              address: (realTimeDispatch as any).destinationAddress,
-              addressDetail: (realTimeDispatch as any).destinationAddressDetail,
-              order: 2,
-              visitTime: null,
-              chauffeurStatus: chauffeur.chauffeurStatus,
-            },
-            classTransformDefaultOptions,
-          );
+          return plainToInstance(CurrentWayPointDto, {
+            id: 0, // 임시 ID
+            name: (realTimeDispatch as any).destinationName,
+            address: (realTimeDispatch as any).destinationAddress,
+            addressDetail: (realTimeDispatch as any).destinationAddressDetail,
+            order: 2,
+            visitTime: null,
+            chauffeurStatus: chauffeur.chauffeurStatus,
+          });
 
         default:
           return null;

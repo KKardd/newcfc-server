@@ -11,10 +11,10 @@ import { ReservationResponseDto } from '@/adapter/inbound/dto/response/reservati
 import { Reservation } from '@/domain/entity/reservation.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
-import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
+import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { SafetyPhoneServiceOutPort } from '@/port/outbound/safety-phone-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
+import {} from '@/validate/serialization';
 
 @Injectable()
 export class ReservationService implements ReservationServiceInPort {
@@ -35,14 +35,14 @@ export class ReservationService implements ReservationServiceInPort {
     );
     const pagination = new Pagination({ totalCount, paginationQuery });
 
-    const response = plainToInstance(ReservationResponseDto, reservations, classTransformDefaultOptions);
+    const response = plainToInstance(ReservationResponseDto, reservations);
 
     return new PaginationResponse(response, pagination);
   }
 
   async detail(id: number): Promise<ReservationResponseDto> {
     const reservation = await this.reservationServiceOutPort.findById(id);
-    return plainToInstance(ReservationResponseDto, reservation, classTransformDefaultOptions);
+    return plainToInstance(ReservationResponseDto, reservation);
   }
 
   async create(createReservation: CreateReservationDto): Promise<void> {

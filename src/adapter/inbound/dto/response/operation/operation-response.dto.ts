@@ -1,13 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Expose, Transform } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
-import { DataStatus } from '@/domain/enum/data-status.enum';
-import { OperationType } from '@/domain/enum/operation-type.enum';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
+import { DataStatus } from '@/domain/enum/data-status.enum';
+import { OperationType } from '@/domain/enum/operation-type.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
+import { KSTDateTransform } from '@/validate/serialization';
 
 export class ChauffeurInfoDto {
   @ApiProperty({ description: '기사 ID' })
@@ -348,10 +349,12 @@ export class OperationResponseDto {
 
   @ApiProperty({ description: '시작 시간', required: false })
   @Expose()
+  @KSTDateTransform
   startTime: Date | null;
 
   @ApiProperty({ description: '종료 시간', required: false })
   @Expose()
+  @KSTDateTransform
   endTime: Date | null;
 
   @ApiProperty({ description: '이동 거리(km)', required: false })
@@ -444,5 +447,5 @@ export class OperationResponseDto {
 
   @ApiProperty({ description: '카카오 경로 정보', required: false })
   @Expose()
-  kakaoPath?: any;
+  kakaoPath?: unknown;
 }

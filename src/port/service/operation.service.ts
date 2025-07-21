@@ -26,12 +26,12 @@ import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
+import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
+import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
-import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
-import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
-import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
+import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
 // 관리자용 운행 상세 응답 DTO
@@ -50,9 +50,9 @@ export class AdminOperationDetailResponseDto {
   realTimeDispatchId: number | null;
   managerName: string | null;
   managerNumber: string | null;
-  additionalCosts: any | null;
+  additionalCosts: unknown | null;
   receiptImageUrls: string[] | null;
-  kakaoPath: any | null;
+  kakaoPath: unknown | null;
   status: DataStatus;
   createdBy: number;
   createdAt: Date;
@@ -60,11 +60,11 @@ export class AdminOperationDetailResponseDto {
   updatedAt: Date;
 
   // 관련 엔티티 정보
-  chauffeur: any | null;
-  vehicle: any | null;
-  garage: any | null;
-  realTimeDispatch: any | null;
-  reservation: any | null;
+  chauffeur: unknown | null;
+  vehicle: unknown | null;
+  garage: unknown | null;
+  realTimeDispatch: unknown | null;
+  reservation: unknown | null;
 
   // 진행상태가 포함된 waypoints
   wayPoints: AdminWayPointDto[];
@@ -79,7 +79,7 @@ export class AdminWayPointDto {
   visitTime: Date | null;
   scheduledTime: Date | null;
   chauffeurStatus: ChauffeurStatus | null;
-  progressStatus: 'COMPLETED' | 'IN_PROGRESS' | 'WAITING' | 'PENDING';
+  progressStatus: string;
   progressLabel: string;
   progressLabelStatus: ChauffeurStatus | null;
 
@@ -121,36 +121,32 @@ export class OperationService implements OperationServiceInPort {
     // 각 운행에 대해 관련 데이터를 조회하고 매핑
     const operationDtos = await Promise.all(
       operations.map(async (operation) => {
-        const operationDto = plainToInstance(OperationResponseDto, operation, classTransformDefaultOptions);
+        const operationDto = plainToInstance(OperationResponseDto, operation);
 
         // 기사 정보 조회
         if (operation.chauffeurId) {
           try {
             const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
             if (chauffeur) {
-              operationDto.chauffeur = plainToInstance(
-                ChauffeurInfoDto,
-                {
-                  id: chauffeur.id,
-                  name: chauffeur.name,
-                  phone: chauffeur.phone,
-                  birthDate: chauffeur.birthDate,
-                  profileImageUrl: chauffeur.profileImageUrl,
-                  type: chauffeur.type,
-                  isVehicleAssigned: chauffeur.isVehicleAssigned,
-                  chauffeurStatus: chauffeur.chauffeurStatus,
-                  vehicleId: chauffeur.vehicleId,
-                  role: chauffeur.role,
-                  status: chauffeur.status,
-                  createdBy: chauffeur.createdBy,
-                  createdAt: chauffeur.createdAt,
-                  updatedBy: chauffeur.updatedBy,
-                  updatedAt: chauffeur.updatedAt,
-                },
-                classTransformDefaultOptions,
-              );
+              operationDto.chauffeur = plainToInstance(ChauffeurInfoDto, {
+                id: chauffeur.id,
+                name: chauffeur.name,
+                phone: chauffeur.phone,
+                birthDate: chauffeur.birthDate,
+                profileImageUrl: chauffeur.profileImageUrl,
+                type: chauffeur.type,
+                isVehicleAssigned: chauffeur.isVehicleAssigned,
+                chauffeurStatus: chauffeur.chauffeurStatus,
+                vehicleId: chauffeur.vehicleId,
+                role: chauffeur.role,
+                status: chauffeur.status,
+                createdBy: chauffeur.createdBy,
+                createdAt: chauffeur.createdAt,
+                updatedBy: chauffeur.updatedBy,
+                updatedAt: chauffeur.updatedAt,
+              });
             }
-          } catch (error) {
+          } catch {
             // 기사 정보를 찾을 수 없는 경우
             operationDto.chauffeur = null;
           }
@@ -161,50 +157,42 @@ export class OperationService implements OperationServiceInPort {
           try {
             const vehicle = await this.vehicleServiceOutPort.findById(operation.vehicleId);
             if (vehicle) {
-              operationDto.vehicle = plainToInstance(
-                VehicleInfoDto,
-                {
-                  id: vehicle.id,
-                  vehicleNumber: vehicle.vehicleNumber,
-                  modelName: vehicle.modelName,
-                  garageId: vehicle.garageId,
-                  vehicleStatus: vehicle.vehicleStatus,
-                  status: vehicle.status,
-                  createdBy: vehicle.createdBy,
-                  createdAt: vehicle.createdAt,
-                  updatedBy: vehicle.updatedBy,
-                  updatedAt: vehicle.updatedAt,
-                },
-                classTransformDefaultOptions,
-              );
+              operationDto.vehicle = plainToInstance(VehicleInfoDto, {
+                id: vehicle.id,
+                vehicleNumber: vehicle.vehicleNumber,
+                modelName: vehicle.modelName,
+                garageId: vehicle.garageId,
+                vehicleStatus: vehicle.vehicleStatus,
+                status: vehicle.status,
+                createdBy: vehicle.createdBy,
+                createdAt: vehicle.createdAt,
+                updatedBy: vehicle.updatedBy,
+                updatedAt: vehicle.updatedAt,
+              });
 
               // 차고지 정보 조회
               if (vehicle.garageId) {
                 try {
                   const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
                   if (garage) {
-                    operationDto.garage = plainToInstance(
-                      GarageInfoDto,
-                      {
-                        id: garage.id,
-                        name: garage.name,
-                        address: garage.address,
-                        addressDetail: garage.detailAddress,
-                        status: garage.status,
-                        createdBy: garage.createdBy,
-                        createdAt: garage.createdAt,
-                        updatedBy: garage.updatedBy,
-                        updatedAt: garage.updatedAt,
-                      },
-                      classTransformDefaultOptions,
-                    );
+                    operationDto.garage = plainToInstance(GarageInfoDto, {
+                      id: garage.id,
+                      name: garage.name,
+                      address: garage.address,
+                      addressDetail: garage.detailAddress,
+                      status: garage.status,
+                      createdBy: garage.createdBy,
+                      createdAt: garage.createdAt,
+                      updatedBy: garage.updatedBy,
+                      updatedAt: garage.updatedAt,
+                    });
                   }
-                } catch (error) {
+                } catch {
                   operationDto.garage = null;
                 }
               }
             }
-          } catch (error) {
+          } catch {
             operationDto.vehicle = null;
           }
         }
@@ -214,26 +202,22 @@ export class OperationService implements OperationServiceInPort {
           try {
             const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(operation.realTimeDispatchId);
             if (realTimeDispatch) {
-              operationDto.realTimeDispatch = plainToInstance(
-                RealTimeDispatchInfoDto,
-                {
-                  id: realTimeDispatch.id,
-                  departureName: realTimeDispatch.departureName,
-                  departureAddress: realTimeDispatch.departureAddress,
-                  departureAddressDetail: realTimeDispatch.departureAddressDetail,
-                  destinationName: realTimeDispatch.destinationName,
-                  destinationAddress: realTimeDispatch.destinationAddress,
-                  destinationAddressDetail: realTimeDispatch.destinationAddressDetail,
-                  status: realTimeDispatch.status,
-                  createdBy: realTimeDispatch.createdBy,
-                  createdAt: realTimeDispatch.createdAt,
-                  updatedBy: realTimeDispatch.updatedBy,
-                  updatedAt: realTimeDispatch.updatedAt,
-                },
-                classTransformDefaultOptions,
-              );
+              operationDto.realTimeDispatch = plainToInstance(RealTimeDispatchInfoDto, {
+                id: realTimeDispatch.id,
+                departureName: realTimeDispatch.departureName,
+                departureAddress: realTimeDispatch.departureAddress,
+                departureAddressDetail: realTimeDispatch.departureAddressDetail,
+                destinationName: realTimeDispatch.destinationName,
+                destinationAddress: realTimeDispatch.destinationAddress,
+                destinationAddressDetail: realTimeDispatch.destinationAddressDetail,
+                status: realTimeDispatch.status,
+                createdBy: realTimeDispatch.createdBy,
+                createdAt: realTimeDispatch.createdAt,
+                updatedBy: realTimeDispatch.updatedBy,
+                updatedAt: realTimeDispatch.updatedAt,
+              });
             }
-          } catch (error) {
+          } catch {
             operationDto.realTimeDispatch = null;
           }
         }
@@ -252,27 +236,23 @@ export class OperationService implements OperationServiceInPort {
 
           if (reservations.length > 0) {
             const reservation = reservations[0];
-            operationDto.reservation = plainToInstance(
-              ReservationInfoDto,
-              {
-                id: reservation.id,
-                operationId: reservation.operationId,
-                passengerName: reservation.passengerName,
-                passengerPhone: reservation.passengerPhone,
-                passengerEmail: reservation.passengerEmail,
-                passengerCount: reservation.passengerCount,
-                safetyPhone: reservation.safetyPhone,
-                memo: reservation.memo,
-                status: reservation.status,
-                createdBy: reservation.createdBy,
-                createdAt: reservation.createdAt,
-                updatedBy: reservation.updatedBy,
-                updatedAt: reservation.updatedAt,
-              },
-              classTransformDefaultOptions,
-            );
+            operationDto.reservation = plainToInstance(ReservationInfoDto, {
+              id: reservation.id,
+              operationId: reservation.operationId,
+              passengerName: reservation.passengerName,
+              passengerPhone: reservation.passengerPhone,
+              passengerEmail: reservation.passengerEmail,
+              passengerCount: reservation.passengerCount,
+              safetyPhone: reservation.safetyPhone,
+              memo: reservation.memo,
+              status: reservation.status,
+              createdBy: reservation.createdBy,
+              createdAt: reservation.createdAt,
+              updatedBy: reservation.updatedBy,
+              updatedAt: reservation.updatedAt,
+            });
           }
-        } catch (error) {
+        } catch {
           operationDto.reservation = null;
         }
 
@@ -306,10 +286,9 @@ export class OperationService implements OperationServiceInPort {
                   updatedBy: wp.updatedBy,
                   updatedAt: wp.updatedAt,
                 },
-                classTransformDefaultOptions,
               ),
             );
-        } catch (error) {
+        } catch {
           operationDto.wayPoints = [];
         }
 
@@ -325,7 +304,7 @@ export class OperationService implements OperationServiceInPort {
     if (!operation) throw new Error('운행 정보를 찾을 수 없습니다.');
 
     // search 메서드와 동일한 로직으로 관련 데이터 조회 및 매핑
-    const operationDto = plainToInstance(OperationResponseDto, operation, classTransformDefaultOptions);
+    const operationDto = plainToInstance(OperationResponseDto, operation);
 
     // 기사, 차량, 실시간 배차, 예약, 경유지 정보 매핑 (위와 동일한 로직을 반복)
     // 기사 정보 조회
@@ -333,29 +312,25 @@ export class OperationService implements OperationServiceInPort {
       try {
         const chauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
         if (chauffeur) {
-          operationDto.chauffeur = plainToInstance(
-            ChauffeurInfoDto,
-            {
-              id: chauffeur.id,
-              name: chauffeur.name,
-              phone: chauffeur.phone,
-              birthDate: chauffeur.birthDate,
-              profileImageUrl: chauffeur.profileImageUrl,
-              type: chauffeur.type,
-              isVehicleAssigned: chauffeur.isVehicleAssigned,
-              chauffeurStatus: chauffeur.chauffeurStatus,
-              vehicleId: chauffeur.vehicleId,
-              role: chauffeur.role,
-              status: chauffeur.status,
-              createdBy: chauffeur.createdBy,
-              createdAt: chauffeur.createdAt,
-              updatedBy: chauffeur.updatedBy,
-              updatedAt: chauffeur.updatedAt,
-            },
-            classTransformDefaultOptions,
-          );
+          operationDto.chauffeur = plainToInstance(ChauffeurInfoDto, {
+            id: chauffeur.id,
+            name: chauffeur.name,
+            phone: chauffeur.phone,
+            birthDate: chauffeur.birthDate,
+            profileImageUrl: chauffeur.profileImageUrl,
+            type: chauffeur.type,
+            isVehicleAssigned: chauffeur.isVehicleAssigned,
+            chauffeurStatus: chauffeur.chauffeurStatus,
+            vehicleId: chauffeur.vehicleId,
+            role: chauffeur.role,
+            status: chauffeur.status,
+            createdBy: chauffeur.createdBy,
+            createdAt: chauffeur.createdAt,
+            updatedBy: chauffeur.updatedBy,
+            updatedAt: chauffeur.updatedAt,
+          });
         }
-      } catch (error) {
+      } catch {
         // 기사 정보를 찾을 수 없는 경우
         operationDto.chauffeur = null;
       }
@@ -366,50 +341,42 @@ export class OperationService implements OperationServiceInPort {
       try {
         const vehicle = await this.vehicleServiceOutPort.findById(operation.vehicleId);
         if (vehicle) {
-          operationDto.vehicle = plainToInstance(
-            VehicleInfoDto,
-            {
-              id: vehicle.id,
-              vehicleNumber: vehicle.vehicleNumber,
-              modelName: vehicle.modelName,
-              garageId: vehicle.garageId,
-              vehicleStatus: vehicle.vehicleStatus,
-              status: vehicle.status,
-              createdBy: vehicle.createdBy,
-              createdAt: vehicle.createdAt,
-              updatedBy: vehicle.updatedBy,
-              updatedAt: vehicle.updatedAt,
-            },
-            classTransformDefaultOptions,
-          );
+          operationDto.vehicle = plainToInstance(VehicleInfoDto, {
+            id: vehicle.id,
+            vehicleNumber: vehicle.vehicleNumber,
+            modelName: vehicle.modelName,
+            garageId: vehicle.garageId,
+            vehicleStatus: vehicle.vehicleStatus,
+            status: vehicle.status,
+            createdBy: vehicle.createdBy,
+            createdAt: vehicle.createdAt,
+            updatedBy: vehicle.updatedBy,
+            updatedAt: vehicle.updatedAt,
+          });
 
           // 차고지 정보 조회
           if (vehicle.garageId) {
             try {
               const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
               if (garage) {
-                operationDto.garage = plainToInstance(
-                  GarageInfoDto,
-                  {
-                    id: garage.id,
-                    name: garage.name,
-                    address: garage.address,
-                    addressDetail: garage.detailAddress,
-                    status: garage.status,
-                    createdBy: garage.createdBy,
-                    createdAt: garage.createdAt,
-                    updatedBy: garage.updatedBy,
-                    updatedAt: garage.updatedAt,
-                  },
-                  classTransformDefaultOptions,
-                );
+                operationDto.garage = plainToInstance(GarageInfoDto, {
+                  id: garage.id,
+                  name: garage.name,
+                  address: garage.address,
+                  addressDetail: garage.detailAddress,
+                  status: garage.status,
+                  createdBy: garage.createdBy,
+                  createdAt: garage.createdAt,
+                  updatedBy: garage.updatedBy,
+                  updatedAt: garage.updatedAt,
+                });
               }
-            } catch (error) {
+            } catch {
               operationDto.garage = null;
             }
           }
         }
-      } catch (error) {
+      } catch {
         operationDto.vehicle = null;
       }
     }
@@ -419,26 +386,22 @@ export class OperationService implements OperationServiceInPort {
       try {
         const realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(operation.realTimeDispatchId);
         if (realTimeDispatch) {
-          operationDto.realTimeDispatch = plainToInstance(
-            RealTimeDispatchInfoDto,
-            {
-              id: realTimeDispatch.id,
-              departureName: realTimeDispatch.departureName,
-              departureAddress: realTimeDispatch.departureAddress,
-              departureAddressDetail: realTimeDispatch.departureAddressDetail,
-              destinationName: realTimeDispatch.destinationName,
-              destinationAddress: realTimeDispatch.destinationAddress,
-              destinationAddressDetail: realTimeDispatch.destinationAddressDetail,
-              status: realTimeDispatch.status,
-              createdBy: realTimeDispatch.createdBy,
-              createdAt: realTimeDispatch.createdAt,
-              updatedBy: realTimeDispatch.updatedBy,
-              updatedAt: realTimeDispatch.updatedAt,
-            },
-            classTransformDefaultOptions,
-          );
+          operationDto.realTimeDispatch = plainToInstance(RealTimeDispatchInfoDto, {
+            id: realTimeDispatch.id,
+            departureName: realTimeDispatch.departureName,
+            departureAddress: realTimeDispatch.departureAddress,
+            departureAddressDetail: realTimeDispatch.departureAddressDetail,
+            destinationName: realTimeDispatch.destinationName,
+            destinationAddress: realTimeDispatch.destinationAddress,
+            destinationAddressDetail: realTimeDispatch.destinationAddressDetail,
+            status: realTimeDispatch.status,
+            createdBy: realTimeDispatch.createdBy,
+            createdAt: realTimeDispatch.createdAt,
+            updatedBy: realTimeDispatch.updatedBy,
+            updatedAt: realTimeDispatch.updatedAt,
+          });
         }
-      } catch (error) {
+      } catch {
         operationDto.realTimeDispatch = null;
       }
     }
@@ -457,27 +420,23 @@ export class OperationService implements OperationServiceInPort {
 
       if (reservations.length > 0) {
         const reservation = reservations[0];
-        operationDto.reservation = plainToInstance(
-          ReservationInfoDto,
-          {
-            id: reservation.id,
-            operationId: reservation.operationId,
-            passengerName: reservation.passengerName,
-            passengerPhone: reservation.passengerPhone,
-            passengerEmail: reservation.passengerEmail,
-            passengerCount: reservation.passengerCount,
-            safetyPhone: reservation.safetyPhone,
-            memo: reservation.memo,
-            status: reservation.status,
-            createdBy: reservation.createdBy,
-            createdAt: reservation.createdAt,
-            updatedBy: reservation.updatedBy,
-            updatedAt: reservation.updatedAt,
-          },
-          classTransformDefaultOptions,
-        );
+        operationDto.reservation = plainToInstance(ReservationInfoDto, {
+          id: reservation.id,
+          operationId: reservation.operationId,
+          passengerName: reservation.passengerName,
+          passengerPhone: reservation.passengerPhone,
+          passengerEmail: reservation.passengerEmail,
+          passengerCount: reservation.passengerCount,
+          safetyPhone: reservation.safetyPhone,
+          memo: reservation.memo,
+          status: reservation.status,
+          createdBy: reservation.createdBy,
+          createdAt: reservation.createdAt,
+          updatedBy: reservation.updatedBy,
+          updatedAt: reservation.updatedAt,
+        });
       }
-    } catch (error) {
+    } catch {
       operationDto.reservation = null;
     }
 
@@ -511,10 +470,9 @@ export class OperationService implements OperationServiceInPort {
               updatedBy: wp.updatedBy,
               updatedAt: wp.updatedAt,
             },
-            classTransformDefaultOptions,
           ),
         );
-    } catch (error) {
+    } catch {
       operationDto.wayPoints = [];
     }
 
@@ -537,9 +495,9 @@ export class OperationService implements OperationServiceInPort {
     response.endTime = operationDetail.endTime;
     response.distance = operationDetail.distance;
     response.chauffeurId = operationDetail.chauffeurId;
-    response.chauffeurName = (operationDetail as any).chauffeurName;
-    response.chauffeurPhone = (operationDetail as any).chauffeurPhone;
-    response.passengerCount = (operationDetail as any).passengerCount;
+    response.chauffeurName = (operationDetail as any)?.chauffeurName || null;
+    response.chauffeurPhone = (operationDetail as any)?.chauffeurPhone || null;
+    response.passengerCount = (operationDetail as any)?.passengerCount || null;
     response.vehicleId = operationDetail.vehicleId;
     response.realTimeDispatchId = operationDetail.realTimeDispatchId;
     response.managerName = operationDetail.managerName;
@@ -558,7 +516,7 @@ export class OperationService implements OperationServiceInPort {
     if (operationDetail.chauffeurId) {
       try {
         response.chauffeur = await this.chauffeurServiceOutPort.findById(operationDetail.chauffeurId);
-      } catch (error) {
+      } catch {
         response.chauffeur = null;
       }
     } else {
@@ -569,7 +527,7 @@ export class OperationService implements OperationServiceInPort {
     if (operationDetail.vehicleId) {
       try {
         response.vehicle = await this.vehicleServiceOutPort.findById(operationDetail.vehicleId);
-      } catch (error) {
+      } catch {
         response.vehicle = null;
       }
     } else {
@@ -577,10 +535,10 @@ export class OperationService implements OperationServiceInPort {
     }
 
     // 3. 차고지 정보 조회 (차량이 있는 경우)
-    if (response.vehicle?.garageId) {
+    if ((response.vehicle as any)?.garageId) {
       try {
-        response.garage = await this.garageServiceOutPort.findById(response.vehicle.garageId);
-      } catch (error) {
+        response.garage = await this.garageServiceOutPort.findById((response.vehicle as any).garageId);
+      } catch {
         response.garage = null;
       }
     } else {
@@ -591,7 +549,7 @@ export class OperationService implements OperationServiceInPort {
     if (operationDetail.realTimeDispatchId) {
       try {
         response.realTimeDispatch = await this.realTimeDispatchServiceOutPort.findById(operationDetail.realTimeDispatchId);
-      } catch (error) {
+      } catch {
         response.realTimeDispatch = null;
       }
     } else {
@@ -601,7 +559,7 @@ export class OperationService implements OperationServiceInPort {
     // 5. 예약 정보 조회
     try {
       response.reservation = await this.reservationServiceOutPort.findByOperationId(operationDetail.id);
-    } catch (error) {
+    } catch {
       response.reservation = null;
     }
 
@@ -620,8 +578,10 @@ export class OperationService implements OperationServiceInPort {
       const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId: operationDetail.id }, wayPointPagination);
 
       const sortedWayPoints = wayPointsResponse.data.sort((a: any, b: any) => a.order - b.order);
-      response.wayPoints = sortedWayPoints.map((wp: any) => this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints));
-    } catch (error) {
+      response.wayPoints = sortedWayPoints.map((wp: unknown) =>
+        this.calculateWayPointProgress(wp, chauffeurStatus, sortedWayPoints),
+      );
+    } catch {
       response.wayPoints = [];
     }
 
@@ -646,115 +606,121 @@ export class OperationService implements OperationServiceInPort {
     adminWayPoint.scheduledTime = wayPoint.scheduledTime;
     adminWayPoint.chauffeurStatus = wayPoint.chauffeurStatus;
 
-    // 진행 상태 계산
-    if (wayPoint.chauffeurStatus && wayPoint.visitTime) {
-      // 방문 완료
-      adminWayPoint.progressStatus = 'COMPLETED';
-      const labelData = this.getProgressLabel(wayPoint.chauffeurStatus, 'COMPLETED');
-      adminWayPoint.progressLabel = labelData.label;
-      adminWayPoint.progressLabelStatus = labelData.status;
-    } else if (chauffeurStatus && this.isCurrentWayPoint(wayPoint, chauffeurStatus, allWayPoints)) {
-      // 현재 진행 중
-      adminWayPoint.progressStatus = 'IN_PROGRESS';
-      const labelData = this.getProgressLabel(chauffeurStatus, 'IN_PROGRESS');
-      adminWayPoint.progressLabel = labelData.label;
-      adminWayPoint.progressLabelStatus = labelData.status;
-    } else if (this.isWaitingWayPoint(wayPoint, allWayPoints)) {
-      // 대기 중
-      adminWayPoint.progressStatus = 'WAITING';
-      const labelData = this.getProgressLabel(null, 'WAITING');
-      adminWayPoint.progressLabel = labelData.label;
-      adminWayPoint.progressLabelStatus = labelData.status;
-    } else {
-      // 미정
-      adminWayPoint.progressStatus = 'PENDING';
-      const labelData = this.getProgressLabel(null, 'PENDING');
-      adminWayPoint.progressLabel = labelData.label;
-      adminWayPoint.progressLabelStatus = labelData.status;
-    }
+    // 전체 운행의 현재 상태에 따른 각 wayPoint별 진행 상태 계산
+    const progressData = this.calculateDetailedWayPointStatus(wayPoint, chauffeurStatus, allWayPoints);
+    adminWayPoint.progressStatus = progressData.status;
+    adminWayPoint.progressLabel = progressData.label;
+    adminWayPoint.progressLabelStatus = progressData.chauffeurStatus;
 
     return adminWayPoint;
   }
 
   /**
-   * 현재 진행 중인 waypoint인지 확인
+   * 상세한 wayPoint 진행 상태 계산
+   * 출발지이동 → 탑승대기 → 운행시작 → 운행종료 단계별로 표시
    */
-  private isCurrentWayPoint(wayPoint: any, chauffeurStatus: ChauffeurStatus, allWayPoints: any[]): boolean {
+  private calculateDetailedWayPointStatus(
+    wayPoint: any,
+    chauffeurStatus: ChauffeurStatus | null,
+    allWayPoints: any[],
+  ): { status: string; label: string; chauffeurStatus: ChauffeurStatus | null } {
+    const isFirstWayPoint = wayPoint?.order === 1;
+    const isLastWayPoint = wayPoint?.order === allWayPoints.length;
+    const hasVisited = wayPoint?.visitTime != null;
+
+    // 이미 방문 완료된 wayPoint
+    if (hasVisited) {
+      if (isLastWayPoint) {
+        return { status: 'COMPLETED', label: '운행종료', chauffeurStatus: wayPoint?.chauffeurStatus };
+      } else {
+        // 중간 wayPoint 방문 완료
+        return { status: 'COMPLETED', label: '완료', chauffeurStatus: wayPoint?.chauffeurStatus };
+      }
+    }
+
+    // 현재 진행 중인 상태에 따른 계산
+    if (!chauffeurStatus) {
+      return { status: 'PENDING', label: '대기', chauffeurStatus: null };
+    }
+
     switch (chauffeurStatus) {
       case ChauffeurStatus.MOVING_TO_DEPARTURE:
+        if (isFirstWayPoint) {
+          return { status: 'IN_PROGRESS', label: '출발지이동', chauffeurStatus: ChauffeurStatus.MOVING_TO_DEPARTURE };
+        }
+        return { status: 'PENDING', label: '대기', chauffeurStatus: null };
+
       case ChauffeurStatus.WAITING_FOR_PASSENGER:
-        return wayPoint.order === 1;
+        if (isFirstWayPoint) {
+          return { status: 'IN_PROGRESS', label: '탑승대기', chauffeurStatus: ChauffeurStatus.WAITING_FOR_PASSENGER };
+        }
+        return { status: 'PENDING', label: '대기', chauffeurStatus: null };
 
       case ChauffeurStatus.IN_OPERATION:
-        // 방문하지 않은 waypoint 중 첫 번째
-        const unvisitedWayPoints = allWayPoints.filter((wp) => !wp.chauffeurStatus || !wp.visitTime);
-        return unvisitedWayPoints.length > 0 && unvisitedWayPoints[0].id === wayPoint.id;
+        // 다음 방문할 wayPoint 찾기
+        const nextWayPoint = this.findNextWayPoint(allWayPoints);
+        if (nextWayPoint && (nextWayPoint as any)?.id === wayPoint?.id) {
+          return { status: 'IN_PROGRESS', label: '운행시작', chauffeurStatus: ChauffeurStatus.IN_OPERATION };
+        }
+        // 이미 방문한 wayPoint들 중에서 현재 위치
+        const currentWayPoint = this.findCurrentWayPointDuringOperation(wayPoint, allWayPoints);
+        if (currentWayPoint) {
+          return { status: 'IN_PROGRESS', label: '운행중', chauffeurStatus: ChauffeurStatus.IN_OPERATION };
+        }
+        return { status: 'PENDING', label: '대기', chauffeurStatus: null };
 
       case ChauffeurStatus.WAITING_OPERATION:
-        // 가장 최근에 방문한 waypoint
-        const visitedWayPoints = allWayPoints.filter((wp) => wp.chauffeurStatus && wp.visitTime);
-        if (visitedWayPoints.length > 0) {
-          const latest = visitedWayPoints.sort((a, b) => new Date(b.visitTime).getTime() - new Date(a.visitTime).getTime())[0];
-          return latest.id === wayPoint.id;
+        // 가장 최근에 방문한 wayPoint
+        const lastVisitedWayPoint = this.findLastVisitedWayPoint(allWayPoints);
+        if (lastVisitedWayPoint && (lastVisitedWayPoint as any)?.id === wayPoint?.id) {
+          if (isLastWayPoint) {
+            return { status: 'IN_PROGRESS', label: '운행종료 대기', chauffeurStatus: ChauffeurStatus.WAITING_OPERATION };
+          }
+          return { status: 'IN_PROGRESS', label: '운행대기', chauffeurStatus: ChauffeurStatus.WAITING_OPERATION };
         }
-        return false;
+        return { status: 'PENDING', label: '대기', chauffeurStatus: null };
 
       case ChauffeurStatus.OPERATION_COMPLETED:
-        return wayPoint.order === allWayPoints.length; // 마지막 waypoint
+        if (isLastWayPoint) {
+          return { status: 'COMPLETED', label: '운행종료', chauffeurStatus: ChauffeurStatus.OPERATION_COMPLETED };
+        }
+        return { status: 'COMPLETED', label: '완료', chauffeurStatus: wayPoint?.chauffeurStatus };
 
       default:
-        return false;
+        return { status: 'PENDING', label: '대기', chauffeurStatus: null };
     }
   }
 
   /**
-   * 대기 상태인 waypoint인지 확인
+   * 다음 방문할 wayPoint 찾기
    */
-  private isWaitingWayPoint(wayPoint: any, allWayPoints: any[]): boolean {
-    // 방문하지 않은 waypoint들 중에서 현재 진행 중이 아닌 것들
-    return !wayPoint.chauffeurStatus && !wayPoint.visitTime;
+  private findNextWayPoint(allWayPoints: any[]): any | null {
+    return allWayPoints.find((wp) => !(wp as any)?.visitTime) || null;
   }
 
   /**
-   * 진행 상태 라벨 생성
+   * 운행 중 현재 wayPoint인지 확인
    */
-  private getProgressLabel(
-    chauffeurStatus: ChauffeurStatus | null,
-    progressStatus: string,
-  ): { label: string; status: ChauffeurStatus | null } {
-    if (progressStatus === 'COMPLETED') {
-      switch (chauffeurStatus) {
-        case ChauffeurStatus.WAITING_FOR_PASSENGER:
-          return { label: '완료', status: ChauffeurStatus.WAITING_FOR_PASSENGER };
-        case ChauffeurStatus.IN_OPERATION:
-          return { label: '완료', status: ChauffeurStatus.IN_OPERATION };
-        case ChauffeurStatus.WAITING_OPERATION:
-          return { label: '완료', status: ChauffeurStatus.WAITING_OPERATION };
-        case ChauffeurStatus.OPERATION_COMPLETED:
-          return { label: '완료', status: ChauffeurStatus.OPERATION_COMPLETED };
-        default:
-          return { label: '완료', status: null };
-      }
-    } else if (progressStatus === 'IN_PROGRESS') {
-      switch (chauffeurStatus) {
-        case ChauffeurStatus.MOVING_TO_DEPARTURE:
-          return { label: '진행중', status: ChauffeurStatus.MOVING_TO_DEPARTURE };
-        case ChauffeurStatus.WAITING_FOR_PASSENGER:
-          return { label: '진행중', status: ChauffeurStatus.WAITING_FOR_PASSENGER };
-        case ChauffeurStatus.IN_OPERATION:
-          return { label: '진행중', status: ChauffeurStatus.IN_OPERATION };
-        case ChauffeurStatus.WAITING_OPERATION:
-          return { label: '진행중', status: ChauffeurStatus.WAITING_OPERATION };
-        case ChauffeurStatus.PENDING_RECEIPT_INPUT:
-          return { label: '진행중', status: ChauffeurStatus.PENDING_RECEIPT_INPUT };
-        default:
-          return { label: '진행중', status: null };
-      }
-    } else if (progressStatus === 'WAITING') {
-      return { label: '대기', status: null };
-    } else {
-      return { label: '미정', status: null };
+  private findCurrentWayPointDuringOperation(wayPoint: any, allWayPoints: any[]): boolean {
+    const visitedWayPoints = allWayPoints.filter((wp) => (wp as any)?.visitTime);
+    const unvisitedWayPoints = allWayPoints.filter((wp) => !(wp as any)?.visitTime);
+
+    // 미방문 wayPoint 중 첫 번째가 현재 진행 중인 wayPoint
+    if (unvisitedWayPoints.length > 0) {
+      return (unvisitedWayPoints[0] as any)?.id === wayPoint?.id;
     }
+    return false;
+  }
+
+  /**
+   * 가장 최근에 방문한 wayPoint 찾기
+   */
+  private findLastVisitedWayPoint(allWayPoints: any[]): any | null {
+    const visitedWayPoints = allWayPoints
+      .filter((wp) => (wp as any)?.visitTime)
+      .sort((a, b) => new Date((b as any)?.visitTime).getTime() - new Date((a as any)?.visitTime).getTime());
+
+    return visitedWayPoints.length > 0 ? visitedWayPoints[0] : null;
   }
 
   async create(createOperation: CreateOperationDto): Promise<void> {
@@ -943,16 +909,19 @@ export class OperationService implements OperationServiceInPort {
     console.log('Receipt Image URLs:', updateOperation.receiptImageUrls);
 
     // undefined 값 제거 (TypeORM이 undefined 값을 무시할 수 있음)
-    const filteredUpdate = Object.fromEntries(
-      Object.entries(updateOperation).filter(([_, value]) => value !== undefined)
-    );
-    
+    const filteredUpdate = Object.fromEntries(Object.entries(updateOperation).filter(([_, value]) => value !== undefined));
+
     console.log('Filtered Update Data:', JSON.stringify(filteredUpdate, null, 2));
 
     await this.operationServiceOutPort.update(id, filteredUpdate);
 
     // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
     await this.checkAndTransitionChauffeurStatus(id, updateOperation);
+
+    // wayPoints 수정이 포함된 경우 처리
+    if (updateOperation.wayPoints) {
+      await this.updateWayPointsWithOrderReordering(id, updateOperation.wayPoints);
+    }
   }
 
   async updateAdmin(id: number, updateOperation: any): Promise<void> {
@@ -1064,7 +1033,6 @@ export class OperationService implements OperationServiceInPort {
           ? `기사가 변경되었습니다. ${previousChauffeur.name} → ${newChauffeur.name}`
           : `기사가 배정되었습니다. ${newChauffeur.name}`,
       },
-      classTransformDefaultOptions,
     );
   }
 
@@ -1084,7 +1052,7 @@ export class OperationService implements OperationServiceInPort {
       // 새로 추가할 wayPoints의 order 값들 추출
       const newOrders = newWayPoints.map((wp) => wp.order).sort((a, b) => a - b);
 
-      for (const newWayPoint of newWayPoints) {
+      for (const newWayPoint of newWayPoints as any[]) {
         const targetOrder = newWayPoint.order;
 
         // 해당 order에 기존 wayPoint가 있는지 확인
@@ -1166,19 +1134,19 @@ export class OperationService implements OperationServiceInPort {
       console.log(`=== Auto transition chauffeur status ===`);
       console.log(`Operation ID: ${operationId}, Chauffeur ID: ${operation.chauffeurId}`);
       console.log(`Current chauffeur status: ${chauffeur.chauffeurStatus}`);
-      
+
       // 기사 상태를 OPERATION_COMPLETED로 자동 전환
       await this.chauffeurServiceOutPort.update(operation.chauffeurId, {
         chauffeurStatus: ChauffeurStatus.OPERATION_COMPLETED,
       });
-      
+
       console.log(`Chauffeur status updated to OPERATION_COMPLETED`);
-      
+
       // 운행 상태도 COMPLETED로 변경
       await this.operationServiceOutPort.update(operationId, {
         status: DataStatus.COMPLETED,
       });
-      
+
       console.log(`Operation status updated to COMPLETED`);
     } catch (error) {
       console.error('기사 상태 자동 전환 중 오류 발생:', error);

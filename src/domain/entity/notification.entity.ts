@@ -40,7 +40,7 @@ export class Notification extends BaseTimeEntity {
   @Index()
   isRead: boolean;
 
-  @Column({ name: 'read_at', type: 'datetime', nullable: true })
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt: Date | null;
 
   @Column({ name: 'fcm_message_id', type: 'varchar', length: 255, nullable: true })

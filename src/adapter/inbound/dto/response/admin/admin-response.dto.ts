@@ -6,7 +6,7 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 
 export class AdminResponseDto {
-  @ApiProperty({ description: '관리자 ID' })
+  @ApiProperty({ description: '관리자 IDD' })
   @Expose()
   id: number;
 

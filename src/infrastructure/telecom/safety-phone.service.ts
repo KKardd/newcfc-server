@@ -39,9 +39,7 @@ export class SafetyPhoneService implements SafetyPhoneServiceOutPort {
   }
 
   private generateAuth(data: string): string {
-    const secretKey = '2000';
-    const hashData = secretKey + data;
-    const md5Hash = createHash('md5').update(hashData).digest('base64');
+    const md5Hash = createHash('md5').update(data).digest('base64');
     return md5Hash;
   }
 }

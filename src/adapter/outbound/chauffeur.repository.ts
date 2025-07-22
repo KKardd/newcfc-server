@@ -101,13 +101,13 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       })
       .andWhere(
         `chauffeur.id NOT IN (
-          SELECT DISTINCT o.chauffeurId
-          FROM operations o
-          WHERE o.chauffeurId IS NOT NULL
+          SELECT DISTINCT o.chauffeur_id
+          FROM operation o
+          WHERE o.chauffeur_id IS NOT NULL
           AND o.status != :deletedStatus
           AND (
-            (o.startTime <= :endTime AND o.endTime >= :startTime)
-            OR (o.startTime IS NULL OR o.endTime IS NULL)
+            (o.start_time <= :endTime AND o.end_time >= :startTime)
+            OR (o.start_time IS NULL OR o.end_time IS NULL)
           )
         )`,
         {

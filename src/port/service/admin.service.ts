@@ -19,6 +19,7 @@ import { AdminServiceInPort } from '@/port/inbound/admin-service.in-port';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
 import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
+import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
 
@@ -29,6 +30,7 @@ export class AdminService implements AdminServiceInPort {
     private readonly chauffeurServiceInPort: ChauffeurServiceInPort,
     private readonly chauffeurServiceOutPort: ChauffeurServiceOutPort,
     private readonly vehicleServiceOutPort: VehicleServiceOutPort,
+    private readonly garageServiceOutPort: GarageServiceOutPort,
   ) {}
 
   async search(searchAdmin: SearchAdminDto, paginationQuery: PaginationQuery): Promise<PaginationResponse<AdminResponseDto>> {
@@ -78,10 +80,56 @@ export class AdminService implements AdminServiceInPort {
       this.vehicleServiceOutPort.findUnassignedVehicles(),
     ]);
 
+    // 3. 기사들의 vehicle, garage 정보를 별도로 조회해서 매핑
+    const enrichedChauffeurs = await this.enrichChauffeursWithVehicleAndGarage(availableChauffeurs);
+
     return plainToInstance(AvailableChauffeursResponseDto, {
-      availableChauffeurs,
+      availableChauffeurs: enrichedChauffeurs,
       unassignedVehicles,
     });
+  }
+
+  /**
+   * 기사들의 vehicle, garage 정보를 조회해서 매핑
+   */
+  private async enrichChauffeursWithVehicleAndGarage(chauffeurs: any[]): Promise<any[]> {
+    const enrichedChauffeurs = [];
+
+    for (const chauffeur of chauffeurs) {
+      const enrichedChauffeur = { ...chauffeur };
+
+      // vehicleId가 있으면 vehicle 정보 조회
+      if (chauffeur.vehicleId) {
+        try {
+          const vehicle = await this.vehicleServiceOutPort.findById(chauffeur.vehicleId);
+          enrichedChauffeur.vehicle = vehicle;
+
+          // vehicle에 garageId가 있으면 garage 정보도 조회
+          if (vehicle?.garageId) {
+            try {
+              const garage = await this.garageServiceOutPort.findById(vehicle.garageId);
+              enrichedChauffeur.garage = garage;
+            } catch (error) {
+              console.log(`Failed to find garage ${vehicle.garageId}:`, error);
+              enrichedChauffeur.garage = null;
+            }
+          } else {
+            enrichedChauffeur.garage = null;
+          }
+        } catch (error) {
+          console.log(`Failed to find vehicle ${chauffeur.vehicleId}:`, error);
+          enrichedChauffeur.vehicle = null;
+          enrichedChauffeur.garage = null;
+        }
+      } else {
+        enrichedChauffeur.vehicle = null;
+        enrichedChauffeur.garage = null;
+      }
+
+      enrichedChauffeurs.push(enrichedChauffeur);
+    }
+
+    return enrichedChauffeurs;
   }
 
   /**

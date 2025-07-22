@@ -90,8 +90,6 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   async findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<Chauffeur[]> {
     return await this.chauffeurRepository
       .createQueryBuilder('chauffeur')
-      .leftJoinAndSelect('chauffeur.vehicle', 'vehicle')
-      .leftJoinAndSelect('vehicle.garage', 'garage')
       .where('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
       .andWhere('chauffeur.type IN (:...types)', { types: [ChauffeurType.HOSPITAL, ChauffeurType.EVENT] })
       .andWhere('chauffeur.chauffeurStatus IN (:...availableStatuses)', {

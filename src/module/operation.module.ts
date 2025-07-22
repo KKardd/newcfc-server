@@ -20,6 +20,7 @@ import { OperationService } from '@/port/service/operation.service';
 import { ChauffeurModule } from './chauffeur.module';
 import { RealTimeDispatchModule } from './real-time-dispatch.module';
 import { ReservationModule } from './reservation.module';
+import { ScheduleModule } from './schedule.module';
 import { WayPointModule } from './way-point.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { WayPointModule } from './way-point.module';
     forwardRef(() => RealTimeDispatchModule),
     forwardRef(() => GarageModule),
     forwardRef(() => NotificationModule),
+    ScheduleModule,
   ],
   controllers: [OperationController],
   providers: [

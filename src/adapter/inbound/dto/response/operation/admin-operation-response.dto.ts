@@ -15,6 +15,41 @@ import {
   VehicleInfoDto,
 } from './operation-response.dto';
 
+// Schedule과 wayPoint 조합 정보를 위한 DTO
+export class ScheduleHistoryDto {
+  @ApiProperty({ description: 'wayPoint ID' })
+  @Expose()
+  id: number;
+
+  @ApiProperty({ description: 'wayPoint 이름', required: false })
+  @Expose()
+  name: string | null;
+
+  @ApiProperty({ description: 'wayPoint 주소', required: false })
+  @Expose()
+  address: string | null;
+
+  @ApiProperty({ description: 'wayPoint 상세주소', required: false })
+  @Expose()
+  addressDetail: string | null;
+
+  @ApiProperty({ description: 'wayPoint 순서' })
+  @Expose()
+  order: number;
+
+  @ApiProperty({ description: '방문 시간 (Schedule 기록 시간)' })
+  @Expose()
+  visitTime: Date;
+
+  @ApiProperty({ description: '예정 시간', required: false })
+  @Expose()
+  scheduledTime: Date | null;
+
+  @ApiProperty({ description: '진행 상태 라벨' })
+  @Expose()
+  progressLabelStatus: string;
+}
+
 export class AdminWayPointInfoDto {
   @ApiProperty({ description: '경유지 ID' })
   @Expose()
@@ -48,25 +83,25 @@ export class AdminWayPointInfoDto {
   @Expose()
   chauffeurStatus: ChauffeurStatus | null;
 
-  @ApiProperty({ 
-    description: '진행 상태', 
+  @ApiProperty({
+    description: '진행 상태',
     example: 'PENDING',
-    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED']
+    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
   })
   @Expose()
   progressStatus: string;
 
-  @ApiProperty({ 
-    description: '진행 상태 라벨 (한국어)', 
-    example: '출발지이동'
+  @ApiProperty({
+    description: '진행 상태 라벨 (한국어)',
+    example: '출발지이동',
   })
   @Expose()
   progressLabel: string;
 
-  @ApiProperty({ 
-    description: '진행 라벨 관련 기사 상태', 
-    enum: ChauffeurStatus, 
-    required: false 
+  @ApiProperty({
+    description: '진행 라벨 관련 기사 상태',
+    enum: ChauffeurStatus,
+    required: false,
   })
   @Expose()
   progressLabelStatus: ChauffeurStatus | null;
@@ -195,10 +230,17 @@ export class AdminOperationResponseDto {
   @Expose()
   reservation: ReservationInfoDto | null;
 
-  @ApiProperty({ 
-    description: '진행 상태가 포함된 경유지 목록', 
-    type: [AdminWayPointInfoDto] 
+  @ApiProperty({
+    description: '진행 상태가 포함된 경유지 목록',
+    type: [AdminWayPointInfoDto],
   })
   @Expose()
   wayPoints: AdminWayPointInfoDto[];
+
+  @ApiProperty({
+    description: '기사 상태 변경 기록',
+    type: [ScheduleHistoryDto],
+  })
+  @Expose()
+  schedules: ScheduleHistoryDto[];
 }

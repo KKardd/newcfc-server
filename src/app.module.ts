@@ -22,6 +22,7 @@ import { NoticeModule } from '@/module/notice.module';
 import { OperationModule } from '@/module/operation.module';
 import { RealTimeDispatchModule } from '@/module/real-time-dispatch.module';
 import { ReservationModule } from '@/module/reservation.module';
+import { ScheduleModule } from '@/module/schedule.module';
 import { TokenProviderModule } from '@/module/token-provider.module';
 import { VehicleModule } from '@/module/vehicle.module';
 import { WayPointModule } from '@/module/way-point.module';
@@ -71,6 +72,7 @@ const typeOrmModules = [
     WorkHistoryModule,
     FaqModule,
     NotificationHistoryModule,
+    ScheduleModule,
   ],
   controllers: [AppController],
 })

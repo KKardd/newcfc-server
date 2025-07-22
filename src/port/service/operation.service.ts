@@ -18,12 +18,14 @@ import {
   ReservationInfoDto,
   WayPointInfoDto,
 } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
+import { ScheduleResponseDto } from '@/adapter/inbound/dto/response/schedule/schedule-response.dto';
 import { Operation } from '@/domain/entity/operation.entity';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationType } from '@/domain/enum/operation-type.enum';
 import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
+import { ScheduleServiceInPort } from '@/port/inbound/schedule-service.in-port';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
@@ -33,65 +35,11 @@ import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispat
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
-
-// 관리자용 운행 상세 응답 DTO
-export class AdminOperationDetailResponseDto {
-  id: number;
-  type: OperationType;
-  isRepeated: boolean;
-  startTime: Date | null;
-  endTime: Date | null;
-  distance: number | null;
-  chauffeurId: number | null;
-  chauffeurName: string | null;
-  chauffeurPhone: string | null;
-  passengerCount: number | null;
-  vehicleId: number | null;
-  realTimeDispatchId: number | null;
-  managerName: string | null;
-  managerNumber: string | null;
-  additionalCosts: unknown | null;
-  receiptImageUrls: string[] | null;
-  kakaoPath: unknown | null;
-  status: DataStatus;
-  createdBy: number;
-  createdAt: Date;
-  updatedBy: number;
-  updatedAt: Date;
-
-  // 관련 엔티티 정보
-  chauffeur: unknown | null;
-  vehicle: unknown | null;
-  garage: unknown | null;
-  realTimeDispatch: unknown | null;
-  reservation: unknown | null;
-
-  // 진행상태가 포함된 waypoints
-  wayPoints: AdminWayPointDto[];
-}
-
-export class AdminWayPointDto {
-  id: number;
-  name: string | null;
-  address: string;
-  addressDetail: string | null;
-  order: number;
-  visitTime: Date | null;
-  scheduledTime: Date | null;
-  chauffeurStatus: ChauffeurStatus | null;
-  progressStatus: string;
-  progressLabel: string;
-  progressLabelStatus: ChauffeurStatus | null;
-
-  // date, time getter 추가
-  get date(): string | null {
-    return this.scheduledTime ? this.scheduledTime.toISOString().split('T')[0] : null;
-  }
-
-  get time(): string | null {
-    return this.scheduledTime ? this.scheduledTime.toTimeString().slice(0, 5) : null;
-  }
-}
+import {
+  AdminOperationResponseDto,
+  AdminWayPointInfoDto,
+  ScheduleHistoryDto,
+} from '@/adapter/inbound/dto/response/operation/admin-operation-response.dto';
 
 @Injectable()
 export class OperationService implements OperationServiceInPort {
@@ -105,6 +53,7 @@ export class OperationService implements OperationServiceInPort {
     private readonly wayPointServiceInPort: WayPointServiceInPort,
     private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
     private readonly notificationServiceOutPort: NotificationServiceOutPort,
+    private readonly scheduleServiceInPort: ScheduleServiceInPort,
   ) {}
 
   async search(
@@ -266,27 +215,24 @@ export class OperationService implements OperationServiceInPort {
           operationDto.wayPoints = wayPoints.data
             .sort((a, b) => a.order - b.order)
             .map((wp) =>
-              plainToInstance(
-                WayPointInfoDto,
-                {
-                  id: wp.id,
-                  operationId: wp.operationId,
-                  name: wp.name,
-                  address: wp.address,
-                  addressDetail: wp.addressDetail,
-                  chauffeurStatus: wp.chauffeurStatus,
-                  latitude: wp.latitude,
-                  longitude: wp.longitude,
-                  visitTime: wp.visitTime,
-                  scheduledTime: wp.scheduledTime,
-                  order: wp.order,
-                  status: wp.status,
-                  createdBy: wp.createdBy,
-                  createdAt: wp.createdAt,
-                  updatedBy: wp.updatedBy,
-                  updatedAt: wp.updatedAt,
-                },
-              ),
+              plainToInstance(WayPointInfoDto, {
+                id: wp.id,
+                operationId: wp.operationId,
+                name: wp.name,
+                address: wp.address,
+                addressDetail: wp.addressDetail,
+                chauffeurStatus: wp.chauffeurStatus,
+                latitude: wp.latitude,
+                longitude: wp.longitude,
+                visitTime: wp.visitTime,
+                scheduledTime: wp.scheduledTime,
+                order: wp.order,
+                status: wp.status,
+                createdBy: wp.createdBy,
+                createdAt: wp.createdAt,
+                updatedBy: wp.updatedBy,
+                updatedAt: wp.updatedAt,
+              }),
             );
         } catch {
           operationDto.wayPoints = [];
@@ -450,27 +396,24 @@ export class OperationService implements OperationServiceInPort {
       operationDto.wayPoints = wayPoints.data
         .sort((a, b) => a.order - b.order)
         .map((wp) =>
-          plainToInstance(
-            WayPointInfoDto,
-            {
-              id: wp.id,
-              operationId: wp.operationId,
-              name: wp.name,
-              address: wp.address,
-              addressDetail: wp.addressDetail,
-              chauffeurStatus: wp.chauffeurStatus,
-              latitude: wp.latitude,
-              longitude: wp.longitude,
-              visitTime: wp.visitTime,
-              scheduledTime: wp.scheduledTime,
-              order: wp.order,
-              status: wp.status,
-              createdBy: wp.createdBy,
-              createdAt: wp.createdAt,
-              updatedBy: wp.updatedBy,
-              updatedAt: wp.updatedAt,
-            },
-          ),
+          plainToInstance(WayPointInfoDto, {
+            id: wp.id,
+            operationId: wp.operationId,
+            name: wp.name,
+            address: wp.address,
+            addressDetail: wp.addressDetail,
+            chauffeurStatus: wp.chauffeurStatus,
+            latitude: wp.latitude,
+            longitude: wp.longitude,
+            visitTime: wp.visitTime,
+            scheduledTime: wp.scheduledTime,
+            order: wp.order,
+            status: wp.status,
+            createdBy: wp.createdBy,
+            createdAt: wp.createdAt,
+            updatedBy: wp.updatedBy,
+            updatedAt: wp.updatedAt,
+          }),
         );
     } catch {
       operationDto.wayPoints = [];
@@ -482,12 +425,12 @@ export class OperationService implements OperationServiceInPort {
   /**
    * 관리자용 운행 상세 조회 - waypoint 진행 상태 포함
    */
-  async getAdminOperationDetail(id: number): Promise<AdminOperationDetailResponseDto> {
+  async getAdminOperationDetail(id: number): Promise<AdminOperationResponseDto> {
     const operationDetail = await this.operationServiceOutPort.findByIdWithDetails(id);
     if (!operationDetail) throw new Error('운행 정보를 찾을 수 없습니다.');
 
     // 기본 응답 구성 (기존 OperationResponseDto와 동일한 정보)
-    const response = new AdminOperationDetailResponseDto();
+    const response = new AdminOperationResponseDto();
     response.id = operationDetail.id;
     response.type = operationDetail.type;
     response.isRepeated = operationDetail.isRepeated;
@@ -537,7 +480,22 @@ export class OperationService implements OperationServiceInPort {
     // 3. 차고지 정보 조회 (차량이 있는 경우)
     if ((response.vehicle as any)?.garageId) {
       try {
-        response.garage = await this.garageServiceOutPort.findById((response.vehicle as any).garageId);
+        const garage = await this.garageServiceOutPort.findById((response.vehicle as any).garageId);
+        if (garage) {
+          response.garage = plainToInstance(GarageInfoDto, {
+            id: garage.id,
+            name: garage.name,
+            address: garage.address,
+            addressDetail: garage.detailAddress,
+            status: garage.status,
+            createdBy: garage.createdBy,
+            createdAt: garage.createdAt,
+            updatedBy: garage.updatedBy,
+            updatedAt: garage.updatedAt,
+          });
+        } else {
+          response.garage = null;
+        }
       } catch {
         response.garage = null;
       }
@@ -563,13 +521,20 @@ export class OperationService implements OperationServiceInPort {
       response.reservation = null;
     }
 
+    // 6. Schedule 정보 조회 및 wayPoint와 조합
+    try {
+      response.schedules = await this.buildScheduleHistory(operationDetail.id);
+    } catch {
+      response.schedules = [];
+    }
+
     // 기사의 현재 상태 조회 (진행상태 계산을 위해)
     let chauffeurStatus: ChauffeurStatus | null = null;
     if (response.chauffeur) {
       chauffeurStatus = (response.chauffeur as any).chauffeurStatus;
     }
 
-    // 6. WayPoint 정보 조회 및 진행 상태 계산
+    // 7. WayPoint 정보 조회 및 진행 상태 계산
     try {
       const wayPointPagination = new PaginationQuery();
       wayPointPagination.page = 1;
@@ -595,8 +560,8 @@ export class OperationService implements OperationServiceInPort {
     wayPoint: any,
     chauffeurStatus: ChauffeurStatus | null,
     allWayPoints: any[],
-  ): AdminWayPointDto {
-    const adminWayPoint = new AdminWayPointDto();
+  ): AdminWayPointInfoDto {
+    const adminWayPoint = new AdminWayPointInfoDto();
     adminWayPoint.id = wayPoint.id;
     adminWayPoint.name = wayPoint.name;
     adminWayPoint.address = wayPoint.address;
@@ -1024,19 +989,16 @@ export class OperationService implements OperationServiceInPort {
     }
 
     // 6. 응답 생성
-    return plainToInstance(
-      AssignChauffeurResponseDto,
-      {
-        operationId: assignDto.operationId,
-        newChauffeurId: newChauffeur.id,
-        newChauffeurName: newChauffeur.name,
-        previousChauffeurId: previousChauffeur?.id || null,
-        previousChauffeurName: previousChauffeur?.name || null,
-        message: previousChauffeur
-          ? `기사가 변경되었습니다. ${previousChauffeur.name} → ${newChauffeur.name}`
-          : `기사가 배정되었습니다. ${newChauffeur.name}`,
-      },
-    );
+    return plainToInstance(AssignChauffeurResponseDto, {
+      operationId: assignDto.operationId,
+      newChauffeurId: newChauffeur.id,
+      newChauffeurName: newChauffeur.name,
+      previousChauffeurId: previousChauffeur?.id || null,
+      previousChauffeurName: previousChauffeur?.name || null,
+      message: previousChauffeur
+        ? `기사가 변경되었습니다. ${previousChauffeur.name} → ${newChauffeur.name}`
+        : `기사가 배정되었습니다. ${newChauffeur.name}`,
+    });
   }
 
   /**
@@ -1154,6 +1116,77 @@ export class OperationService implements OperationServiceInPort {
     } catch (error) {
       console.error('기사 상태 자동 전환 중 오류 발생:', error);
       // 에러가 발생해도 operation 업데이트는 성공했으므로 예외를 던지지 않음
+    }
+  }
+
+  /**
+   * Schedule 정보와 WayPoint 정보를 조합하여 운행 이력을 생성합니다.
+   */
+  private async buildScheduleHistory(operationId: number): Promise<ScheduleHistoryDto[]> {
+    const scheduleHistory: ScheduleHistoryDto[] = [];
+
+    try {
+      // 1. 해당 운행의 Schedule 기록들 조회
+      const schedules = await this.scheduleServiceInPort.findByOperationId(operationId);
+
+      // 2. 각 Schedule 기록에 대해 wayPoint 정보와 조합
+      for (const schedule of schedules) {
+        if (schedule.wayPointId) {
+          try {
+            // wayPoint 정보 조회
+            const wayPointPagination = new PaginationQuery();
+            wayPointPagination.page = 1;
+            wayPointPagination.countPerPage = 1;
+
+            const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId: operationId }, wayPointPagination);
+
+            // 해당 wayPoint 찾기
+            const wayPoint = wayPointsResponse.data.find((wp) => wp.id === schedule.wayPointId);
+
+            if (wayPoint) {
+              const historyItem = plainToInstance(ScheduleHistoryDto, {
+                id: wayPoint.id,
+                name: wayPoint.name,
+                address: wayPoint.address,
+                addressDetail: wayPoint.addressDetail,
+                order: wayPoint.order,
+                visitTime: schedule.recordedAt,
+                scheduledTime: wayPoint.scheduledTime,
+                progressLabelStatus: this.getProgressLabelFromStatus(schedule.chauffeurStatus),
+              });
+
+              scheduleHistory.push(historyItem);
+            }
+          } catch (error) {
+            console.error(`Failed to process schedule ${schedule.id}:`, error);
+          }
+        }
+      }
+
+      // 3. 기록 시간순으로 정렬
+      scheduleHistory.sort((a, b) => new Date(a.visitTime).getTime() - new Date(b.visitTime).getTime());
+    } catch (error) {
+      console.error('Failed to build schedule history:', error);
+    }
+
+    return scheduleHistory;
+  }
+
+  /**
+   * ChauffeurStatus를 기반으로 진행 상태 라벨을 생성합니다.
+   */
+  private getProgressLabelFromStatus(chauffeurStatus: ChauffeurStatus): string {
+    switch (chauffeurStatus) {
+      case ChauffeurStatus.WAITING_FOR_PASSENGER:
+        return '탑승 대기';
+      case ChauffeurStatus.IN_OPERATION:
+        return '운행 시작';
+      case ChauffeurStatus.WAITING_OPERATION:
+        return '운행 종료';
+      case ChauffeurStatus.OPERATION_COMPLETED:
+        return '운행 완료';
+      default:
+        return '알 수 없음';
     }
   }
 }

@@ -14,6 +14,7 @@ import { ChauffeurService } from '@/port/service/chauffeur.service';
 import { OperationModule } from './operation.module';
 import { RealTimeDispatchModule } from './real-time-dispatch.module';
 import { ReservationModule } from './reservation.module';
+import { ScheduleModule } from './schedule.module';
 import { VehicleModule } from './vehicle.module';
 import { WayPointModule } from './way-point.module';
 import { WorkHistoryModule } from './work-history.module';
@@ -27,6 +28,7 @@ import { WorkHistoryModule } from './work-history.module';
     VehicleModule,
     forwardRef(() => RealTimeDispatchModule),
     WorkHistoryModule,
+    ScheduleModule,
   ],
   controllers: [ChauffeurController],
   providers: [

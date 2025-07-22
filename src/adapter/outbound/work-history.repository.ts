@@ -24,21 +24,34 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
     const where: FindOptionsWhere<WorkHistory> = {};
     if (search.chauffeurId) where.chauffeurId = search.chauffeurId;
     if (search.vehicleId) where.vehicleId = search.vehicleId;
+
     if (status === DataStatus.DELETED) {
       where.status = Not(DataStatus.DELETED);
     } else if (status) {
       where.status = status as DataStatus;
     }
 
-    // year와 month가 제공된 경우 해당 월의 범위로 필터링
+    // KST 기준으로 날짜 범위 처리하는 유틸
+    const toUtcFromKst = (kstDate: Date) => new Date(kstDate.getTime() - 9 * 60 * 60 * 1000);
+
     if (search.year && search.month) {
-      const startOfMonth = new Date(search.year, search.month - 1, 1); // month는 0부터 시작하므로 -1
-      const endOfMonth = new Date(search.year, search.month, 0, 23, 59, 59, 999); // 다음 달 0일 = 현재 달 마지막 일
-      where.startTime = Between(startOfMonth, endOfMonth);
+      const startOfMonthKST = new Date(search.year, search.month - 1, 1, 0, 0, 0, 0);
+      const endOfMonthKST = new Date(search.year, search.month, 0, 23, 59, 59, 999);
+
+      const startOfMonthUTC = toUtcFromKst(startOfMonthKST);
+      const endOfMonthUTC = toUtcFromKst(endOfMonthKST);
+
+      where.startTime = Between(startOfMonthUTC, endOfMonthUTC);
     } else {
-      // year와 month가 없을 때만 startDate, endDate 적용
-      if (search.startDate) where.startTime = MoreThanOrEqual(new Date(search.startDate));
-      if (search.endDate) where.endTime = LessThanOrEqual(new Date(search.endDate));
+      if (search.startDate) {
+        const startDate = new Date(`${search.startDate}T00:00:00+09:00`);
+        where.startTime = MoreThanOrEqual(new Date(startDate.toISOString()));
+      }
+
+      if (search.endDate) {
+        const endDate = new Date(`${search.endDate}T23:59:59.999+09:00`);
+        where.endTime = LessThanOrEqual(new Date(endDate.toISOString()));
+      }
     }
 
     return this.workHistoryRepository.findAndCount({

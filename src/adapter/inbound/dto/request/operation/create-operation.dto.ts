@@ -34,6 +34,11 @@ export class CreateWayPointInfoDto {
   @IsString()
   time?: string;
 
+  @ApiProperty({ description: '경유지 이름', required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @ApiProperty({ description: '주소' })
   @IsString()
   address: string;

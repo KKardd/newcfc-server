@@ -9,6 +9,7 @@ import { CreateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/crea
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { UpdateChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/update-chauffeur.dto';
 import { UpdateLocationDto } from '@/adapter/inbound/dto/request/chauffeur/update-location.dto';
+import { CreateScheduleDto } from '@/adapter/inbound/dto/request/schedule/create-schedule.dto';
 import { AssignedVehicleResponseDto } from '@/adapter/inbound/dto/response/chauffeur/assigned-vehicle-response.dto';
 import { ChauffeurProfileResponseDto } from '@/adapter/inbound/dto/response/chauffeur/chauffeur-profile-response.dto';
 import {
@@ -39,6 +40,7 @@ import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationType } from '@/domain/enum/operation-type.enum';
 import { ChauffeurServiceInPort } from '@/port/inbound/chauffeur-service.in-port';
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
+import { ScheduleServiceInPort } from '@/port/inbound/schedule-service.in-port';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
@@ -61,6 +63,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     private readonly wayPointServiceOutPort: WayPointServiceOutPort,
     private readonly workHistoryService: WorkHistoryService,
     private readonly garageServiceOutPort: GarageServiceOutPort,
+    private readonly scheduleServiceInPort: ScheduleServiceInPort,
   ) {}
 
   async search(
@@ -242,6 +245,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
   async changeStatus(chauffeurId: number, changeStatusDto: ChangeChauffeurStatusDto): Promise<ChauffeurStatusChangeResponseDto> {
     const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+    if (!chauffeur) throw new Error('기사를 찾을 수 없습니다.');
+
+    const previousStatus = chauffeur.chauffeurStatus;
 
     // 기존 상태에서 허용되지 않는 상태 변경인지 검증
     // (기존 검증 로직 유지)
@@ -253,6 +259,9 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
     // 기사 상태 변경 시 현재 위치의 waypoint에 상태 저장
     await this.updateWayPointChauffeurStatus(chauffeurId, changeStatusDto.updateStatus);
+
+    // Schedule 생성 로직 추가
+    await this.createScheduleRecord(chauffeurId, changeStatusDto.updateStatus, previousStatus);
 
     const response = new ChauffeurStatusChangeResponseDto();
     response.chauffeurStatus = changeStatusDto.updateStatus;
@@ -324,6 +333,142 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     }
 
     return response;
+  }
+
+  /**
+   * Schedule 기록을 생성하는 메서드
+   */
+  private async createScheduleRecord(
+    chauffeurId: number,
+    newStatus: ChauffeurStatus,
+    previousStatus: ChauffeurStatus | null,
+  ): Promise<void> {
+    try {
+      // 출발지 이동은 Schedule을 생성하지 않음 (주소지 정보 없음)
+      if (newStatus === ChauffeurStatus.MOVING_TO_DEPARTURE) {
+        console.log('출발지 이동 상태는 Schedule 생성을 건너뜁니다.');
+        return;
+      }
+
+      // Schedule 생성이 필요한 상태들만 처리 (wayPoint 진행상태 기록용)
+      const scheduleTargetStatuses = [
+        ChauffeurStatus.WAITING_FOR_PASSENGER, // 탑승 대기
+        ChauffeurStatus.IN_OPERATION, // 운행 시작
+        ChauffeurStatus.WAITING_OPERATION, // 운행 종료 (중간 경유지)
+        ChauffeurStatus.OPERATION_COMPLETED, // 운행 종료 (최종 완료)
+      ];
+
+      if (!scheduleTargetStatuses.includes(newStatus)) {
+        console.log(`${newStatus} 상태는 Schedule 생성 대상이 아닙니다.`);
+        return;
+      }
+
+      // 현재 기사의 진행 중인 operation 조회
+      const currentOperation = await this.getCurrentOperation(chauffeurId);
+
+      if (!currentOperation) {
+        console.log('진행 중인 운행이 없어서 Schedule 생성을 건너뜁니다.');
+        return;
+      }
+
+      // 기사의 현재 위치 정보 조회
+      const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
+
+      // 해당 상태에 맞는 wayPoint 찾기
+      const relatedWayPointId = await this.findWayPointForSchedule(currentOperation.id, newStatus);
+
+      if (!relatedWayPointId) {
+        console.log(`${newStatus} 상태에 해당하는 wayPoint를 찾을 수 없습니다.`);
+        return;
+      }
+
+      const createScheduleDto: CreateScheduleDto = {
+        operationId: currentOperation.id,
+        wayPointId: relatedWayPointId,
+        chauffeurStatus: newStatus,
+      };
+
+      await this.scheduleServiceInPort.create(createScheduleDto);
+      console.log(`Schedule 생성 완료: ${chauffeurId} ${previousStatus} -> ${newStatus} (wayPoint: ${relatedWayPointId})`);
+    } catch (error) {
+      // Schedule 생성 실패해도 전체 플로우는 계속 진행
+      console.error('Failed to create schedule record:', error);
+    }
+  }
+
+  /**
+   * 기사 상태에 따른 해당 wayPoint 찾기 (wayPoint 진행상태 기반)
+   */
+  private async findWayPointForSchedule(operationId: number, chauffeurStatus: ChauffeurStatus): Promise<number | null> {
+    try {
+      const wayPointPagination = new PaginationQuery();
+      wayPointPagination.page = 1;
+      wayPointPagination.countPerPage = 100;
+
+      const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
+      const wayPoints = wayPointsResponse.data.sort((a, b) => a.order - b.order);
+
+      if (wayPoints.length === 0) {
+        return null;
+      }
+
+      switch (chauffeurStatus) {
+        case ChauffeurStatus.WAITING_FOR_PASSENGER:
+          // 탑승 대기 → 시작점 (첫 번째 wayPoint)
+          return wayPoints[0]?.id || null;
+
+        case ChauffeurStatus.IN_OPERATION:
+          // 운행 중 → 현재 진행 중인 wayPoint
+          // 아직 방문하지 않은 wayPoint 중 첫 번째를 찾음
+          for (const wayPoint of wayPoints) {
+            const wayPointDetail = await this.wayPointServiceOutPort.findById(wayPoint.id);
+            if (wayPointDetail && !wayPointDetail.visitTime) {
+              return wayPoint.id;
+            }
+          }
+          // 모든 wayPoint가 방문되었다면 마지막 wayPoint
+          return wayPoints[wayPoints.length - 1]?.id || null;
+
+        case ChauffeurStatus.WAITING_OPERATION:
+          // 운행 대기 → 방금 도착한 wayPoint (가장 최근에 방문한 wayPoint)
+          // visitTime이 가장 최근인 wayPoint를 찾음
+          let latestVisitedWayPoint = null;
+          let latestVisitTime = null;
+
+          for (const wayPoint of wayPoints) {
+            const wayPointDetail = await this.wayPointServiceOutPort.findById(wayPoint.id);
+            if (wayPointDetail && wayPointDetail.visitTime) {
+              if (!latestVisitTime || wayPointDetail.visitTime > latestVisitTime) {
+                latestVisitTime = wayPointDetail.visitTime;
+                latestVisitedWayPoint = wayPoint;
+              }
+            }
+          }
+
+          if (latestVisitedWayPoint) {
+            return latestVisitedWayPoint.id;
+          }
+
+          // 방문한 wayPoint가 없다면 현재 도착 예정인 다음 wayPoint
+          for (const wayPoint of wayPoints) {
+            const wayPointDetail = await this.wayPointServiceOutPort.findById(wayPoint.id);
+            if (wayPointDetail && !wayPointDetail.visitTime) {
+              return wayPoint.id;
+            }
+          }
+          return null;
+
+        case ChauffeurStatus.OPERATION_COMPLETED:
+          // 운행 종료 → 마지막 도착지 (마지막 wayPoint)
+          return wayPoints[wayPoints.length - 1]?.id || null;
+
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error('Failed to find waypoint for schedule:', error);
+      return null;
+    }
   }
 
   // 기사 전용 메서드들
@@ -927,6 +1072,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
               targetWayPointId = wayPoint.id;
               break;
             }
+          }
+          break;
+
+        case ChauffeurStatus.PENDING_RECEIPT_INPUT:
+          // 정보 미기입 - 마지막 wayPoint (운행 완료 후 정보만 미기입인 상태)
+          const lastWayPointForReceipt = wayPoints[wayPoints.length - 1];
+          if (lastWayPointForReceipt) {
+            targetWayPointId = lastWayPointForReceipt.id;
           }
           break;
 

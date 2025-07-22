@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { Injectable } from '@nestjs/common';
+
 import { firstValueFrom } from 'rxjs';
 
 import { SafetyPhoneServiceOutPort } from '@/port/outbound/safety-phone-service.out-port';
@@ -26,6 +27,7 @@ export class SafetyPhoneService implements SafetyPhoneServiceOutPort {
         },
       }),
     );
+    console.log('-->', response.data);
 
     if (response.data.rt != 0) {
       throw new Error(response.data.rs);

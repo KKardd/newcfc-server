@@ -84,4 +84,15 @@ export class NotificationHistoryRepository implements NotificationHistoryService
   async findById(id: number): Promise<Notification | null> {
     return await this.notificationRepository.findOne({ where: { id } });
   }
+
+  async hasUnreadNotifications(userId: number, userType: string): Promise<boolean> {
+    const count = await this.notificationRepository.count({
+      where: {
+        userId,
+        userType,
+        isRead: false,
+      },
+    });
+    return count > 0;
+  }
 }

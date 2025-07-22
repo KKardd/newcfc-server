@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 import { SearchNotificationDto } from '@/adapter/inbound/dto/request/notification/search-notification.dto';
 import { NotificationResponseDto } from '@/adapter/inbound/dto/response/notification/notification-response.dto';
+import { HasUnreadResponseDto } from '@/adapter/inbound/dto/response/notification/has-unread-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
 import { NotificationHistoryServiceInPort } from '@/port/inbound/notification-history-service.in-port';
@@ -41,6 +42,28 @@ export class NotificationController {
     }
 
     return await this.notificationHistoryService.getMyNotifications(user.userId, userType, search);
+  }
+
+  @ApiOperation({
+    summary: '읽지 않은 알림 존재 여부 확인',
+    description: '로그인한 사용자에게 읽지 않은 알림이 있는지 확인합니다.',
+  })
+  @ApiSuccessResponse(200, HasUnreadResponseDto)
+  @Roles(UserRoleType.CHAUFFEUR, UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
+  @Get('me/has-unread')
+  async hasUnreadNotifications(@UserToken() user: UserAccessTokenPayload): Promise<{ hasUnread: boolean }> {
+    // 사용자 타입 결정
+    let userType: string;
+    if (user.roles.includes(UserRoleType.CHAUFFEUR)) {
+      userType = 'CHAUFFEUR';
+    } else if (user.roles.includes(UserRoleType.SUPER_ADMIN) || user.roles.includes(UserRoleType.SUB_ADMIN)) {
+      userType = 'ADMIN';
+    } else {
+      userType = 'USER';
+    }
+
+    const hasUnread = await this.notificationHistoryService.hasUnreadNotifications(user.userId, userType);
+    return { hasUnread };
   }
 
   @ApiOperation({

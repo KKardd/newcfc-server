@@ -1007,17 +1007,20 @@ export class OperationService implements OperationServiceInPort {
       chauffeurId: assignDto.chauffeurId,
     });
 
-    // 5. 기사에게 FCM 알림 전송
-    try {
-      const notificationMessage = `새로운 운행이 배정되었습니다. 출발시간: ${operation.startTime ? new Date(operation.startTime).toLocaleString('ko-KR') : '미정'}`;
-      await this.notificationServiceOutPort.sendReservationNotification(
-        assignDto.chauffeurId,
-        assignDto.operationId,
-        notificationMessage,
-      );
-    } catch (error) {
-      console.error('FCM 알림 전송 실패:', error);
-      // 알림 전송 실패해도 배정은 성공으로 처리
+    // 5. 기사에게 FCM 알림 전송 (새로운 배정인 경우만)
+    // 기존에 기사가 배정되어 있었다면 (기사 변경) 알림을 전송하지 않음
+    if (!previousChauffeur) {
+      try {
+        const notificationMessage = `새로운 운행이 배정되었습니다. 출발시간: ${operation.startTime ? new Date(operation.startTime).toLocaleString('ko-KR') : '미정'}`;
+        await this.notificationServiceOutPort.sendReservationNotification(
+          assignDto.chauffeurId,
+          assignDto.operationId,
+          notificationMessage,
+        );
+      } catch (error) {
+        console.error('FCM 알림 전송 실패:', error);
+        // 알림 전송 실패해도 배정은 성공으로 처리
+      }
     }
 
     // 6. 응답 생성

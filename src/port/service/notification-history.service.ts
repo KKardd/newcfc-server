@@ -18,14 +18,6 @@ export class NotificationHistoryService implements NotificationHistoryServiceInP
     const unreadNotificationIds = notifications.filter((n) => !n.isRead).map((n) => n.id);
     if (unreadNotificationIds.length > 0) {
       await this.notificationHistoryServiceOutPort.markAsRead(userId, userType, unreadNotificationIds);
-
-      // 읽음 상태 업데이트
-      notifications.forEach((notification) => {
-        if (unreadNotificationIds.includes(notification.id)) {
-          notification.isRead = true;
-          notification.readAt = new Date();
-        }
-      });
     }
 
     return plainToInstance(NotificationResponseDto, notifications);
@@ -33,5 +25,9 @@ export class NotificationHistoryService implements NotificationHistoryServiceInP
 
   async markAsRead(userId: number, userType: string, notificationIds?: number[]): Promise<void> {
     await this.notificationHistoryServiceOutPort.markAsRead(userId, userType, notificationIds);
+  }
+
+  async hasUnreadNotifications(userId: number, userType: string): Promise<boolean> {
+    return await this.notificationHistoryServiceOutPort.hasUnreadNotifications(userId, userType);
   }
 }

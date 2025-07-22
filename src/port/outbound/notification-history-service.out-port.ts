@@ -7,4 +7,5 @@ export abstract class NotificationHistoryServiceOutPort {
   abstract markAsRead(userId: number, userType: string, notificationIds?: number[]): Promise<void>;
   abstract markAllAsRead(userId: number, userType: string): Promise<void>;
   abstract findById(id: number): Promise<Notification | null>;
+  abstract hasUnreadNotifications(userId: number, userType: string): Promise<boolean>;
 }

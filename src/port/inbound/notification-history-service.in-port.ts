@@ -8,4 +8,5 @@ export abstract class NotificationHistoryServiceInPort {
     search: SearchNotificationDto,
   ): Promise<NotificationResponseDto[]>;
   abstract markAsRead(userId: number, userType: string, notificationIds?: number[]): Promise<void>;
+  abstract hasUnreadNotifications(userId: number, userType: string): Promise<boolean>;
 }

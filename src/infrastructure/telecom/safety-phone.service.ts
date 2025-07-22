@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 
@@ -37,6 +39,9 @@ export class SafetyPhoneService implements SafetyPhoneServiceOutPort {
   }
 
   private generateAuth(data: string): string {
-    return data;
+    const secretKey = '2000';
+    const hashData = secretKey + data;
+    const md5Hash = createHash('md5').update(hashData).digest('base64');
+    return md5Hash;
   }
 }

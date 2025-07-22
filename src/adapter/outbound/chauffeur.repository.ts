@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+
 import { Repository, Not, UpdateResult, Like } from 'typeorm';
+
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchChauffeurDto } from '@/adapter/inbound/dto/request/chauffeur/search-chauffeur.dto';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
+import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 
@@ -84,8 +88,37 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   }
 
   async findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<Chauffeur[]> {
-    // 실제 구현 필요
-    return [];
+    return await this.chauffeurRepository
+      .createQueryBuilder('chauffeur')
+      .leftJoinAndSelect('chauffeur.vehicle', 'vehicle')
+      .leftJoinAndSelect('vehicle.garage', 'garage')
+      .where('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .andWhere('chauffeur.type IN (:...types)', { types: [ChauffeurType.HOSPITAL, ChauffeurType.EVENT] })
+      .andWhere('chauffeur.chauffeurStatus IN (:...availableStatuses)', {
+        availableStatuses: [
+          ChauffeurStatus.WAITING_FOR_RESERVATION,
+          ChauffeurStatus.RECEIVED_VEHICLE,
+          ChauffeurStatus.OPERATION_COMPLETED,
+        ],
+      })
+      .andWhere(
+        `chauffeur.id NOT IN (
+          SELECT DISTINCT o.chauffeurId
+          FROM operations o
+          WHERE o.chauffeurId IS NOT NULL
+          AND o.status != :deletedStatus
+          AND (
+            (o.startTime <= :endTime AND o.endTime >= :startTime)
+            OR (o.startTime IS NULL OR o.endTime IS NULL)
+          )
+        )`,
+        {
+          startTime,
+          endTime,
+          deletedStatus: DataStatus.DELETED,
+        },
+      )
+      .getMany();
   }
 
   async updateLocation(id: number, latitude: number, longitude: number): Promise<UpdateResult> {

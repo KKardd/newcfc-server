@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, Like } from 'typeorm';
+
+import { Repository, Not, Like, UpdateResult } from 'typeorm';
 
 import { PaginationQuery } from '@/adapter/inbound/dto/pagination';
 import { SearchVehicleDto } from '@/adapter/inbound/dto/request/vehicle/search-vehicle.dto';
-import { Vehicle } from '@/domain/entity/vehicle.entity';
 import { Chauffeur } from '@/domain/entity/chauffeur.entity';
+import { Vehicle } from '@/domain/entity/vehicle.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
-import { UpdateResult } from 'typeorm';
 
 @Injectable()
 export class VehicleRepository implements VehicleServiceOutPort {
@@ -62,7 +63,6 @@ export class VehicleRepository implements VehicleServiceOutPort {
     // 배정 여부 필터링을 위한 서브쿼리 생성
     const applyAssignedFilter = (queryBuilder: any) => {
       if (search.assigned !== undefined) {
-
         // boolean 또는 string으로 전달될 수 있으므로 명시적으로 비교
         const isAssignedFilter = search.assigned === true || search.assigned === 'true';
         const isUnassignedFilter = search.assigned === false || search.assigned === 'false';
@@ -133,8 +133,22 @@ export class VehicleRepository implements VehicleServiceOutPort {
   }
 
   async findUnassignedVehicles(): Promise<Vehicle[]> {
-    // 실제 구현 필요
-    return [];
+    return await this.vehicleRepository
+      .createQueryBuilder('vehicle')
+      .leftJoinAndSelect('vehicle.garage', 'garage')
+      .where('vehicle.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .andWhere('vehicle.vehicleStatus = :normalStatus', { normalStatus: VehicleStatus.NORMAL })
+      .andWhere(
+        `vehicle.id NOT IN (
+          SELECT DISTINCT c.vehicleId
+          FROM chauffeurs c
+          WHERE c.vehicleId IS NOT NULL
+          AND c.status != :deletedStatus
+          AND c.isVehicleAssigned = true
+        )`,
+        { deletedStatus: DataStatus.DELETED },
+      )
+      .getMany();
   }
 
   async countByGarageId(garageId: number): Promise<number> {

@@ -20,6 +20,11 @@ export class UpdateChauffeurDto {
   @Matches(/^\d{6}$/, { message: '생년월일은 6자리 숫자여야 합니다 (YYMMDD)' })
   birthDate?: string;
 
+  @ApiProperty({ description: '프로필 사진 URL', required: false })
+  @IsOptional()
+  @IsString()
+  profileImageUrl?: string | null;
+
   @ApiProperty({ description: '기사 타입', enum: ChauffeurType, required: false })
   @IsOptional()
   @IsEnum(ChauffeurType)

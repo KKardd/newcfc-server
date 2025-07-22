@@ -8,6 +8,7 @@ import { CreateOperationDto } from '@/adapter/inbound/dto/request/operation/crea
 import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/search-operation.dto';
 import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/update-operation.dto';
 import { AssignChauffeurResponseDto } from '@/adapter/inbound/dto/response/admin/assign-chauffeur-response.dto';
+import { AdminOperationResponseDto } from '@/adapter/inbound/dto/response/operation/admin-operation-response.dto';
 import { OperationResponseDto } from '@/adapter/inbound/dto/response/operation/operation-response.dto';
 import { ApiSuccessResponse } from '@/adapter/inbound/dto/swagger.decorator';
 import { UserRoleType } from '@/domain/enum/user-role.enum';
@@ -45,8 +46,8 @@ export class OperationController {
   @Get(':id/admin')
   @ApiOperation({ summary: '관리자용 운행 상세 조회 (진행 상태 포함)' })
   @ApiParam({ name: 'id', description: '운행 ID' })
-  @ApiResponse({ status: 200, description: '관리자용 운행 상세 정보 (진행 상태 포함)' })
-  async getAdminDetail(@Param('id') id: number) {
+  @ApiResponse({ status: 200, description: '관리자용 운행 상세 정보 (진행 상태 포함)', type: AdminOperationResponseDto })
+  async getAdminDetail(@Param('id') id: number): Promise<AdminOperationResponseDto> {
     return this.operationService.getAdminOperationDetail(id);
   }
 

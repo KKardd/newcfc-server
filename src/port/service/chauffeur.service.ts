@@ -764,7 +764,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   /**
    * 현재 진행 중인 waypoint를 식별하는 메서드
    */
-  private async getCurrentWayPoint(chauffeurId: number, sortedWayPoints: unknown[]): Promise<CurrentWayPointDto | null> {
+  private async getCurrentWayPoint(chauffeurId: number, sortedWayPoints: any[]): Promise<CurrentWayPointDto | null> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);
 
@@ -1268,7 +1268,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
   /**
    * 실시간 배차 정보를 쇼퍼앱용 간단한 waypoint 형태로 변환
    */
-  private createSimpleWayPointsForChauffeur(realTimeDispatch: unknown): CurrentWayPointDto[] {
+  private createSimpleWayPointsForChauffeur(realTimeDispatch: any): CurrentWayPointDto[] {
     const wayPoints: CurrentWayPointDto[] = [];
 
     // 1. 출발지 (항상 표시)
@@ -1305,7 +1305,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
    */
   private async getCurrentWayPointForRealTimeDispatch(
     chauffeurId: number,
-    realTimeDispatch: unknown,
+    realTimeDispatch: any,
   ): Promise<CurrentWayPointDto | null> {
     try {
       const chauffeur = await this.chauffeurServiceOutPort.findById(chauffeurId);

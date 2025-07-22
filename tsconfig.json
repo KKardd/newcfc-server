@@ -10,7 +10,7 @@
     "sourceMap": true,
     "incremental": true,
     "esModuleInterop": true,
-    "strict": true,
+    "strict": false,
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,

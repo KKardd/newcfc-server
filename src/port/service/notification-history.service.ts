@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { plainToInstance } from 'class-transformer';
 
 import { SearchNotificationDto } from '@/adapter/inbound/dto/request/notification/search-notification.dto';

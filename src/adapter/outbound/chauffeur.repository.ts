@@ -88,7 +88,23 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   }
 
   async findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<Chauffeur[]> {
-    return await this.chauffeurRepository
+    // 1. 먼저 해당 시간대에 운행이 있는 기사들의 ID를 조회
+    const busyChauffeurIds = await this.chauffeurRepository
+      .createQueryBuilder('chauffeur')
+      .innerJoin('operation', 'o', 'chauffeur.id = o.chauffeur_id')
+      .select('chauffeur.id', 'id')
+      .where('o.chauffeur_id IS NOT NULL')
+      .andWhere('o.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .andWhere('((o.start_time <= :endTime AND o.end_time >= :startTime) OR (o.start_time IS NULL OR o.end_time IS NULL))', {
+        startTime,
+        endTime,
+      })
+      .getRawMany();
+
+    const busyIds = busyChauffeurIds.map((row) => row.id);
+
+    // 2. 사용 가능한 기사들을 조회 (busy한 기사들 제외)
+    const query = this.chauffeurRepository
       .createQueryBuilder('chauffeur')
       .where('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
       .andWhere('chauffeur.type IN (:...types)', { types: [ChauffeurType.HOSPITAL, ChauffeurType.EVENT] })
@@ -98,25 +114,14 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
           ChauffeurStatus.RECEIVED_VEHICLE,
           ChauffeurStatus.OPERATION_COMPLETED,
         ],
-      })
-      .andWhere(
-        `chauffeur.id NOT IN (
-          SELECT DISTINCT o.chauffeur_id
-          FROM operation o
-          WHERE o.chauffeur_id IS NOT NULL
-          AND o.status != :deletedStatus
-          AND (
-            (o.start_time <= :endTime AND o.end_time >= :startTime)
-            OR (o.start_time IS NULL OR o.end_time IS NULL)
-          )
-        )`,
-        {
-          startTime,
-          endTime,
-          deletedStatus: DataStatus.DELETED,
-        },
-      )
-      .getMany();
+      });
+
+    // busyIds가 있으면 제외
+    if (busyIds.length > 0) {
+      query.andWhere('chauffeur.id NOT IN (:...busyIds)', { busyIds });
+    }
+
+    return await query.getMany();
   }
 
   async updateLocation(id: number, latitude: number, longitude: number): Promise<UpdateResult> {

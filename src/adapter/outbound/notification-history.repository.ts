@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, In, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
 
 import { SearchNotificationDto } from '@/adapter/inbound/dto/request/notification/search-notification.dto';
 import { Notification } from '@/domain/entity/notification.entity';
@@ -31,17 +31,13 @@ export class NotificationHistoryRepository implements NotificationHistoryService
       where.isRead = search.isRead;
     }
 
-    if (search.startDate) {
+    if (search.startDate && search.endDate) {
+      // startDate와 endDate가 모두 있는 경우
+      where.createdAt = Between(new Date(search.startDate), new Date(search.endDate));
+    } else if (search.startDate) {
       where.createdAt = MoreThanOrEqual(new Date(search.startDate));
-    }
-
-    if (search.endDate) {
-      if (where.createdAt && search.startDate) {
-        // startDate와 endDate가 모두 있는 경우
-        where.createdAt = [MoreThanOrEqual(new Date(search.startDate)), LessThanOrEqual(new Date(search.endDate))];
-      } else {
-        where.createdAt = LessThanOrEqual(new Date(search.endDate));
-      }
+    } else if (search.endDate) {
+      where.createdAt = LessThanOrEqual(new Date(search.endDate));
     }
 
     return await this.notificationRepository.find({

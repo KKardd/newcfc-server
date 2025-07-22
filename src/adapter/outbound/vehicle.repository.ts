@@ -135,17 +135,17 @@ export class VehicleRepository implements VehicleServiceOutPort {
   async findUnassignedVehicles(): Promise<Vehicle[]> {
     return await this.vehicleRepository
       .createQueryBuilder('vehicle')
-      .where('vehicle.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .where('vehicle.status != :vehicleDeletedStatus', { vehicleDeletedStatus: DataStatus.DELETED })
       .andWhere('vehicle.vehicleStatus = :normalStatus', { normalStatus: VehicleStatus.NORMAL })
       .andWhere(
         `vehicle.id NOT IN (
           SELECT DISTINCT c.vehicle_id
           FROM chauffeur c
           WHERE c.vehicle_id IS NOT NULL
-          AND c.status != :deletedStatus
+          AND c.status != :chauffeurDeletedStatus
           AND c.is_vehicle_assigned = true
         )`,
-        { deletedStatus: DataStatus.DELETED },
+        { chauffeurDeletedStatus: DataStatus.DELETED },
       )
       .getMany();
   }

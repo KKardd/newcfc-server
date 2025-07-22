@@ -9,8 +9,8 @@ import { NotificationHistoryServiceInPort } from '@/port/inbound/notification-hi
 import { JwtAuthGuard } from '@/security/guard/jwt-auth.guard';
 import { Roles } from '@/security/guard/user-role.decorator';
 import { UserRolesGuard } from '@/security/guard/user-role.guard';
-import { UserToken } from '@/security/jwt/user-token.decorator';
 import { UserAccessTokenPayload } from '@/security/jwt/token.payload';
+import { UserToken } from '@/security/jwt/user-token.decorator';
 
 @ApiTags('Notification')
 @ApiBearerAuth()
@@ -19,9 +19,9 @@ import { UserAccessTokenPayload } from '@/security/jwt/token.payload';
 export class NotificationController {
   constructor(private readonly notificationHistoryService: NotificationHistoryServiceInPort) {}
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: '내 알림 목록 조회',
-    description: '로그인한 사용자의 모든 알림 목록을 조회합니다. 조회 시 읽지 않은 알림들이 자동으로 읽음 처리됩니다.'
+    description: '로그인한 사용자의 모든 알림 목록을 조회합니다. 조회 시 읽지 않은 알림들이 자동으로 읽음 처리됩니다.',
   })
   @ApiSuccessResponse(200, NotificationResponseDto, { isArray: true })
   @Roles(UserRoleType.CHAUFFEUR, UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
@@ -43,16 +43,13 @@ export class NotificationController {
     return await this.notificationHistoryService.getMyNotifications(user.userId, userType, search);
   }
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: '내 알림 읽음 처리',
-    description: '특정 알림들을 읽음 처리합니다. notificationIds를 제공하지 않으면 모든 읽지 않은 알림을 읽음 처리합니다.'
+    description: '특정 알림들을 읽음 처리합니다. notificationIds를 제공하지 않으면 모든 읽지 않은 알림을 읽음 처리합니다.',
   })
   @Roles(UserRoleType.CHAUFFEUR, UserRoleType.SUPER_ADMIN, UserRoleType.SUB_ADMIN)
   @Put('me/mark-read')
-  async markAsRead(
-    @UserToken() user: UserAccessTokenPayload,
-    @Body() body: { notificationIds?: number[] },
-  ): Promise<void> {
+  async markAsRead(@UserToken() user: UserAccessTokenPayload, @Body() body: { notificationIds?: number[] }): Promise<void> {
     // 사용자 타입 결정
     let userType: string;
     if (user.roles.includes(UserRoleType.CHAUFFEUR)) {

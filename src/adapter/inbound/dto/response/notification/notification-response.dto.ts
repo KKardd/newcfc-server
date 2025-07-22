@@ -50,4 +50,8 @@ export class NotificationResponseDto {
   @Expose()
   @Transform(({ value }) => new Date(value).toISOString())
   updatedAt: string;
+
+  @ApiProperty({ description: '수정자 ID' })
+  @Expose()
+  updatedBy: number;
 }

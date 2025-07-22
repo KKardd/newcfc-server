@@ -8,6 +8,7 @@ import { SearchWorkHistoryDto } from '@/adapter/inbound/dto/request/work-history
 import { WorkHistory } from '@/domain/entity/work-history.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { WorkHistoryServiceOutPort } from '@/port/outbound/work-history-service.out-port';
+import { convertKstToUtc } from '@/util/date';
 
 @Injectable()
 export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
@@ -31,26 +32,23 @@ export class WorkHistoryRepository implements WorkHistoryServiceOutPort {
       where.status = status as DataStatus;
     }
 
-    // KST 기준으로 날짜 범위 처리하는 유틸
-    const toUtcFromKst = (kstDate: Date) => new Date(kstDate.getTime() - 9 * 60 * 60 * 1000);
-
     if (search.year && search.month) {
       const startOfMonthKST = new Date(search.year, search.month - 1, 1, 0, 0, 0, 0);
       const endOfMonthKST = new Date(search.year, search.month, 0, 23, 59, 59, 999);
 
-      const startOfMonthUTC = toUtcFromKst(startOfMonthKST);
-      const endOfMonthUTC = toUtcFromKst(endOfMonthKST);
+      const startOfMonthUTC = convertKstToUtc(startOfMonthKST);
+      const endOfMonthUTC = convertKstToUtc(endOfMonthKST);
 
       where.startTime = Between(startOfMonthUTC, endOfMonthUTC);
     } else {
       if (search.startDate) {
-        const startDate = new Date(`${search.startDate}T00:00:00+09:00`);
-        where.startTime = MoreThanOrEqual(new Date(startDate.toISOString()));
+        const startDate = convertKstToUtc(`${search.startDate}T00:00:00`);
+        where.startTime = MoreThanOrEqual(startDate);
       }
 
       if (search.endDate) {
-        const endDate = new Date(`${search.endDate}T23:59:59.999+09:00`);
-        where.endTime = LessThanOrEqual(new Date(endDate.toISOString()));
+        const endDate = convertKstToUtc(`${search.endDate}T23:59:59.999`);
+        where.endTime = LessThanOrEqual(endDate);
       }
     }
 

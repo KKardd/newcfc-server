@@ -17,6 +17,7 @@ import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { OperationService } from '@/port/service/operation.service';
 
+import { AdminModule } from './admin.module';
 import { ChauffeurModule } from './chauffeur.module';
 import { RealTimeDispatchModule } from './real-time-dispatch.module';
 import { ReservationModule } from './reservation.module';
@@ -26,6 +27,7 @@ import { WayPointModule } from './way-point.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Operation, WayPoint, Vehicle, Chauffeur, Garage, RealTimeDispatch, Reservation]),
+    forwardRef(() => AdminModule),
     forwardRef(() => ChauffeurModule),
     forwardRef(() => VehicleModule),
     forwardRef(() => ReservationModule),

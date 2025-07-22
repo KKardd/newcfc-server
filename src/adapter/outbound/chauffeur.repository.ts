@@ -10,6 +10,7 @@ import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { ChauffeurType } from '@/domain/enum/chauffeur-type.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
+import { convertKstToUtc } from '@/util/date';
 
 @Injectable()
 export class ChauffeurRepository implements ChauffeurServiceOutPort {
@@ -88,6 +89,10 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
   }
 
   async findAvailableChauffeurs(startTime: Date, endTime: Date): Promise<Chauffeur[]> {
+    // KST 시간을 UTC로 변환
+    const startTimeUtc = convertKstToUtc(startTime);
+    const endTimeUtc = convertKstToUtc(endTime);
+
     // 1. 먼저 해당 시간대에 운행이 있는 기사들의 ID를 조회
     const busyChauffeurIds = await this.chauffeurRepository
       .createQueryBuilder('chauffeur')
@@ -96,8 +101,8 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
       .where('o.chauffeur_id IS NOT NULL')
       .andWhere('o.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
       .andWhere('((o.start_time <= :endTime AND o.end_time >= :startTime) OR (o.start_time IS NULL OR o.end_time IS NULL))', {
-        startTime,
-        endTime,
+        startTime: startTimeUtc,
+        endTime: endTimeUtc,
       })
       .getRawMany();
 

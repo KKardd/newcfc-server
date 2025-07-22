@@ -30,11 +30,13 @@ import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port'
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
+import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
 import { classTransformDefaultOptions } from '@/validate/serialization';
+import { convertKstToUtc } from '@/util/date';
 import {
   AdminOperationResponseDto,
   AdminWayPointInfoDto,
@@ -54,6 +56,7 @@ export class OperationService implements OperationServiceInPort {
     private readonly realTimeDispatchServiceOutPort: RealTimeDispatchServiceOutPort,
     private readonly notificationServiceOutPort: NotificationServiceOutPort,
     private readonly scheduleServiceInPort: ScheduleServiceInPort,
+    private readonly adminServiceOutPort: AdminServiceOutPort,
   ) {}
 
   async search(
@@ -71,6 +74,16 @@ export class OperationService implements OperationServiceInPort {
     const operationDtos = await Promise.all(
       operations.map(async (operation) => {
         const operationDto = plainToInstance(OperationResponseDto, operation);
+
+        // 생성자 정보 조회
+        try {
+          const admin = await this.adminServiceOutPort.findById(operation.createdBy);
+          if (admin) {
+            operationDto.createdByName = admin.name;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch admin info for id ${operation.createdBy}:`, error);
+        }
 
         // 기사 정보 조회
         if (operation.chauffeurId) {
@@ -454,6 +467,15 @@ export class OperationService implements OperationServiceInPort {
     response.updatedBy = operationDetail.updatedBy;
     response.updatedAt = operationDetail.updatedAt;
 
+    // 생성자 정보 조회
+    try {
+      const admin = await this.adminServiceOutPort.findById(operationDetail.createdBy);
+      response.createdByName = admin ? admin.name : null;
+    } catch (error) {
+      console.error(`Failed to fetch admin info for id ${operationDetail.createdBy}:`, error);
+      response.createdByName = null;
+    }
+
     // 관련 엔티티 정보 별도 조회 및 설정
     // 1. 기사 정보 조회
     if (operationDetail.chauffeurId) {
@@ -693,8 +715,8 @@ export class OperationService implements OperationServiceInPort {
     const operation = plainToInstance(Operation, {
       type: createOperation.type,
       isRepeated: createOperation.schedule.isRepeat || false,
-      startTime: createOperation.startTime ? new Date(createOperation.startTime) : null,
-      endTime: createOperation.endTime ? new Date(createOperation.endTime) : null,
+      startTime: createOperation.startTime ? convertKstToUtc(createOperation.startTime) : null,
+      endTime: createOperation.endTime ? convertKstToUtc(createOperation.endTime) : null,
       chauffeurId: createOperation.chauffeurId,
       vehicleId: createOperation.vehicleId,
       realTimeDispatchId: createOperation.schedule.realTimeDispatchId,
@@ -873,7 +895,7 @@ export class OperationService implements OperationServiceInPort {
     console.log('Additional Costs:', updateOperation.additionalCosts);
     console.log('Receipt Image URLs:', updateOperation.receiptImageUrls);
 
-    // undefined 값 제거 (TypeORM이 undefined 값을 무시할 수 있음)
+    // undefined 값만 제거 (null 값은 유지하여 DB에서 필드를 null로 설정할 수 있도록 함)
     const filteredUpdate = Object.fromEntries(Object.entries(updateOperation).filter(([_, value]) => value !== undefined));
 
     console.log('Filtered Update Data:', JSON.stringify(filteredUpdate, null, 2));
@@ -889,9 +911,12 @@ export class OperationService implements OperationServiceInPort {
     }
   }
 
-  async updateAdmin(id: number, updateOperation: any): Promise<void> {
+  async updateAdmin(id: number, updateOperation: UpdateOperationDto): Promise<void> {
     // 관리자용 운행 수정 - 일정 로그 수정 포함
-    await this.operationServiceOutPort.update(id, updateOperation);
+    // undefined 값만 제거 (null 값은 유지하여 DB에서 필드를 null로 설정할 수 있도록 함)
+    const filteredUpdate = Object.fromEntries(Object.entries(updateOperation).filter(([_, value]) => value !== undefined));
+    
+    await this.operationServiceOutPort.update(id, filteredUpdate);
 
     // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
     await this.checkAndTransitionChauffeurStatus(id, updateOperation);
@@ -1014,8 +1039,6 @@ export class OperationService implements OperationServiceInPort {
       const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
       const existingWayPointsMap = new Map(existingWayPoints.data.map((wp) => [wp.order, wp]));
 
-      // 새로 추가할 wayPoints의 order 값들 추출
-      const newOrders = newWayPoints.map((wp) => wp.order).sort((a, b) => a - b);
 
       for (const newWayPoint of newWayPoints as any[]) {
         const targetOrder = newWayPoint.order;

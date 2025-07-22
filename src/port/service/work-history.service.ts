@@ -13,6 +13,7 @@ import {
 } from '@/adapter/inbound/dto/response/work-history/work-history-response.dto';
 import { WorkHistoryRepository } from '@/adapter/outbound/work-history.repository';
 import { WorkHistory } from '@/domain/entity/work-history.entity';
+import { convertKstToUtc } from '@/util/date';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { WorkHistoryServiceInPort } from '@/port/inbound/work-history-service.in-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
@@ -104,7 +105,7 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
   async create(createWorkHistory: CreateWorkHistoryDto): Promise<void> {
     const workHistory = plainToInstance(WorkHistory, {
       ...createWorkHistory,
-      startTime: new Date(createWorkHistory.startTime),
+      startTime: convertKstToUtc(createWorkHistory.startTime),
     });
     await this.workHistoryRepository.save(workHistory);
   }
@@ -129,12 +130,12 @@ export class WorkHistoryService implements WorkHistoryServiceInPort {
 
     // startTime 처리
     if (updateWorkHistory.startTime) {
-      updateData.startTime = new Date(updateWorkHistory.startTime);
+      updateData.startTime = convertKstToUtc(updateWorkHistory.startTime);
     }
 
     // endTime 처리
     if (updateWorkHistory.endTime) {
-      updateData.endTime = new Date(updateWorkHistory.endTime);
+      updateData.endTime = convertKstToUtc(updateWorkHistory.endTime);
 
       // 총 근무 시간 계산 (분) - totalMinutes가 명시적으로 설정되지 않은 경우에만
       if (updateWorkHistory.totalMinutes === undefined) {

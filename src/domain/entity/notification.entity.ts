@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
-import { BaseTimeEntity } from '@/domain/entity/basetime.entity';
+import { BaseEntity } from '@/domain/entity/base.entity';
 
 export enum NotificationType {
   NEW_OPERATION = 'NEW_OPERATION',
@@ -11,7 +11,7 @@ export enum NotificationType {
 }
 
 @Entity('notifications')
-export class Notification extends BaseTimeEntity {
+export class Notification extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

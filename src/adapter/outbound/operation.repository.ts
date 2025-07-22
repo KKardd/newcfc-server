@@ -9,6 +9,7 @@ import { Operation } from '@/domain/entity/operation.entity';
 import { ChauffeurStatus } from '@/domain/enum/chauffeur-status.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
+import { convertKstToUtc, createKstDateRange } from '@/util/date';
 
 @Injectable()
 export class OperationRepository implements OperationServiceOutPort {
@@ -48,65 +49,115 @@ export class OperationRepository implements OperationServiceOutPort {
       queryBuilder.andWhere('operation.status = :status', { status });
     }
 
-    // 시간 검색 로직 개선 - 운행 중인 상태도 포함
+    // 시간 검색 로직 개선 - 운행 중인 상태도 포함 (type 필터 고려)
     if (search.startTime && search.endTime) {
-      const startDate = this.convertKstDateToSearchRange(search.startTime, true);
-      const endDate = this.convertKstDateToSearchRange(search.endTime, false);
+      const startDate = createKstDateRange(search.startTime, true);
+      const endDate = createKstDateRange(search.endTime, false);
 
       // 기사 테이블과 LEFT JOIN
       queryBuilder.leftJoin('chauffeur', 'chauffeur', 'chauffeur.id = operation.chauffeur_id');
 
-      // 조건 1: 운행 시작시간이 검색 범위 내에 있는 경우
-      // 조건 2: 현재 운행 중인 상태이고, 운행 시작시간이 검색 시작일 이후인 경우
-      queryBuilder.andWhere(
-        `
-        (operation.startTime BETWEEN :startDate AND :endDate)
-        OR
-        (
-          operation.startTime >= :startDate
-          AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
-        )
-      `,
-        {
-          startDate,
-          endDate,
-          inProgressStatuses: [
-            ChauffeurStatus.MOVING_TO_DEPARTURE,
-            ChauffeurStatus.WAITING_FOR_PASSENGER,
-            ChauffeurStatus.IN_OPERATION,
-            ChauffeurStatus.WAITING_OPERATION,
-            ChauffeurStatus.PENDING_RECEIPT_INPUT,
-          ],
-        },
-      );
+      if (search.type) {
+        // type 필터가 있는 경우: 해당 타입의 운행만 조회
+        queryBuilder.andWhere(
+          `
+          (operation.startTime BETWEEN :startDate AND :endDate)
+          OR
+          (
+            operation.startTime >= :startDate
+            AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
+            AND operation.type = :typeForTime
+          )
+        `,
+          {
+            startDate,
+            endDate,
+            typeForTime: search.type,
+            inProgressStatuses: [
+              ChauffeurStatus.MOVING_TO_DEPARTURE,
+              ChauffeurStatus.WAITING_FOR_PASSENGER,
+              ChauffeurStatus.IN_OPERATION,
+              ChauffeurStatus.WAITING_OPERATION,
+              ChauffeurStatus.PENDING_RECEIPT_INPUT,
+            ],
+          },
+        );
+      } else {
+        // type 필터가 없는 경우: 기존 로직
+        queryBuilder.andWhere(
+          `
+          (operation.startTime BETWEEN :startDate AND :endDate)
+          OR
+          (
+            operation.startTime >= :startDate
+            AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
+          )
+        `,
+          {
+            startDate,
+            endDate,
+            inProgressStatuses: [
+              ChauffeurStatus.MOVING_TO_DEPARTURE,
+              ChauffeurStatus.WAITING_FOR_PASSENGER,
+              ChauffeurStatus.IN_OPERATION,
+              ChauffeurStatus.WAITING_OPERATION,
+              ChauffeurStatus.PENDING_RECEIPT_INPUT,
+            ],
+          },
+        );
+      }
     } else if (search.startTime) {
-      const startDate = this.convertKstDateToSearchRange(search.startTime, true);
+      const startDate = createKstDateRange(search.startTime, true);
       queryBuilder.andWhere('operation.startTime >= :startDate', { startDate });
     } else if (search.endTime) {
-      const endDate = this.convertKstDateToSearchRange(search.endTime, false);
+      const endDate = createKstDateRange(search.endTime, false);
 
       // 기사 테이블과 LEFT JOIN
       queryBuilder.leftJoin('chauffeur', 'chauffeur', 'chauffeur.id = operation.chauffeur_id');
 
-      // 조건 1: 운행 시작시간이 종료일 이전인 경우
-      // 조건 2: 현재 운행 중인 상태인 경우 (endTime이 지났어도 포함)
-      queryBuilder.andWhere(
-        `
-        (operation.startTime <= :endDate)
-        OR
-        (chauffeur.chauffeur_status IN (:...inProgressStatuses))
-      `,
-        {
-          endDate,
-          inProgressStatuses: [
-            ChauffeurStatus.MOVING_TO_DEPARTURE,
-            ChauffeurStatus.WAITING_FOR_PASSENGER,
-            ChauffeurStatus.IN_OPERATION,
-            ChauffeurStatus.WAITING_OPERATION,
-            ChauffeurStatus.PENDING_RECEIPT_INPUT,
-          ],
-        },
-      );
+      if (search.type) {
+        // type 필터가 있는 경우: 해당 타입의 운행만 조회
+        queryBuilder.andWhere(
+          `
+          (operation.startTime <= :endDate)
+          OR
+          (
+            chauffeur.chauffeur_status IN (:...inProgressStatuses)
+            AND operation.type = :typeForEndTime
+          )
+        `,
+          {
+            endDate,
+            typeForEndTime: search.type,
+            inProgressStatuses: [
+              ChauffeurStatus.MOVING_TO_DEPARTURE,
+              ChauffeurStatus.WAITING_FOR_PASSENGER,
+              ChauffeurStatus.IN_OPERATION,
+              ChauffeurStatus.WAITING_OPERATION,
+              ChauffeurStatus.PENDING_RECEIPT_INPUT,
+            ],
+          },
+        );
+      } else {
+        // type 필터가 없는 경우: 기존 로직
+        queryBuilder.andWhere(
+          `
+          (operation.startTime <= :endDate)
+          OR
+          (chauffeur.chauffeur_status IN (:...inProgressStatuses))
+        `,
+          {
+            endDate,
+            inProgressStatuses: [
+              ChauffeurStatus.MOVING_TO_DEPARTURE,
+              ChauffeurStatus.WAITING_FOR_PASSENGER,
+              ChauffeurStatus.IN_OPERATION,
+              ChauffeurStatus.WAITING_OPERATION,
+              ChauffeurStatus.PENDING_RECEIPT_INPUT,
+            ],
+          },
+        );
+      }
     }
 
     // 정렬 및 페이징
@@ -119,28 +170,6 @@ export class OperationRepository implements OperationServiceOutPort {
     return queryBuilder.getManyAndCount();
   }
 
-  /**
-   * KST 날짜를 검색 범위로 변환
-   * @param date 입력된 날짜 (KST 기준)
-   * @param isStart true면 해당 날짜의 00:00:00, false면 23:59:59
-   */
-  private convertKstDateToSearchRange(date: Date, isStart: boolean): Date {
-    // 입력된 날짜를 KST 기준으로 처리
-    const kstDate = new Date(date);
-
-    if (isStart) {
-      // 해당 날짜의 00:00:00 KST
-      kstDate.setHours(0, 0, 0, 0);
-    } else {
-      // 해당 날짜의 23:59:59.999 KST
-      kstDate.setHours(23, 59, 59, 999);
-    }
-
-    // KST를 UTC로 변환 (한국은 UTC+9)
-    // 주의: DB에 저장된 시간이 UTC인지 KST인지에 따라 변환 방식이 달라질 수 있습니다.
-    // 현재 코드는 DB에 KST로 저장되어 있다고 가정하고 그대로 반환합니다.
-    return kstDate;
-  }
 
   async findById(id: number): Promise<Operation | null> {
     return this.operationRepository.findOne({ where: { id } });

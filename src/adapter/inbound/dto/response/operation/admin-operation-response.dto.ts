@@ -198,6 +198,10 @@ export class AdminOperationResponseDto {
   @Expose()
   createdBy: number;
 
+  @ApiProperty({ description: '생성자 이름', required: false })
+  @Expose()
+  createdByName: string | null;
+
   @ApiProperty({ description: '생성일' })
   @Expose()
   createdAt: Date;

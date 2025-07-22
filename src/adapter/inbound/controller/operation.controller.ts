@@ -62,7 +62,7 @@ export class OperationController {
   })
   @ApiParam({ name: 'id', description: '운행 ID' })
   @Put(':id/admin')
-  async updateAdmin(@Param('id') id: number, @Body() updateOperation: any) {
+  async updateAdmin(@Param('id') id: number, @Body() updateOperation: UpdateOperationDto) {
     return this.operationService.updateAdmin(id, updateOperation);
   }
 

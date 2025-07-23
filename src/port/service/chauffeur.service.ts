@@ -352,6 +352,7 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
       // Schedule 생성이 필요한 상태들만 처리 (wayPoint 진행상태 기록용)
       const scheduleTargetStatuses = [
+        ChauffeurStatus.MOVING_TO_DEPARTURE, // 출발지 이동 (운행 시작)
         ChauffeurStatus.WAITING_FOR_PASSENGER, // 탑승 대기
         ChauffeurStatus.IN_OPERATION, // 운행 시작
         ChauffeurStatus.WAITING_OPERATION, // 운행 종료 (중간 경유지)
@@ -413,6 +414,10 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       }
 
       switch (chauffeurStatus) {
+        case ChauffeurStatus.MOVING_TO_DEPARTURE:
+          // 출발지 이동 → 출발지 (첫 번째 wayPoint)
+          return wayPoints[0]?.id || null;
+
         case ChauffeurStatus.WAITING_FOR_PASSENGER:
           // 탑승 대기 → 시작점 (첫 번째 wayPoint)
           return wayPoints[0]?.id || null;
@@ -1053,6 +1058,14 @@ export class ChauffeurService implements ChauffeurServiceInPort {
       let targetWayPointId: number | null = null;
 
       switch (chauffeurStatus) {
+        case ChauffeurStatus.MOVING_TO_DEPARTURE:
+          // 출발지 이동 - 첫 번째 waypoint (order=1)
+          const firstWayPointForMoving = wayPoints.find((wp) => wp.order === 1);
+          if (firstWayPointForMoving) {
+            targetWayPointId = firstWayPointForMoving.id;
+          }
+          break;
+
         case ChauffeurStatus.WAITING_FOR_PASSENGER:
           // 출발지에 도착 - 첫 번째 waypoint (order=1)
           const firstWayPoint = wayPoints.find((wp) => wp.order === 1);

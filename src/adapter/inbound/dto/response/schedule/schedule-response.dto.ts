@@ -18,9 +18,9 @@ export class ScheduleResponseDto {
   @Expose()
   wayPointId: number;
 
-  @ApiProperty({ description: '기록 시간' })
+  @ApiProperty({ description: '방문 시간' })
   @Expose()
-  recordedAt: Date;
+  visitTime: Date;
 
   @ApiProperty({ description: '기사 상태', enum: ChauffeurStatus })
   @Expose()

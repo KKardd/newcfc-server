@@ -17,7 +17,7 @@ export class Schedule extends BaseEntity {
   wayPointId: number;
 
   @Column({ name: 'recorded_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  recordedAt: Date;
+  visitTime: Date;
 
   @Column({ name: 'chauffeur_status', type: 'enum', enum: ChauffeurStatus, nullable: false })
   chauffeurStatus: ChauffeurStatus;

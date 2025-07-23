@@ -23,11 +23,11 @@ export class ScheduleRepository implements ScheduleServiceOutPort {
 
     // 날짜 범위 검색
     if (search.startDate && search.endDate) {
-      where.recordedAt = Between(search.startDate, search.endDate);
+      where.visitTime = Between(search.startDate, search.endDate);
     } else if (search.startDate) {
-      where.recordedAt = Between(search.startDate, new Date());
+      where.visitTime = Between(search.startDate, new Date());
     } else if (search.endDate) {
-      where.recordedAt = Between(new Date('1970-01-01'), search.endDate);
+      where.visitTime = Between(new Date('1970-01-01'), search.endDate);
     }
 
     // 상태 필터링
@@ -40,7 +40,7 @@ export class ScheduleRepository implements ScheduleServiceOutPort {
     return this.scheduleRepository.findAndCount({
       skip: paginationQuery.skip,
       take: paginationQuery.countPerPage,
-      order: { recordedAt: 'DESC' },
+      order: { visitTime: 'DESC' },
       where,
     });
   }
@@ -55,7 +55,7 @@ export class ScheduleRepository implements ScheduleServiceOutPort {
         operationId,
         status: Not(DataStatus.DELETED),
       },
-      order: { recordedAt: 'ASC' },
+      order: { visitTime: 'ASC' },
     });
   }
 

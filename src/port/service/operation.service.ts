@@ -1173,7 +1173,7 @@ export class OperationService implements OperationServiceInPort {
                 address: wayPoint.address,
                 addressDetail: wayPoint.addressDetail,
                 order: wayPoint.order,
-                visitTime: schedule.recordedAt,
+                visitTime: schedule.visitTime,
                 scheduledTime: wayPoint.scheduledTime,
                 progressLabelStatus: this.getProgressLabelFromStatus(schedule.chauffeurStatus),
               });
@@ -1200,6 +1200,8 @@ export class OperationService implements OperationServiceInPort {
    */
   private getProgressLabelFromStatus(chauffeurStatus: ChauffeurStatus): string {
     switch (chauffeurStatus) {
+      case ChauffeurStatus.MOVING_TO_DEPARTURE:
+        return '출발지 이동';
       case ChauffeurStatus.WAITING_FOR_PASSENGER:
         return '탑승 대기';
       case ChauffeurStatus.IN_OPERATION:

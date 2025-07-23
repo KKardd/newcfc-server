@@ -915,7 +915,7 @@ export class OperationService implements OperationServiceInPort {
     // 관리자용 운행 수정 - 일정 로그 수정 포함
     // undefined 값만 제거 (null 값은 유지하여 DB에서 필드를 null로 설정할 수 있도록 함)
     const filteredUpdate = Object.fromEntries(Object.entries(updateOperation).filter(([_, value]) => value !== undefined));
-    
+
     await this.operationServiceOutPort.update(id, filteredUpdate);
 
     // 영수증 또는 추가비용 입력 시 자동 상태 전환 체크
@@ -992,9 +992,10 @@ export class OperationService implements OperationServiceInPort {
       previousChauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
     }
 
-    // 4. 운행에 새로운 기사 배정
+    // 4. 운행에 새로운 기사 배정 (기사의 차량도 함께 배정)
     await this.operationServiceOutPort.update(assignDto.operationId, {
       chauffeurId: assignDto.chauffeurId,
+      vehicleId: newChauffeur.vehicleId,
     });
 
     // 5. 기사에게 FCM 알림 전송 (새로운 배정인 경우만)
@@ -1038,7 +1039,6 @@ export class OperationService implements OperationServiceInPort {
 
       const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
       const existingWayPointsMap = new Map(existingWayPoints.data.map((wp) => [wp.order, wp]));
-
 
       for (const newWayPoint of newWayPoints as any[]) {
         const targetOrder = newWayPoint.order;

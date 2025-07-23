@@ -129,6 +129,39 @@ export class ChauffeurRepository implements ChauffeurServiceOutPort {
     return await query.getMany();
   }
 
+  async findAvailableChauffeursForReservation(startTime: Date, endTime: Date): Promise<Chauffeur[]> {
+    // KST 시간을 UTC로 변환
+    const startTimeUtc = convertKstToUtc(startTime);
+    const endTimeUtc = convertKstToUtc(endTime);
+
+    // 1. 해당 시간대에 운행이 있는 기사들의 ID를 조회
+    const busyChauffeurIds = await this.chauffeurRepository
+      .createQueryBuilder('chauffeur')
+      .innerJoin('operation', 'o', 'chauffeur.id = o.chauffeur_id')
+      .select('chauffeur.id', 'id')
+      .where('o.chauffeur_id IS NOT NULL')
+      .andWhere('o.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .andWhere('((o.start_time <= :endTime AND o.end_time >= :startTime) OR (o.start_time IS NULL OR o.end_time IS NULL))', {
+        startTime: startTimeUtc,
+        endTime: endTimeUtc,
+      })
+      .getRawMany();
+
+    const busyIds = busyChauffeurIds.map((row) => row.id);
+
+    // 2. 사용 가능한 모든 기사들을 조회 (타입, 상태 제한 없음)
+    const query = this.chauffeurRepository
+      .createQueryBuilder('chauffeur')
+      .where('chauffeur.status != :deletedStatus', { deletedStatus: DataStatus.DELETED });
+
+    // busyIds가 있으면 제외
+    if (busyIds.length > 0) {
+      query.andWhere('chauffeur.id NOT IN (:...busyIds)', { busyIds });
+    }
+
+    return await query.getMany();
+  }
+
   async updateLocation(id: number, latitude: number, longitude: number): Promise<UpdateResult> {
     return this.chauffeurRepository.update(id, { latitude, longitude });
   }

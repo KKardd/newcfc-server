@@ -10,6 +10,7 @@ import { Vehicle } from '@/domain/entity/vehicle.entity';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 import { VehicleStatus } from '@/domain/enum/vehicle-status.enum';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
+import { convertKstToUtc } from '@/util/date';
 
 @Injectable()
 export class VehicleRepository implements VehicleServiceOutPort {
@@ -157,5 +158,39 @@ export class VehicleRepository implements VehicleServiceOutPort {
         status: Not(DataStatus.DELETED),
       },
     });
+  }
+
+  async findAvailableVehiclesForReservation(startTime: Date, endTime: Date): Promise<Vehicle[]> {
+    // KST 시간을 UTC로 변환
+    const startTimeUtc = convertKstToUtc(startTime);
+    const endTimeUtc = convertKstToUtc(endTime);
+
+    // 1. 해당 시간대에 운행이 있는 차량들의 ID를 조회
+    const busyVehicleIds = await this.vehicleRepository
+      .createQueryBuilder('vehicle')
+      .innerJoin('operation', 'o', 'vehicle.id = o.vehicle_id')
+      .select('vehicle.id', 'id')
+      .where('o.vehicle_id IS NOT NULL')
+      .andWhere('o.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .andWhere('((o.start_time <= :endTime AND o.end_time >= :startTime) OR (o.start_time IS NULL OR o.end_time IS NULL))', {
+        startTime: startTimeUtc,
+        endTime: endTimeUtc,
+      })
+      .getRawMany();
+
+    const busyIds = busyVehicleIds.map((row) => row.id);
+
+    // 2. 사용 가능한 모든 차량들을 조회
+    const query = this.vehicleRepository
+      .createQueryBuilder('vehicle')
+      .where('vehicle.status != :deletedStatus', { deletedStatus: DataStatus.DELETED })
+      .andWhere('vehicle.vehicleStatus = :normalStatus', { normalStatus: VehicleStatus.NORMAL });
+
+    // busyIds가 있으면 제외
+    if (busyIds.length > 0) {
+      query.andWhere('vehicle.id NOT IN (:...busyIds)', { busyIds });
+    }
+
+    return await query.getMany();
   }
 }

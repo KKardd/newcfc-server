@@ -83,7 +83,7 @@ export class AdminController {
     await this.adminService.delete(id);
   }
 
-  @ApiOperation({ summary: '예약 배차용 사용 가능한 기사 및 미배정 차량 조회' })
+  @ApiOperation({ summary: '예약 배차용 사용 가능한 기사 및 차량 조회 (시간대별)' })
   @ApiSuccessResponse(200, AvailableChauffeursResponseDto)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, UserRolesGuard)

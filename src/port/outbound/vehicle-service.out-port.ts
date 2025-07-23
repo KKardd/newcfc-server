@@ -21,5 +21,7 @@ export abstract class VehicleServiceOutPort {
 
   abstract findUnassignedVehicles(): Promise<Vehicle[]>;
 
+  abstract findAvailableVehiclesForReservation(startTime: Date, endTime: Date): Promise<Vehicle[]>;
+
   abstract countByGarageId(garageId: number): Promise<number>;
 }

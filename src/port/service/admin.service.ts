@@ -71,23 +71,21 @@ export class AdminService implements AdminServiceInPort {
   }
 
   async getAvailableChauffeurs(searchDto: SearchAvailableChauffeursDto): Promise<AvailableChauffeursResponseDto> {
-    // 1. 모든 행사 쇼퍼들의 오늘 배차 상태를 먼저 체크하고 업데이트
-    await this.checkAllEventChauffeursStatus();
-
-    // 2. 사용 가능한 기사와 미배정 차량 조회
-    const [availableChauffeurs, unassignedVehicles] = await Promise.all([
-      this.chauffeurServiceOutPort.findAvailableChauffeurs(searchDto.startTime, searchDto.endTime),
-      this.vehicleServiceOutPort.findUnassignedVehicles(),
+    // 예약 배차용: 시간대별 사용 가능한 모든 기사와 차량 조회 (상태/타입 제한 없음)
+    const [availableChauffeurs, availableVehicles] = await Promise.all([
+      this.chauffeurServiceOutPort.findAvailableChauffeursForReservation(searchDto.startTime, searchDto.endTime),
+      this.vehicleServiceOutPort.findAvailableVehiclesForReservation(searchDto.startTime, searchDto.endTime),
     ]);
 
-    // 3. 기사들의 vehicle, garage 정보를 별도로 조회해서 매핑
+    // 기사들의 vehicle, garage 정보를 별도로 조회해서 매핑
     const enrichedChauffeurs = await this.enrichChauffeursWithVehicleAndGarage(availableChauffeurs);
 
     return plainToInstance(AvailableChauffeursResponseDto, {
       availableChauffeurs: enrichedChauffeurs,
-      unassignedVehicles,
+      unassignedVehicles: availableVehicles,
     });
   }
+
 
   /**
    * 기사들의 vehicle, garage 정보를 조회해서 매핑

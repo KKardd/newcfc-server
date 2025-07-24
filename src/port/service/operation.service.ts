@@ -992,29 +992,40 @@ export class OperationService implements OperationServiceInPort {
       previousChauffeur = await this.chauffeurServiceOutPort.findById(operation.chauffeurId);
     }
 
-    // 4. 운행에 새로운 기사 배정 (기사의 차량도 함께 배정)
+    // 4. 기존 기사가 있다면 취소 알림 전송 (기사 변경인 경우)
+    if (previousChauffeur) {
+      try {
+        await this.notificationServiceOutPort.sendOperationCancellationNotification(
+          previousChauffeur.id,
+          assignDto.operationId,
+          '배정된 운행이 다른 기사로 변경되었습니다.',
+        );
+      } catch (error) {
+        console.error('기존 기사 FCM 취소 알림 전송 실패:', error);
+        // 알림 전송 실패해도 배정은 진행
+      }
+    }
+
+    // 5. 운행에 새로운 기사 배정 (기사의 차량도 함께 배정)
     await this.operationServiceOutPort.update(assignDto.operationId, {
       chauffeurId: assignDto.chauffeurId,
       vehicleId: newChauffeur.vehicleId,
     });
 
-    // 5. 기사에게 FCM 알림 전송 (새로운 배정인 경우만)
-    // 기존에 기사가 배정되어 있었다면 (기사 변경) 알림을 전송하지 않음
-    if (!previousChauffeur) {
-      try {
-        const notificationMessage = `새로운 운행이 배정되었습니다. 출발시간: ${operation.startTime ? new Date(operation.startTime).toLocaleString('ko-KR') : '미정'}`;
-        await this.notificationServiceOutPort.sendReservationNotification(
-          assignDto.chauffeurId,
-          assignDto.operationId,
-          notificationMessage,
-        );
-      } catch (error) {
-        console.error('FCM 알림 전송 실패:', error);
-        // 알림 전송 실패해도 배정은 성공으로 처리
-      }
+    // 6. 새로운 기사에게 FCM 배정 알림 전송 (항상 전송)
+    try {
+      const notificationMessage = `새로운 운행이 배정되었습니다. 출발시간: ${operation.startTime ? new Date(operation.startTime).toLocaleString('ko-KR') : '미정'}`;
+      await this.notificationServiceOutPort.sendReservationNotification(
+        assignDto.chauffeurId,
+        assignDto.operationId,
+        notificationMessage,
+      );
+    } catch (error) {
+      console.error('FCM 알림 전송 실패:', error);
+      // 알림 전송 실패해도 배정은 성공으로 처리
     }
 
-    // 6. 응답 생성
+    // 7. 응답 생성
     return plainToInstance(AssignChauffeurResponseDto, {
       operationId: assignDto.operationId,
       newChauffeurId: newChauffeur.id,

@@ -34,7 +34,8 @@ export class OperationRepository implements OperationServiceOutPort {
     if (search.vehicleId) {
       queryBuilder.andWhere('operation.vehicleId = :vehicleId', { vehicleId: search.vehicleId });
     }
-    if (search.realTimeDispatchId) {
+    // realTimeDispatchId 조건 (시간 조건이 없을 때만 적용)
+    if (search.realTimeDispatchId && !(search.startTime && search.endTime) && !search.startTime && !search.endTime) {
       queryBuilder.andWhere('operation.realTimeDispatchId = :realTimeDispatchId', {
         realTimeDispatchId: search.realTimeDispatchId,
       });
@@ -57,105 +58,121 @@ export class OperationRepository implements OperationServiceOutPort {
       // 기사 테이블과 LEFT JOIN
       queryBuilder.leftJoin('chauffeur', 'chauffeur', 'chauffeur.id = operation.chauffeur_id');
 
+      // realTimeDispatchId 조건을 시간 조건과 함께 처리
+      const realTimeDispatchCondition = search.realTimeDispatchId ? 'AND operation.realTimeDispatchId = :realTimeDispatchId' : '';
+      const queryParams: any = {
+        startDate,
+        endDate,
+        inProgressStatuses: [
+          ChauffeurStatus.MOVING_TO_DEPARTURE,
+          ChauffeurStatus.WAITING_FOR_PASSENGER,
+          ChauffeurStatus.IN_OPERATION,
+          ChauffeurStatus.WAITING_OPERATION,
+          ChauffeurStatus.PENDING_RECEIPT_INPUT,
+        ],
+      };
+
+      if (search.realTimeDispatchId) {
+        queryParams.realTimeDispatchId = search.realTimeDispatchId;
+      }
+
       if (search.type) {
         // type 필터가 있는 경우: 해당 타입의 운행만 조회
+        queryParams.typeForTime = search.type;
         queryBuilder.andWhere(
           `
-          (operation.startTime BETWEEN :startDate AND :endDate)
-          OR
           (
-            operation.startTime >= :startDate
-            AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
-            AND operation.type = :typeForTime
+            (operation.startTime BETWEEN :startDate AND :endDate)
+            OR
+            (
+              operation.startTime >= :startDate
+              AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
+              AND operation.type = :typeForTime
+            )
           )
+          ${realTimeDispatchCondition}
         `,
-          {
-            startDate,
-            endDate,
-            typeForTime: search.type,
-            inProgressStatuses: [
-              ChauffeurStatus.MOVING_TO_DEPARTURE,
-              ChauffeurStatus.WAITING_FOR_PASSENGER,
-              ChauffeurStatus.IN_OPERATION,
-              ChauffeurStatus.WAITING_OPERATION,
-              ChauffeurStatus.PENDING_RECEIPT_INPUT,
-            ],
-          },
+          queryParams,
         );
       } else {
         // type 필터가 없는 경우: 기존 로직
         queryBuilder.andWhere(
           `
-          (operation.startTime BETWEEN :startDate AND :endDate)
-          OR
           (
-            operation.startTime >= :startDate
-            AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
+            (operation.startTime BETWEEN :startDate AND :endDate)
+            OR
+            (
+              operation.startTime >= :startDate
+              AND chauffeur.chauffeur_status IN (:...inProgressStatuses)
+            )
           )
+          ${realTimeDispatchCondition}
         `,
-          {
-            startDate,
-            endDate,
-            inProgressStatuses: [
-              ChauffeurStatus.MOVING_TO_DEPARTURE,
-              ChauffeurStatus.WAITING_FOR_PASSENGER,
-              ChauffeurStatus.IN_OPERATION,
-              ChauffeurStatus.WAITING_OPERATION,
-              ChauffeurStatus.PENDING_RECEIPT_INPUT,
-            ],
-          },
+          queryParams,
         );
       }
     } else if (search.startTime) {
       const startDate = createKstDateRange(search.startTime, true);
-      queryBuilder.andWhere('operation.startTime >= :startDate', { startDate });
+      const queryParams: any = { startDate };
+      
+      if (search.realTimeDispatchId) {
+        queryParams.realTimeDispatchId = search.realTimeDispatchId;
+        queryBuilder.andWhere('operation.startTime >= :startDate AND operation.realTimeDispatchId = :realTimeDispatchId', queryParams);
+      } else {
+        queryBuilder.andWhere('operation.startTime >= :startDate', queryParams);
+      }
     } else if (search.endTime) {
       const endDate = createKstDateRange(search.endTime, false);
 
       // 기사 테이블과 LEFT JOIN
       queryBuilder.leftJoin('chauffeur', 'chauffeur', 'chauffeur.id = operation.chauffeur_id');
 
+      // realTimeDispatchId 조건을 endTime 조건과 함께 처리
+      const realTimeDispatchCondition = search.realTimeDispatchId ? 'AND operation.realTimeDispatchId = :realTimeDispatchId' : '';
+      const queryParams: any = {
+        endDate,
+        inProgressStatuses: [
+          ChauffeurStatus.MOVING_TO_DEPARTURE,
+          ChauffeurStatus.WAITING_FOR_PASSENGER,
+          ChauffeurStatus.IN_OPERATION,
+          ChauffeurStatus.WAITING_OPERATION,
+          ChauffeurStatus.PENDING_RECEIPT_INPUT,
+        ],
+      };
+
+      if (search.realTimeDispatchId) {
+        queryParams.realTimeDispatchId = search.realTimeDispatchId;
+      }
+
       if (search.type) {
         // type 필터가 있는 경우: 해당 타입의 운행만 조회
+        queryParams.typeForEndTime = search.type;
         queryBuilder.andWhere(
           `
-          (operation.startTime <= :endDate)
-          OR
           (
-            chauffeur.chauffeur_status IN (:...inProgressStatuses)
-            AND operation.type = :typeForEndTime
+            (operation.startTime <= :endDate)
+            OR
+            (
+              chauffeur.chauffeur_status IN (:...inProgressStatuses)
+              AND operation.type = :typeForEndTime
+            )
           )
+          ${realTimeDispatchCondition}
         `,
-          {
-            endDate,
-            typeForEndTime: search.type,
-            inProgressStatuses: [
-              ChauffeurStatus.MOVING_TO_DEPARTURE,
-              ChauffeurStatus.WAITING_FOR_PASSENGER,
-              ChauffeurStatus.IN_OPERATION,
-              ChauffeurStatus.WAITING_OPERATION,
-              ChauffeurStatus.PENDING_RECEIPT_INPUT,
-            ],
-          },
+          queryParams,
         );
       } else {
         // type 필터가 없는 경우: 기존 로직
         queryBuilder.andWhere(
           `
-          (operation.startTime <= :endDate)
-          OR
-          (chauffeur.chauffeur_status IN (:...inProgressStatuses))
+          (
+            (operation.startTime <= :endDate)
+            OR
+            (chauffeur.chauffeur_status IN (:...inProgressStatuses))
+          )
+          ${realTimeDispatchCondition}
         `,
-          {
-            endDate,
-            inProgressStatuses: [
-              ChauffeurStatus.MOVING_TO_DEPARTURE,
-              ChauffeurStatus.WAITING_FOR_PASSENGER,
-              ChauffeurStatus.IN_OPERATION,
-              ChauffeurStatus.WAITING_OPERATION,
-              ChauffeurStatus.PENDING_RECEIPT_INPUT,
-            ],
-          },
+          queryParams,
         );
       }
     }

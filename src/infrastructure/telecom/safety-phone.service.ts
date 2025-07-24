@@ -19,7 +19,7 @@ export class SafetyPhoneService implements SafetyPhoneServiceOutPort {
     formData.append('iid', this.interfaceId);
     formData.append('rn', realNumber);
     formData.append('expire_hour', expireHours.toString());
-    formData.append('auth', this.generateAuth(this.interfaceId + realNumber));
+    formData.append('auth', this.generateAuthWithDebug(this.interfaceId + realNumber));
 
     const response = await firstValueFrom(
       this.httpService.post('/link/auto_expire_mapp.do', formData, {
@@ -39,7 +39,23 @@ export class SafetyPhoneService implements SafetyPhoneServiceOutPort {
   }
 
   private generateAuth(data: string): string {
-    const md5Hash = createHash('md5').update(data).digest('base64');
-    return md5Hash;
+    const md5Hash = createHash('md5').update(data, 'utf8').digest();
+    const base64Encoded = md5Hash.toString('base64');
+    return base64Encoded;
+  }
+
+  private generateAuthWithDebug(data: string): string {
+    console.log('Original data:', data);
+
+    const md5HashHex = createHash('md5').update(data, 'utf8').digest('hex');
+    console.log('MD5 hash (hex):', md5HashHex);
+
+    const md5HashBinary = createHash('md5').update(data, 'utf8').digest();
+    console.log('MD5 hash (binary length):', md5HashBinary.length);
+
+    const base64Result = md5HashBinary.toString('base64');
+    console.log('Base64 encoded:', base64Result);
+
+    return base64Result;
   }
 }

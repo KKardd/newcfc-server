@@ -6,6 +6,11 @@ import { OperationType } from '@/domain/enum/operation-type.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
 
 class WayPointUpdateDto {
+  @ApiProperty({ description: '경유지 ID', required: false })
+  @IsOptional()
+  @IsNumber()
+  id?: number;
+
   @ApiProperty({ description: '경유지 이름' })
   @IsString()
   name: string;

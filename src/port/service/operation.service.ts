@@ -1039,72 +1039,62 @@ export class OperationService implements OperationServiceInPort {
   }
 
   /**
-   * wayPoints 업데이트 시 order 재정렬 처리
+   * wayPoints 덮어씌우기 방식 업데이트
    */
-  private async updateWayPointsWithOrderReordering(operationId: number, newWayPoints: any[]): Promise<void> {
+  private async updateWayPointsWithOrderReordering(operationId: number, wayPoints: any[]): Promise<void> {
     try {
-      // 기존 wayPoints 조회
+      // 1. 기존 wayPoints 조회
       const wayPointPagination = new PaginationQuery();
       wayPointPagination.page = 1;
       wayPointPagination.countPerPage = 100;
-
       const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
-      const existingWayPointsMap = new Map(existingWayPoints.data.map((wp) => [wp.order, wp]));
-
-      for (const newWayPoint of newWayPoints as any[]) {
-        const targetOrder = newWayPoint.order;
-
-        // 해당 order에 기존 wayPoint가 있는지 확인
-        if (existingWayPointsMap.has(targetOrder)) {
-          // 기존 wayPoints 중 targetOrder 이상인 것들을 한 칸씩 뒤로 이동
-          await this.shiftWayPointsOrder(operationId, targetOrder, 1);
-
-          // 기존 wayPoint들 맵 업데이트 (order가 변경되었으므로)
-          const updatedExistingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
-          existingWayPointsMap.clear();
-          updatedExistingWayPoints.data.forEach((wp) => existingWayPointsMap.set(wp.order, wp));
+      
+      // 2. 요청으로 들어온 wayPoint들의 ID 수집
+      const requestWayPointIds = wayPoints.filter(wp => wp.id).map(wp => wp.id);
+      
+      // 3. 요청에 없는 기존 wayPoint들 삭제 (hard delete)
+      for (const existingWp of existingWayPoints.data) {
+        if (!requestWayPointIds.includes(existingWp.id)) {
+          await this.wayPointServiceInPort.hardDelete(existingWp.id);
         }
-
-        // 새로운 wayPoint 생성
-        await this.wayPointServiceInPort.create({
-          operationId,
-          name: newWayPoint.name,
-          address: newWayPoint.address,
-          addressDetail: newWayPoint.addressDetail,
-          latitude: newWayPoint.latitude,
-          longitude: newWayPoint.longitude,
-          visitTime: newWayPoint.visitTime,
-          order: targetOrder,
-        });
-
-        // 생성된 wayPoint를 맵에 추가
-        existingWayPointsMap.set(targetOrder, { order: targetOrder } as any);
+      }
+      
+      // 4. wayPoint 생성/업데이트 처리
+      for (const wayPoint of wayPoints) {
+        if (wayPoint.id) {
+          // ID가 있으면 업데이트
+          await this.wayPointServiceInPort.update(wayPoint.id, {
+            operationId,
+            name: wayPoint.name,
+            address: wayPoint.address,
+            addressDetail: wayPoint.addressDetail,
+            latitude: wayPoint.latitude,
+            longitude: wayPoint.longitude,
+            visitTime: wayPoint.visitTime,
+            scheduledTime: wayPoint.scheduledTime,
+            order: wayPoint.order,
+          });
+        } else {
+          // ID가 없으면 생성
+          await this.wayPointServiceInPort.create({
+            operationId,
+            name: wayPoint.name,
+            address: wayPoint.address,
+            addressDetail: wayPoint.addressDetail,
+            latitude: wayPoint.latitude,
+            longitude: wayPoint.longitude,
+            visitTime: wayPoint.visitTime,
+            scheduledTime: wayPoint.scheduledTime,
+            order: wayPoint.order,
+          });
+        }
       }
     } catch (error) {
-      console.error('wayPoints order 재정렬 중 오류 발생:', error);
+      console.error('wayPoints 덮어씌우기 업데이트 중 오류 발생:', error);
       throw new Error('wayPoints 업데이트에 실패했습니다.');
     }
   }
 
-  /**
-   * 특정 order 이상의 wayPoints를 지정된 만큼 뒤로 이동
-   */
-  private async shiftWayPointsOrder(operationId: number, fromOrder: number, shiftAmount: number): Promise<void> {
-    const wayPointPagination = new PaginationQuery();
-    wayPointPagination.page = 1;
-    wayPointPagination.countPerPage = 100;
-
-    const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
-
-    // fromOrder 이상인 wayPoints를 order 역순으로 정렬 (충돌 방지)
-    const wayPointsToShift = existingWayPoints.data.filter((wp) => wp.order >= fromOrder).sort((a, b) => b.order - a.order);
-
-    for (const wayPoint of wayPointsToShift) {
-      await this.wayPointServiceInPort.update(wayPoint.id, {
-        order: wayPoint.order + shiftAmount,
-      });
-    }
-  }
 
   /**
    * 영수증 또는 추가비용 입력 시 기사 상태 자동 전환 체크

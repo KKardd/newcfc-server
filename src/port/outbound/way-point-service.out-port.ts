@@ -18,4 +18,6 @@ export abstract class WayPointServiceOutPort {
   abstract update(id: number, wayPoint: Partial<WayPoint>): Promise<UpdateResult>;
 
   abstract updateStatus(id: number, status: DataStatus): Promise<UpdateResult>;
+
+  abstract hardDelete(id: number): Promise<void>;
 }

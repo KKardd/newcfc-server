@@ -46,4 +46,8 @@ export class WayPointRepository implements WayPointServiceOutPort {
   async updateStatus(id: number, status: DataStatus) {
     return this.wayPointRepository.update(id, { status });
   }
+
+  async hardDelete(id: number): Promise<void> {
+    await this.wayPointRepository.delete(id);
+  }
 }

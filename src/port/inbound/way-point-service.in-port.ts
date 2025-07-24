@@ -18,4 +18,6 @@ export abstract class WayPointServiceInPort {
   abstract update(id: number, updateWayPoint: UpdateWayPointDto): Promise<void>;
 
   abstract delete(id: number): Promise<void>;
+
+  abstract hardDelete(id: number): Promise<void>;
 }

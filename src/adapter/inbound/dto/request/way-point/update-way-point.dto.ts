@@ -2,6 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateWayPointDto {
+  @ApiProperty({ description: '경유지 ID', required: false })
+  @IsOptional()
+  @IsNumber()
+  id?: number;
+
   @ApiProperty({ description: '운행 ID', required: false })
   @IsOptional()
   @IsNumber()

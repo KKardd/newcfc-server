@@ -12,9 +12,9 @@ export class Schedule extends BaseEntity {
   @Index()
   operationId: number;
 
-  @Column({ name: 'way_point_id', type: 'integer', nullable: false })
+  @Column({ name: 'way_point_id', type: 'integer', nullable: true })
   @Index()
-  wayPointId: number;
+  wayPointId: number | null;
 
   @Column({ name: 'recorded_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   visitTime: Date;

@@ -10,6 +10,11 @@ import { SearchOperationDto } from '@/adapter/inbound/dto/request/operation/sear
 import { UpdateOperationDto } from '@/adapter/inbound/dto/request/operation/update-operation.dto';
 import { AssignChauffeurResponseDto } from '@/adapter/inbound/dto/response/admin/assign-chauffeur-response.dto';
 import {
+  AdminOperationResponseDto,
+  AdminWayPointInfoDto,
+  ScheduleHistoryDto,
+} from '@/adapter/inbound/dto/response/operation/admin-operation-response.dto';
+import {
   OperationResponseDto,
   ChauffeurInfoDto,
   VehicleInfoDto,
@@ -27,21 +32,16 @@ import { OperationServiceInPort } from '@/port/inbound/operation-service.in-port
 import { ReservationServiceInPort } from '@/port/inbound/reservation-service.in-port';
 import { ScheduleServiceInPort } from '@/port/inbound/schedule-service.in-port';
 import { WayPointServiceInPort } from '@/port/inbound/way-point-service.in-port';
+import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { ChauffeurServiceOutPort } from '@/port/outbound/chauffeur-service.out-port';
 import { GarageServiceOutPort } from '@/port/outbound/garage-service.out-port';
 import { NotificationServiceOutPort } from '@/port/outbound/notification-service.out-port';
-import { AdminServiceOutPort } from '@/port/outbound/admin-service.out-port';
 import { OperationServiceOutPort } from '@/port/outbound/operation-service.out-port';
 import { RealTimeDispatchServiceOutPort } from '@/port/outbound/real-time-dispatch-service.out-port';
 import { ReservationServiceOutPort } from '@/port/outbound/reservation-service.out-port';
 import { VehicleServiceOutPort } from '@/port/outbound/vehicle-service.out-port';
-import { classTransformDefaultOptions } from '@/validate/serialization';
 import { convertKstToUtc } from '@/util/date';
-import {
-  AdminOperationResponseDto,
-  AdminWayPointInfoDto,
-  ScheduleHistoryDto,
-} from '@/adapter/inbound/dto/response/operation/admin-operation-response.dto';
+import { classTransformDefaultOptions } from '@/validate/serialization';
 
 @Injectable()
 export class OperationService implements OperationServiceInPort {
@@ -1048,17 +1048,17 @@ export class OperationService implements OperationServiceInPort {
       wayPointPagination.page = 1;
       wayPointPagination.countPerPage = 100;
       const existingWayPoints = await this.wayPointServiceInPort.search({ operationId }, wayPointPagination);
-      
+
       // 2. 요청으로 들어온 wayPoint들의 ID 수집
-      const requestWayPointIds = wayPoints.filter(wp => wp.id).map(wp => wp.id);
-      
+      const requestWayPointIds = wayPoints.filter((wp) => wp.id).map((wp) => wp.id);
+
       // 3. 요청에 없는 기존 wayPoint들 삭제 (hard delete)
       for (const existingWp of existingWayPoints.data) {
         if (!requestWayPointIds.includes(existingWp.id)) {
           await this.wayPointServiceInPort.hardDelete(existingWp.id);
         }
       }
-      
+
       // 4. wayPoint 생성/업데이트 처리
       for (const wayPoint of wayPoints) {
         if (wayPoint.id) {
@@ -1094,7 +1094,6 @@ export class OperationService implements OperationServiceInPort {
       throw new Error('wayPoints 업데이트에 실패했습니다.');
     }
   }
-
 
   /**
    * 영수증 또는 추가비용 입력 시 기사 상태 자동 전환 체크
@@ -1155,12 +1154,26 @@ export class OperationService implements OperationServiceInPort {
 
       // 2. 각 Schedule 기록에 대해 wayPoint 정보와 조합
       for (const schedule of schedules) {
-        if (schedule.wayPointId) {
-          try {
+        try {
+          // 출발지 이동의 경우 또는 wayPointId가 null인 경우 빈 정보로 schedule 항목 생성
+          if (schedule.chauffeurStatus === ChauffeurStatus.MOVING_TO_DEPARTURE || !schedule.wayPointId) {
+            const historyItem = plainToInstance(ScheduleHistoryDto, {
+              wayPointId: schedule.wayPointId, // Schedule의 wayPointId 포함
+              name: '',
+              address: '',
+              addressDetail: '',
+              order: 0,
+              visitTime: schedule.visitTime,
+              scheduledTime: null,
+              progressLabelStatus: this.getProgressLabelFromStatus(schedule.chauffeurStatus),
+            });
+
+            scheduleHistory.push(historyItem);
+          } else if (schedule.wayPointId) {
             // wayPoint 정보 조회
             const wayPointPagination = new PaginationQuery();
             wayPointPagination.page = 1;
-            wayPointPagination.countPerPage = 1;
+            wayPointPagination.countPerPage = 100;
 
             const wayPointsResponse = await this.wayPointServiceInPort.search({ operationId: operationId }, wayPointPagination);
 
@@ -1170,6 +1183,7 @@ export class OperationService implements OperationServiceInPort {
             if (wayPoint) {
               const historyItem = plainToInstance(ScheduleHistoryDto, {
                 id: wayPoint.id,
+                wayPointId: schedule.wayPointId, // Schedule의 wayPointId 포함
                 name: wayPoint.name,
                 address: wayPoint.address,
                 addressDetail: wayPoint.addressDetail,
@@ -1181,9 +1195,9 @@ export class OperationService implements OperationServiceInPort {
 
               scheduleHistory.push(historyItem);
             }
-          } catch (error) {
-            console.error(`Failed to process schedule ${schedule.id}:`, error);
           }
+        } catch (error) {
+          console.error(`Failed to process schedule ${schedule.id}:`, error);
         }
       }
 

@@ -14,9 +14,9 @@ export class ScheduleResponseDto {
   @Expose()
   operationId: number;
 
-  @ApiProperty({ description: '경유지 ID' })
+  @ApiProperty({ description: '경유지 ID', required: false })
   @Expose()
-  wayPointId: number;
+  wayPointId: number | null;
 
   @ApiProperty({ description: '방문 시간' })
   @Expose()

@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { Type, Transform } from 'class-transformer';
 import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 
-import { OperationType } from '@/domain/enum/operation-type.enum';
 import { DataStatus } from '@/domain/enum/data-status.enum';
+import { OperationType } from '@/domain/enum/operation-type.enum';
 
 class WayPointUpdateDto {
   @ApiProperty({ description: '경유지 ID', required: false })
@@ -131,21 +132,22 @@ export class UpdateOperationDto {
   @IsEnum(DataStatus)
   status?: DataStatus;
 
-  @ApiProperty({ 
-    description: '경유지 목록 (order 재정렬 자동 적용)', 
-    type: [WayPointUpdateDto], 
+  @ApiProperty({
+    description: '경유지 목록 (order 재정렬 자동 적용)',
+    type: [WayPointUpdateDto],
     required: false,
     example: [
       {
-        name: "서울역",
-        address: "서울특별시 중구 세종대로 18",
-        addressDetail: "1층",
+        name: '서울역',
+        address: '서울특별시 중구 세종대로 18',
+        addressDetail: '1층',
         latitude: 37.5565,
         longitude: 126.9723,
-        visitTime: "2025-01-18T10:30:00Z",
-        order: 2
-      }
-    ]
+        visitTime: '2025-01-18T10:30:00Z',
+        order: 2,
+        id: 1,
+      },
+    ],
   })
   @IsOptional()
   @IsArray()

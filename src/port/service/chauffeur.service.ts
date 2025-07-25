@@ -344,11 +344,11 @@ export class ChauffeurService implements ChauffeurServiceInPort {
     previousStatus: ChauffeurStatus | null,
   ): Promise<void> {
     try {
-      // 출발지 이동은 Schedule을 생성하지 않음 (주소지 정보 없음)
-      if (newStatus === ChauffeurStatus.MOVING_TO_DEPARTURE) {
-        console.log('출발지 이동 상태는 Schedule 생성을 건너뜁니다.');
-        return;
-      }
+      // 출발지 이동시에도 Schedule을 생성함 (운행 진행 상태 추적을 위해)
+      // if (newStatus === ChauffeurStatus.MOVING_TO_DEPARTURE) {
+      //   console.log('출발지 이동 상태는 Schedule 생성을 건너뜁니다.');
+      //   return;
+      // }
 
       // Schedule 생성이 필요한 상태들만 처리 (wayPoint 진행상태 기록용)
       const scheduleTargetStatuses = [
@@ -380,12 +380,17 @@ export class ChauffeurService implements ChauffeurServiceInPort {
 
       if (!relatedWayPointId) {
         console.log(`${newStatus} 상태에 해당하는 wayPoint를 찾을 수 없습니다.`);
-        return;
+        // 출발지 이동의 경우 wayPoint가 없어도 Schedule 생성 (더미 wayPoint ID 사용)
+        if (newStatus === ChauffeurStatus.MOVING_TO_DEPARTURE) {
+          console.log('출발지 이동을 위한 더미 wayPoint로 Schedule 생성합니다.');
+        } else {
+          return;
+        }
       }
 
       const createScheduleDto: CreateScheduleDto = {
         operationId: currentOperation.id,
-        wayPointId: relatedWayPointId,
+        wayPointId: relatedWayPointId, // 출발지 이동의 경우 null 가능
         chauffeurStatus: newStatus,
       };
 

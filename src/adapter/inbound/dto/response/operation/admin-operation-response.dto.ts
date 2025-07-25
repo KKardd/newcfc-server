@@ -21,6 +21,10 @@ export class ScheduleHistoryDto {
   @Expose()
   id: number;
 
+  @ApiProperty({ description: 'Schedule의 wayPoint ID', required: false })
+  @Expose()
+  wayPointId: number | null;
+
   @ApiProperty({ description: 'wayPoint 이름', required: false })
   @Expose()
   name: string | null;
